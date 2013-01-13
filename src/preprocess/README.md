@@ -12,10 +12,13 @@ Postgres
 ========
 
 sudo su - postgres
+
 psql -d template1 -U postgres
 
 create user eduser with password ‘password’; 
+
 create database enron; 
+
 GRANT ALL PRIVILEGES ON DATABASE enron to eduser;
 
 restart postgres 
