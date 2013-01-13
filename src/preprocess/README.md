@@ -1,25 +1,25 @@
-DB creattion: 
-==============
+Data base configurations: 
+=========================
 
-http://www.cyberciti.biz/faq/howto-add-postgresql-user-account/
+Ref: http://www.cyberciti.biz/faq/howto-add-postgresql-user-account/
+
 
 UNIX: 
 =====
 
-sudo adduser eduser 
+sudo adduser eduser # creates a new db system user 
 
 Postgres 
 ========
 
-sudo su - postgres
+sudo su - postgres 
 
 psql -d template1 -U postgres
 
-create user eduser with password ‘password’; 
+create user eduser with password ‘password’; # creates a db user 
 
-create database enron; 
+create database enron; # creates a databased named 'enron'
 
-GRANT ALL PRIVILEGES ON DATABASE enron to eduser;
+GRANT ALL PRIVILEGES ON DATABASE enron to eduser; # grant all permissions to eduser 
 
-restart postgres 
-sudo /etc/init.d/postgresql restart 9.1
+sudo /etc/init.d/postgresql restart 9.1 # restart postgres 
