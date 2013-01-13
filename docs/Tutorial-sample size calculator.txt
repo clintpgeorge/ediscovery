@@ -1,0 +1,31 @@
+Input: 
+Description | Variable | Example
+  1)Message id table, mid_table, message
+  2)Input keyword , keyword, "terminate"
+  3)Confidence interval , confidence, " 95 " (95 %)
+  4)Level of precision ,precision,  " 2 " (+/- 2%)
+  5)Output directory to be examined by hand, output, "/usr/clint/desktop/"
+
+Algorithm:
+  1)Run text search. 
+    SearchNonResponsive( message, "terminate")
+    Output: List of non-matching message id's -> mid_nonmatch
+  2)Run random sampler : See references for formulae
+    RandomSample(mid_nonmatch, confidence, precision)
+    Output: mid_randomsample
+  3)Query and display/move results 
+    DisplayResults(mid_randomsample,mid_table, output)
+    Output: Random samples dispalyed as folder/view.
+
+
+References:
+Calculation: 
+http://e-discoveryteam.com/2012/05/06/random-sample-calculations-and-my-prediction-that-300000-lawyers-will-be-using-random-sampling-by-2022/
+http://www.raosoft.com/samplesize.html
+
+Correction for finite size: 
+
+http://edis.ifas.ufl.edu/pd006
+
+Verify correctness by a calculator:
+http://www.floridalawfirm.com/calculate.html
