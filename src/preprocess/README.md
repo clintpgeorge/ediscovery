@@ -1,11 +1,16 @@
 DB creattion: 
+==============
 
 http://www.cyberciti.biz/faq/howto-add-postgresql-user-account/
 
 UNIX: 
+=====
+
 sudo adduser eduser 
 
 Postgres 
+========
+
 sudo su - postgres
 psql -d template1 -U postgres
 
