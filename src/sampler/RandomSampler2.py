@@ -61,7 +61,7 @@ def FindFilesInFolder(inputDir):
 def RandomSampler(messageIdList,confidence,precision,SEEDCONSTANT):
 	# Uncomment to test sample size of big numbers and verify
 	# messageIdList = xrange(10000)
-	random(SEEDCONSTANT)
+	random.seed(SEEDCONSTANT)
 	
 	# setting up z , the diction of confidence -> zvalues
 	z = {}
@@ -95,18 +95,22 @@ def RandomSampler(messageIdList,confidence,precision,SEEDCONSTANT):
 		raise Exception, "Confidence interval not supported"
 		sys.exit(1)
 		
-# Copies the random files to a given folder		
+# Copies the random files to a given folder	
+# Throws error for sample already existing. Need to fix	
 def CopyRandomFiles(dir,randomList):
-	print "Now creating directory and copying .... "
-	if not os.path.exists(dir):
-		os.mkdir(dir)
-	i=1
-	for file in randomList:
-		currFileName = os.path.basename(file)
-		shutil.copy2(file,dir)
-		os.rename(os.path.join(dir,currFileName),os.path.join(dir,currFileName+"--"+str(i)))
-		i+=1
-	print "Copying complete"
+	try:
+		print "Now creating directory and copying .... "
+		if  not os.path.exists(dir):
+			os.makedirs(dir)
+		i=1
+		for file in randomList:
+			currFileName = os.path.basename(file)
+			shutil.copy2(file,dir)
+			os.rename(os.path.join(dir,currFileName),os.path.join(dir,currFileName+"--"+str(i)))
+			i+=1
+		print "Copying complete"
+	except OSError:
+			print "Cannot copy the required files. Check that destination directory is empty"
 	return
 
 # Standard boilerplate to call the main() function to begin
