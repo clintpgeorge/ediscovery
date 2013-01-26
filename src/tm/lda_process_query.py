@@ -11,17 +11,37 @@ import logging, gensim
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 
-def load_doc_info(doc_paths_file):
+def load_docs_info(doc_paths_file):
+    '''Returns lists of lists of file details such as [doc_id, doc_dir_path, doc_name] 
+    
+    Loads the file paths from the given file 
+    
+    '''
     fi = [] 
     with open(doc_paths_file) as fp:
         for line in fp: 
             fi.append(line.strip().split())
     return fi
 
-
-
-def process_query(query, dictionary_file, lda_mdl_file, lda_index_file, doc_paths_file, limit=5):
+def load_lda_variables(dictionary_file, lda_mdl_file, lda_index_file):
+    '''Returns a tuple of dictionary, lda model, and lda index 
+    
+    This function loads all the LDA model variables from 
+    the given files 
+    
     '''
+
+    dictionary = gensim.corpora.Dictionary().load(dictionary_file)
+    lda = gensim.models.ldamodel.LdaModel.load(lda_mdl_file)
+    index = gensim.similarities.MatrixSimilarity.load(lda_index_file)
+
+    return (dictionary, lda, index)
+
+
+def process_query(query, dictionary, lda, index, files_info, limit=5):
+    '''Returns a lists of lists of responsive and non responsive 
+    document details such as [doc_id, doc_dir_path, doc_name, score] 
+      
     Tokenize the input query and finds topically 
     similar documents (responsive) using LDA based 
     document search. Currently, the responsive documents 
@@ -32,14 +52,14 @@ def process_query(query, dictionary_file, lda_mdl_file, lda_index_file, doc_path
         (a) improve the method that identifies the 
         responsive documents 
     '''
-    # corpus = gensim.corpora.BleiCorpus(ldac_file)
-    id2word = gensim.corpora.Dictionary().load(dictionary_file)
-    lda = gensim.models.ldamodel.LdaModel.load(lda_mdl_file)
-    index = gensim.similarities.MatrixSimilarity.load(lda_index_file)
+
     # process the query 
-    query_vec = id2word.doc2bow(query.lower().split())
+    
+    query_vec = dictionary.doc2bow(query.lower().split())
     query_td = lda[query_vec]
+    
     # querying based on cosine distance
+    
     sims = index[query_td] # perform a similarity query against the corpus
     sims = sorted(enumerate(sims), key=lambda item: -item[1])
     
@@ -48,17 +68,15 @@ def process_query(query, dictionary_file, lda_mdl_file, lda_index_file, doc_path
     responsive_docs_idx = sims[0:limit]
     non_responsive_docs_idx = sims[limit:len(sims)]
     
-    fi = load_doc_info(doc_paths_file)
-    
     responsive_docs = [] 
     for (doc_id, score) in responsive_docs_idx: 
-        doc = fi[doc_id]
+        doc = files_info[doc_id]
         doc.append(score)
         responsive_docs.append(doc)
     
     non_responsive_docs = [] 
     for (doc_id, score) in non_responsive_docs_idx: 
-        doc = fi[doc_id]
+        doc = files_info[doc_id]
         doc.append(score)
         non_responsive_docs.append(doc)
     
