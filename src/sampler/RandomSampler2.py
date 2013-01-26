@@ -9,7 +9,7 @@ import random
 # input:
 # inputFolder/pst = Source of the datasets
 # confidence: float between 0 & 1,
-# precision: confidence: float between 0 & 1  
+# precision: confidence: float between 0 & 1
 def main():
 	if len(sys.argv) != 4:
 		sys.stderr.write("Please enter input in expected format: RandomSampler inputFolder, confidence, precision")
@@ -19,33 +19,33 @@ def main():
 		try:
 			# evaluating input for testing, will change in final system
 			inputFolder = sys.argv[1]
-			
-			
+
+
 			confidence = float(sys.argv[2])
 			precision = float(sys.argv[3])
-		
-			if not os.path.exists(inputFolder) : 
+
+			if not os.path.exists(inputFolder) :
 				print "Input folder cannot be found"
 			if confidence <= 0 or confidence > 1:
 				raise Exception, "Confidence is not valid, enter as a probability between 0 and 1"
 			if precision <= 0 or precision > 1:
 				raise Exception, "Precision is not valid, enter as a probability between 0 and 1"
-			
-			
-			fileList = FindFilesInFolder(inputFolder) 
+
+
+			fileList = FindFilesInFolder(inputFolder)
 			#change to required constant for testing
 			SEEDCONSTANT = 0.5
 			messageRandomSample = RandomSampler(fileList,confidence,precision,SEEDCONSTANT)
 			#currently constant
 			outputDir= "C:\\Users\\abhiramj\\Desktop\\sample"
 			CopyRandomFiles(outputDir,messageRandomSample)
-			return messageRandomSample			
-			
+			return messageRandomSample
+
 		except Exception as anyException:
 			print "Error: " + str(anyException)
 			sys.exit(1)
-			
-	
+
+
 # Recursive descent to find files in folder.
 # Input is input folder, output is absolute path of all files
 # Output is list of absolute path of all files
@@ -62,7 +62,7 @@ def RandomSampler(messageIdList,confidence,precision,SEEDCONSTANT):
 	# Uncomment to test sample size of big numbers and verify
 	# messageIdList = xrange(10000)
 	random.seed(SEEDCONSTANT)
-	
+
 	# setting up z , the diction of confidence -> zvalues
 	z = {}
 	z[0.999] = 3.3
@@ -73,18 +73,18 @@ def RandomSampler(messageIdList,confidence,precision,SEEDCONSTANT):
 	z[0.90] =1.645
 	z[0.85] = 1.439
 	z[0.75] = 1.151
-	
-	
-	
+
+
+
 	# prevalence is the likelihood of finding a responsive/positive example in population
 	# We assume this as 0.5 (most conservative) as we do not know prior information about data
 	prevalence = 0.5
-	
+
 	# check that the confidence interval is supported
 	if confidence in z:
 		# sample size formula based on infinite population
 		sampleSize= pow(z[confidence],2)*(prevalence)*(1-prevalence)/(pow(precision,2))
-		
+
 		# correction for finite size
 		correctedSampleSize = sampleSize/(1+ (sampleSize-1)/len(messageIdList))
 		correctedSampleSize = int(math.ceil(correctedSampleSize))
@@ -94,9 +94,9 @@ def RandomSampler(messageIdList,confidence,precision,SEEDCONSTANT):
 	else:
 		raise Exception, "Confidence interval not supported"
 		sys.exit(1)
-		
-# Copies the random files to a given folder	
-# Throws error for sample already existing. Need to fix	
+
+# Copies the random files to a given folder
+# Throws error for sample already existing. Need to fix
 def CopyRandomFiles(dir,randomList):
 	try:
 		print "Now creating directory and copying .... "
