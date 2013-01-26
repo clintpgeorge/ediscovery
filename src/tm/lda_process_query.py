@@ -62,6 +62,9 @@ def process_query(query, dictionary_file, lda_mdl_file, lda_index_file, doc_path
         doc.append(score)
         non_responsive_docs.append(doc)
     
+    ## The responsive_docs and non_responsive_docs are lists 
+    ## of lists. The internal list has the following 
+    ## fixed set of elements = [doc_id, email_path, file_name, score]  
     
     return (responsive_docs, non_responsive_docs)
 
