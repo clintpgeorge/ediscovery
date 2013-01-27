@@ -4,22 +4,28 @@ import sys
 import math
 import random
 
+# PREVALENCE is the likelihood of finding a responsive/positive example in population
+# We assume this as 0.5 (most conservative) as we do not know prior information about data
+PREVALENCE = 0.5
+
 # input: messageIdList: comma separated list of values(no spaces), confidence: float between 0 & 1, precision: confidence: float between 0 & 1  
 def main():
+	
+	
 	if len(sys.argv) != 4:
-		sys.stderr.write("Please enter input in expected format: RandomSampler messageidlist, confidence, precision")
+		sys.stderr.write("Please enter input in expected format: random_sampler messageidlist, confidence, precision")
 		sys.exit(1)
 	else:
 	#checking for input
 		try:
 			# evaluating input for testing, will change in final system
-			messageIdList = sys.argv[1].split(",")
+			message_id_list = sys.argv[1].split(",")
 			
 			
 			confidence = float(sys.argv[2])
 			precision = float(sys.argv[3])
 		
-			if len(messageIdList) <= 0: 
+			if len(message_id_list) <= 0: 
 				print "MessageId is not a list, interpreting as a range"
 			if confidence <= 0 or confidence > 1:
 				raise Exception, "Confidence is not valid, enter as a probability between 0 and 1"
@@ -28,8 +34,8 @@ def main():
 			
 			#change to required constant for testing
 			SEEDCONSTANT = 0.5
-			messageRandomSample = RandomSampler(messageIdList,confidence,precision,SEEDCONSTANT)
-			return messageRandomSample			
+			message_random_sample = random_sampler(message_id_list,confidence,precision,SEEDCONSTANT)
+			return message_random_sample			
 			
 		except Exception as anyException:
 			print "Error: " + anyException
@@ -42,10 +48,12 @@ def main():
 
 
 # SEEDCONSTANT unused currently
-def RandomSampler(messageIdList,confidence,precision,SEEDCONSTANT):
+def random_sampler(message_id_list,confidence,precision,SEEDCONSTANT):
+	
+	
 	# Uncomment to test sample size of big numbers and verify
-	# messageIdList = xrange(10000)
-	randomizer  = random
+	# message_id_list = xrange(10000)
+	random.seed(SEEDCONSTANT)
 	
 	# setting up z , the diction of confidence -> zvalues
 	z = {}
@@ -60,21 +68,18 @@ def RandomSampler(messageIdList,confidence,precision,SEEDCONSTANT):
 	
 	
 	
-	# prevalence is the likelihood of finding a responsive/positive example in population
-	# We assume this as 0.5 (most conservative) as we do not know prior information about data
-	prevalence = 0.5
 	
 	# check that the confidence interval is supported
 	if confidence in z:
 		# sample size formula based on infinite population
-		sampleSize= pow(z[confidence],2)*(prevalence)*(1-prevalence)/(pow(precision,2))
+		sample_size= pow(z[confidence],2)*(PREVALENCE)*(1-PREVALENCE)/(pow(precision,2))
 		
 		# correction for finite size
-		correctedSampleSize = sampleSize/(1+ (sampleSize-1)/len(messageIdList))
-		correctedSampleSize = int(math.ceil(correctedSampleSize))
-		print "Sample size is "+ str(correctedSampleSize)
-		randomSample = randomizer.sample(messageIdList,correctedSampleSize)
-		return randomSample
+		corrected_sample_size = sample_size/(1+ (sample_size-1)/len(message_id_list))
+		corrected_sample_size = int(math.ceil(corrected_sample_size))
+		print "Sample size is "+ str(corrected_sample_size)
+		random_sample = random.sample(message_id_list,corrected_sample_size)
+		return random_sample
 	else:
 		raise Exception, "Confidence interval not supported"
 		sys.exit(1)

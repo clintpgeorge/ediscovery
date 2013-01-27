@@ -99,17 +99,17 @@ if __name__=="__main__":
     arg_parser.add_argument("-m", dest="min_frequency", type=int, help="Minimum frequency of vocabulary terms", default=10)
     arg_parser.add_argument("-i", dest="min_word_len", type=int, help="Minimum length of vocabulary terms", default=2)
     
-    args = arg_parser.parse_args()
+    output_folder = arg_parser.parse_args()
     
     
     
     # Sets connection string from arguments 
-    CONNECTION_STRING = "host='%s' dbname='%s' user='%s' password='%s'" % (args.host, args.dbname, args.user, args.password)
+    CONNECTION_STRING = "host='%s' dbname='%s' user='%s' password='%s'" % (output_folder.host, output_folder.dbname, output_folder.user, output_folder.password)
     
 
     # create file handler which 
     # logs even debug messages
-    if args.log: 
+    if output_folder.log: 
         logging.basicConfig(filename='db_enron_create_corpus.log', 
                             format='%(asctime)s : %(levelname)s : %(message)s', 
                             level=logging.DEBUG)
@@ -128,7 +128,7 @@ if __name__=="__main__":
     ldac_file = 'enron.ldac'
     
     # Creates the dictionary 
-    create_dictionary(args.stop_words_file, mids, dictionary_file, args.min_frequency, args.min_word_len)
+    create_dictionary(output_folder.stop_words_file, mids, dictionary_file, output_folder.min_frequency, output_folder.min_word_len)
     
     # Creates the corpus 
     dictionary = corpora.Dictionary().load(dictionary_file)       

@@ -111,11 +111,11 @@ if __name__=="__main__":
     arg_parser.add_argument("-m", dest="min_frequency", type=int, help="Minimum frequency of vocabulary terms", default=15)
     arg_parser.add_argument("-i", dest="min_word_len", type=int, help="Minimum length of vocabulary terms", default=2)
     
-    args = arg_parser.parse_args()
+    output_folder = arg_parser.parse_args()
 
     # create file handler which 
     # logs even debug messages
-    if args.log: 
+    if output_folder.log: 
         logging.basicConfig(filename='fs_enron_create_corpus.log', 
                             format='%(asctime)s : %(levelname)s : %(message)s', 
                             level=logging.DEBUG)
@@ -127,10 +127,10 @@ if __name__=="__main__":
     
     logging.info('=============================================================================================================')
     
-    logging.info('Email root directory: %s' % args.directory)
+    logging.info('Email root directory: %s' % output_folder.directory)
     
     logging.info('Loads email paths...')
-    file_tuples = get_file_info(args.directory)
+    file_tuples = get_file_info(output_folder.directory)
     logging.info('%d email documents found.' % len(file_tuples))
     
     dictionary_file = 'fs_enron.dict'
@@ -147,7 +147,7 @@ if __name__=="__main__":
     
     
     # Creates the dictionary 
-    create_dictionary(args.stop_words_file, file_tuples, dictionary_file, args.min_frequency, args.min_word_len)
+    create_dictionary(output_folder.stop_words_file, file_tuples, dictionary_file, output_folder.min_frequency, output_folder.min_word_len)
     
     # Creates the corpus 
     dictionary = corpora.Dictionary().load(dictionary_file)       

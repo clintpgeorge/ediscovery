@@ -175,24 +175,24 @@ if __name__=="__main__":
     arg_parser.add_argument("-u", dest="user", type=str, help="db user name", required=True)
     arg_parser.add_argument("-p", dest="password", type=str, help="db user login password", required=True)
     
-    args = arg_parser.parse_args()
+    output_folder = arg_parser.parse_args()
     
     # Sets connection string from arguments 
-    CONNECTION_STRING = "host='%s' dbname='%s' user='%s' password='%s'" % (args.host, args.dbname, args.user, args.password)
+    CONNECTION_STRING = "host='%s' dbname='%s' user='%s' password='%s'" % (output_folder.host, output_folder.dbname, output_folder.user, output_folder.password)
     
 
     # create file handler which 
     # logs even debug messages
-    if args.log: 
+    if output_folder.log: 
         fh = logging.FileHandler('enron_insert_db.log')
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
     
-    logger.info('Execution directory: %s' % args.directory)
+    logger.info('Execution directory: %s' % output_folder.directory)
     
     logger.info('Loads email paths...')
-    file_tuples = get_file_info(args.directory)
+    file_tuples = get_file_info(output_folder.directory)
     
     logger.info('Loads emails into the data base')
     
