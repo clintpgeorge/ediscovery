@@ -26,7 +26,8 @@ def lucene_index(input_folder,output_folder):
     index_folder = SimpleFSDirectory(File(output_folder))
     analyzer = StandardAnalyzer(Version.LUCENE_30)
     writer = IndexWriter(index_folder, analyzer, True, IndexWriter.MaxFieldLength(4000))
-    
+    writer.setMergeFactor(100)
+    writer.setRAMBufferSizeMB(500)
     
     files_to_index = find_files_in_folder(input_folder) 
     for input_file in files_to_index:
