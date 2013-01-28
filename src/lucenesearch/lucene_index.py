@@ -22,12 +22,12 @@ def lucene_index(input_folder,output_folder):
         logger.debug("Making output directory for index: "+ output_folder)
         os.makedirs(output_folder)
         
-    lucene.initVM()
+    lucene.initVM(initialheap='1024m',maxheap='2048m')
     index_folder = SimpleFSDirectory(File(output_folder))
     analyzer = StandardAnalyzer(Version.LUCENE_30)
-    writer = IndexWriter(index_folder, analyzer, True, IndexWriter.MaxFieldLength(4000))
-    writer.setMergeFactor(100)
-    writer.setRAMBufferSizeMB(500)
+    writer = IndexWriter(index_folder, analyzer, True, IndexWriter.MaxFieldLength.UNLIMITED)
+    writer.setMergeFactor(15)
+    writer.setRAMBufferSizeMB(32.0)
     
     files_to_index = find_files_in_folder(input_folder) 
     for input_file in files_to_index:

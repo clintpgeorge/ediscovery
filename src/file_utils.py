@@ -18,6 +18,7 @@ def copy_random_files(dir,random_list):
             os.rename(os.path.join(dir,curr_file_name),os.path.join(dir,curr_file_name+"--"+str(i)))
             i += 1
     except OSError:
+            print str(OSError)
             print "Cannot copy the required files. Check that destination directory is empty"
     return
 
