@@ -18,6 +18,12 @@ import logging, gensim
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 def is_number(s):
+    '''Checks whether a given token is a number 
+    Returns: 
+        a boolean 
+    Arguments: 
+        a token 
+    '''
     try:
         float(s)
         return True
@@ -25,6 +31,13 @@ def is_number(s):
         return False
     
 def normalize_columns(arr):
+    '''Normalize the columns of a given numpy matrix or array 
+    
+    Returns: 
+        a numpy matrix/array 
+    Arguments: 
+        a numpy matrix/array  
+    '''
     _, cols = arr.shape
     for col in xrange(cols):
         col_sum = sum(arr[:, col])
@@ -35,6 +48,13 @@ def normalize_columns(arr):
     return arr 
 
 def normalize_rows(arr):
+    '''Normalize the rows of a given numpy matrix or array 
+    
+    Returns: 
+        a numpy matrix/array  
+    Arguments: 
+        a numpy matrix/array  
+    '''
     rows, _ = arr.shape
     for row in xrange(rows):
         row_sum = sum(arr[row, :])
@@ -45,7 +65,12 @@ def normalize_rows(arr):
     return arr 
 
 
+'''
+Performs LDA estimation process 
 
+
+TODO: make it a proper executable with parameters (instead of hard coding)
+'''
 
 # Initializes the variables 
 

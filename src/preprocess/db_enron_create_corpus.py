@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+'''
+
+This script is used to parse the enron emails 
+in the palin text format (stored in the database) 
+and create an LDA corpus from them. 
+
+Created by: Clint P. George
+Created On: Jan 29, 2013   
+
+'''
 
 import psycopg2
 import logging
@@ -13,6 +23,12 @@ DB access functions
 '''
 
 def get_message_ids():
+    '''Loads message ids from 
+    the enron database 
+    
+    Returns: 
+        a list of message ids 
+    '''
     mids = [] 
     conn = psycopg2.connect(CONNECTION_STRING)
     cursor = conn.cursor()
@@ -25,7 +41,11 @@ def get_message_ids():
     return mids 
 
 def process_msg(mid):
+    '''Processes a single email file 
     
+    Arguments: 
+        mid - the email uid from the database 
+    '''
     conn = psycopg2.connect(CONNECTION_STRING)
     cursor = conn.cursor()
     cursor.execute("SELECT body FROM messages where mid = %d;" % mid)
@@ -41,12 +61,22 @@ def process_msg(mid):
 Corpus building functions 
 '''
 
-def create_dictionary(en_sw_file, mids, dictionary_file, MIN_FREQUENCY, MIN_WORD_LENGTH):
+def create_dictionary(en_sw_file, msg_ids, dictionary_file, MIN_FREQUENCY, MIN_WORD_LENGTH):
+    '''Creates a dictionary from the given text files using the Gensim class and functions
     
+    Returns:
+        None 
+    Arguments:
+        en_sw_file - stopwords file 
+        msg_ids - list of message ids 
+        dictionary_file - the dictionary object file (output)
+        MIN_FREQUENCY - min frequency of a valid vocabulary term 
+        MIN_WORD_LENGTH - min word length of a valid vocabulary term 
+    '''
     # loads stop words 
     stoplist = load_en_stopwords(en_sw_file)
     # collect statistics about all tokens
-    dictionary = corpora.Dictionary(process_msg(mid) for mid in mids)
+    dictionary = corpora.Dictionary(process_msg(mid) for mid in msg_ids)
     
     # remove stop words and words that appear only once
     stop_ids = [dictionary.token2id[stopword] for stopword in stoplist if stopword in dictionary.token2id]
@@ -61,7 +91,14 @@ def create_dictionary(en_sw_file, mids, dictionary_file, MIN_FREQUENCY, MIN_WORD
 
 
 class TextCorpus(object):
+    '''The text corpus class 
     
+    Returns: 
+        a corpus object 
+    Arguments: 
+        _dictionary - a dictionary object 
+        _msg_ids - a list of message ids 
+    '''
     def __init__(self, _dictionary, _msg_ids):
         
         self.msg_ids = _msg_ids                
@@ -116,7 +153,7 @@ if __name__=="__main__":
     else: 
         logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', 
                             level=logging.DEBUG)
-        
+
     
     
     logging.info('=============================================================================================================')

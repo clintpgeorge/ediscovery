@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+'''
+
+This script is used to parse the enron emails 
+in the palin text format and create an LDA 
+corpus from them. 
+
+Created by: Clint P. George
+Created On: Jan 12, 2013   
+
+'''
+
+
 import os 
 import logging
 import argparse
@@ -10,6 +22,12 @@ from utils_email import punkt_word_tokenizer, load_en_stopwords
 
 
 def process_msg(t, count):
+    '''Processes a single email file 
+    
+    Arguments: 
+        t - the email file path information tuple 
+        count - the email uid, which is used for logging 
+    '''
     
     root, _, file_name = t
     logging.info('[#%d] file: %s' % (count, os.path.join(root, file_name)) )
@@ -50,6 +68,17 @@ def process_msg(t, count):
     return tokens
 
 def create_dictionary(en_sw_file, file_tuples, dictionary_file, MIN_FREQUENCY, MIN_WORD_LENGTH):
+    '''Creates a dictionary from the given text files using the Gensim class and functions
+    
+    Returns:
+        None 
+    Arguments:
+        en_sw_file - stopwords file 
+        file_tuples - list of file details 
+        dictionary_file - the dictionary object file (output)
+        MIN_FREQUENCY - min frequency of a valid vocabulary term 
+        MIN_WORD_LENGTH - min word length of a valid vocabulary term 
+    '''
     
     # loads stop words 
     stoplist = load_en_stopwords(en_sw_file)
@@ -68,15 +97,31 @@ def create_dictionary(en_sw_file, file_tuples, dictionary_file, MIN_FREQUENCY, M
     logging.info(str(dictionary))
 
 
-def get_file_info(mail_dir):
+def get_file_info(dir_path):
+    '''Loads the file paths from a given directory 
+    through directory walk 
+    
+    Returns: 
+        a list of tuples 
+    Arguments: 
+        the directory path 
+    '''
     file_tuples = []
-    for root, dirs, files in os.walk(mail_dir): # Walk directory tree
+    for root, dirs, files in os.walk(dir_path): # Walk directory tree
         for f in files:
             file_tuples.append((root, dirs, f)) 
     return file_tuples
 
 
 class TextCorpus(object):
+    '''The text corpus class 
+    
+    Returns: 
+        a corpus object 
+    Arguments: 
+        _dictionary - a dictionary object 
+        _file_tuples - a list of file details 
+    '''
     
     def __init__(self, _dictionary, _file_tuples):
         

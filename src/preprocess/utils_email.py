@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+'''
+
+This script has all the utility functions for 
+processing the enron email dataset  
+
+Created by: Clint P. George
+Created On: Jan 29, 2013   
+
+'''
 
 import re 
 import quopri
@@ -8,7 +17,7 @@ from nltk.tokenize import PunktWordTokenizer
 
 
 '''
-Globals 
+Global variables 
 '''
 STRIP_CHAR_LIST = [u'_', u'-', u',', u'!', u':', u'.', u'?', 
                    u';', u'=', u'…', u'•', u'–', u'¿', u'¡', 
@@ -25,6 +34,14 @@ Initializes the tokenizer
 tokenizer = PunktWordTokenizer()
 
 def cleanup(token):
+    '''Clean up a given token based on regular expression, strip(),
+    and a predefined set of characters 
+    
+    Returns: 
+        a cleaned up token 
+    Arguments:
+        a token (str) 
+    '''
     try:
         
         token = quopri.decodestring(token).encode('UTF-8')
@@ -40,8 +57,13 @@ def cleanup(token):
 
    
 def punkt_word_tokenizer(text):
-    '''
-    A tokenizer based on NLTK's PunktWordTokenizer 
+    '''A tokenizer based on NLTK's PunktWordTokenizer 
+    
+    Returns: 
+        a list of tokens 
+    Arguments:
+        a string to tokenized 
+    
     '''
 
     
@@ -52,6 +74,13 @@ def punkt_word_tokenizer(text):
 
 
 def load_en_stopwords(filename):
+    '''Loads English stop-words from a given file 
+    
+    Return: 
+        a list of stop words
+    Arguments: 
+        the stop-words file name
+    '''
     
     stopwords = list();
     with codecs.open(filename, mode='r', encoding='utf-8') as fSW: 

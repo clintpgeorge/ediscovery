@@ -4,6 +4,9 @@
 This script process any given query in text format 
 and finds similar documents from the learned 
 LDA model.  
+
+Created On: Jan 24, 2013 
+Created By: Clint P. George 
 '''
 
 import logging, gensim
@@ -12,10 +15,12 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 
 def load_docs_info(doc_paths_file):
-    '''Returns lists of lists of file details such as [doc_id, doc_dir_path, doc_name] 
+    '''Loads the file paths from the given file 
     
-    Loads the file paths from the given file 
-    
+    Returns: 
+        a list of lists of file details such as [doc_id, doc_dir_path, doc_name] 
+    Arguments:
+        file name     
     '''
     fi = [] 
     with open(doc_paths_file) as fp:
@@ -24,11 +29,15 @@ def load_docs_info(doc_paths_file):
     return fi
 
 def load_lda_variables(dictionary_file, lda_mdl_file, lda_index_file):
-    '''Returns a tuple of dictionary, lda model, and lda index 
-    
-    This function loads all the LDA model variables from 
+    '''This function loads all the LDA model variables from 
     the given files 
     
+    Returns: 
+        a tuple of dictionary, lda model, and lda index
+    Arguments:
+        dictionary_file - the dictionary file
+        lda_mdl_file - the LDA model file 
+        lda_index_file - the LDA index file 
     '''
 
     dictionary = gensim.corpora.Dictionary().load(dictionary_file)
@@ -39,10 +48,7 @@ def load_lda_variables(dictionary_file, lda_mdl_file, lda_index_file):
 
 
 def process_query(query, dictionary, lda, index, files_info, limit=5):
-    '''Returns a lists of lists of responsive and non responsive 
-    document details such as [doc_id, doc_dir_path, doc_name, score] 
-      
-    Tokenize the input query and finds topically 
+    '''Tokenize the input query and finds topically 
     similar documents (responsive) using LDA based 
     document search. Currently, the responsive documents 
     are determined by just taking top N records from 
@@ -51,6 +57,18 @@ def process_query(query, dictionary, lda, index, files_info, limit=5):
     TODO: 
         (a) improve the method that identifies the 
         responsive documents 
+    
+    Returns:
+        a lists of lists of responsive and non responsive 
+        document details such as [doc_id, doc_dir_path, doc_name, score] 
+    Arguments:
+        query - the query in text format 
+        dictionary - the dictionary object 
+        lda - the LDA model object 
+        index - the index object 
+        files_info - the list of file details 
+        limit - the limit on the number of responsive records 
+    
     '''
 
     # process the query 
@@ -89,6 +107,9 @@ def process_query(query, dictionary, lda, index, files_info, limit=5):
 
 
 def test_query():
+    '''
+    This function tests a sample query 
+    '''
 
     dictionary_file = 'fs_enron.dict'
     doc_paths_file = 'fs_enron.email_paths'

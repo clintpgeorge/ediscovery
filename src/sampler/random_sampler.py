@@ -1,5 +1,11 @@
 #!/usr/bin/env python2.7
 
+'''
+
+TODO: If this is an obsolete function delete it from repository 
+
+'''
+
 import sys
 import math
 import random

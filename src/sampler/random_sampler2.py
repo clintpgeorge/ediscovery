@@ -1,5 +1,11 @@
 #!/usr/bin/env python2.7
+'''
+TODO: (1) Add description ???
 
+Created by: Abhiram J.  
+Created On: Jan 28, 2013   
+
+'''
 import sys
 import os
 import math
@@ -8,6 +14,7 @@ import argparse
 import datetime
 import logging
 from file_utils import find_files_in_folder, copy_random_files
+
 # PREVALENCE is the likelihood of finding a responsive/positive example in population
 # We assume this as 0.5 (most conservative) as we do not know prior information about data
 PREVALENCE = 0.5
@@ -83,8 +90,15 @@ def main():
 
 
 # SEEDCONSTANT unused currently
-def random_sampler(message_id_list,confidence,precision,SEEDCONSTANT):
+def random_sampler(message_id_list, confidence, precision, SEEDCONSTANT):
+	'''Description ??
+	TODO: Add function details (see 'the tm package' files)
 	
+	Returns: 
+		???
+	Arguments: 
+		???
+	'''
 	
 	# Uncomment to test sample size of big numbers and verify
 	# message_id_list = xrange(10000)

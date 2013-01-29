@@ -1,13 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+'''
+This script is to test the basic query processing 
+based on LDA and lucene 
+
+Created by: Clint P. George and Abhiram J. 
+Created on: Jan 28, 2013 
+
+'''
 import numpy as np 
 import os
-from lucenesearch.lucene_index import lucene_index
+#from lucenesearch.lucene_index import lucene_index
 from lucenesearch.lucene_search import lucene_search  
 from tm.lda_process_query import process_query, load_docs_info, load_lda_variables
 from sampler.random_sampler import random_sampler
 from file_utils import copy_random_files, find_files_in_folder
 import datetime
+
+
+'''
+Global variables 
+
+TODO: The hard coded values should be removed 
+'''
+
 DATA_PATH = '/data/ediscovery/enron' # raw_input('Data path: ')
 dictionary_file = os.path.join(DATA_PATH, 'fs_enron.dict')
 doc_paths_file = os.path.join(DATA_PATH, 'fs_enron.email_paths')
