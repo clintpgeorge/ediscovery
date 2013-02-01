@@ -48,40 +48,40 @@ def main():
 	arg_parser.add_argument("-o", dest="output_dir", type=str, help="Output directory of samples",
 						    default="/home/abhiramj/code/temp/samples",
 						    required=False)
-	output_folder = arg_parser.parse_args()
+	args = arg_parser.parse_args()
 	
-	if  not os.path.isdir(output_folder.output_dir):
-		logger.debug("Making output directory" + output_folder.output_dir)
-		os.makedirs(output_folder.output_dir)
+	if  not os.path.isdir(args.output_dir):
+		logger.debug("Making output directory" + args.output_dir)
+		os.makedirs(args.output_dir)
 	
-	file_handle = logging.FileHandler(os.path.join(output_folder.output_dir,'random_sampler_test_function--' +str(timestamp)+'.log'))
+	file_handle = logging.FileHandler(os.path.join(args.output_dir,'random_sampler_test_function--' +str(timestamp)+'.log'))
 	file_handle.setLevel(logging.INFO)
 	file_handle.setFormatter(formatter)
 	logger.addHandler(file_handle)
 	
 	logger.info("Args are: ")
-	logger.info("input_folder: "+ output_folder.input_folder)
-	logger.info("confidence: "+ str(output_folder.confidence))
-	logger.info("precision: "+ str(output_folder.precision))
-	logger.info("output_dir: "+ output_folder.output_dir)
+	logger.info("input_folder: "+ args.input_folder)
+	logger.info("confidence: "+ str(args.confidence))
+	logger.info("precision: "+ str(args.precision))
+	logger.info("output_dir: "+ args.output_dir)
 	
 
-	if not os.path.exists(output_folder.input_folder) :
+	if not os.path.exists(args.input_folder) :
 		logger.error("Exiting with error: Input folder cannot be found")
 		raise Exception, "Input folder cannot be found"
-	if output_folder.confidence <= 0 or output_folder.confidence > 1:
+	if args.confidence <= 0 or args.confidence > 1:
 		logger.error("Exiting with error: Confidence is not valid, enter as a probability between 0 and 1")
 		raise Exception, "Confidence is not valid, enter as a probability between 0 and 1"
-	if output_folder.precision <= 0 or output_folder.precision > 1:
+	if args.precision <= 0 or args.precision > 1:
 		logger.error( "Exiting with error: Precision is not valid, enter as a probability between 0 and 1")
 		raise Exception, "Precision is not valid, enter as a probability between 0 and 1"
 
 
-	file_list = find_files_in_folder(output_folder.input_folder)
-	message_random_sample = random_sampler(file_list,output_folder.confidence,output_folder.precision,SEEDCONSTANT=0.5)
+	file_list = find_files_in_folder(args.input_folder)
+	message_random_sample = random_sampler(file_list,args.confidence,args.precision,SEEDCONSTANT=0.5)
 	
 	
-	file_destination_dir = output_folder.output_dir +"--"+ str(timestamp)
+	file_destination_dir = args.output_dir +"--"+ str(timestamp)
 	copy_random_files(file_destination_dir,message_random_sample)
 	return message_random_sample
 
