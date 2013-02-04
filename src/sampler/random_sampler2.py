@@ -15,6 +15,20 @@ import datetime
 import logging
 from file_utils import find_files_in_folder, copy_random_files
 
+
+# setting up z , the diction of confidence -> zvalues
+SUPPORTED_CONFIDENCES = {}
+SUPPORTED_CONFIDENCES[0.999] = 3.3
+SUPPORTED_CONFIDENCES[0.99] = 2.577
+SUPPORTED_CONFIDENCES[0.985] = 2.43
+SUPPORTED_CONFIDENCES[0.975] = 2.243
+SUPPORTED_CONFIDENCES[0.95] = 1.96
+SUPPORTED_CONFIDENCES[0.90] =1.645
+SUPPORTED_CONFIDENCES[0.85] = 1.439
+SUPPORTED_CONFIDENCES[0.75] = 1.151
+
+
+
 # PREVALENCE is the likelihood of finding a responsive/positive example in population
 # We assume this as 0.5 (most conservative) as we do not know prior information about data
 PREVALENCE = 0.5
@@ -104,24 +118,11 @@ def random_sampler(message_id_list, confidence, precision, SEEDCONSTANT):
 	# message_id_list = xrange(10000)
 	random.seed(SEEDCONSTANT)
 
-	# setting up z , the diction of confidence -> zvalues
-	z = {}
-	z[0.999] = 3.3
-	z[0.99] =2.577
-	z[0.985] =2.43
-	z[0.975] = 2.243
-	z[0.95]= 1.96
-	z[0.90] =1.645
-	z[0.85] = 1.439
-	z[0.75] = 1.151
-
-
-
 
 	# check that the confidence interval is supported
-	if confidence in z:
+	if confidence in SUPPORTED_CONFIDENCES:
 		# sample size formula based on infinite population
-		sample_size= pow(z[confidence],2)*(PREVALENCE)*(1-PREVALENCE)/(pow(precision,2))
+		sample_size= pow(SUPPORTED_CONFIDENCES[confidence],2)*(PREVALENCE)*(1-PREVALENCE)/(pow(precision,2))
 
 		# correction for finite size
 		corrected_sample_size = sample_size/(1 + (sample_size-1)/len(message_id_list))

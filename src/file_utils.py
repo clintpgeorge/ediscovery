@@ -10,7 +10,34 @@ Created On: Jan 28, 2013
 import os
 import shutil
 
-def copy_random_files(dir_path,random_list):
+def copy_files_with_dir_tree(file_paths, output_dir_path):
+    '''Copies the files given in path list into 
+    the specified output directory. The directory structure 
+    is preserved during this process. 
+    
+    Returns: 
+        None 
+        
+    Arguments: 
+        file_paths - list of files paths 
+        output_dir_path - the output directory path 
+    '''
+    
+    # find the longest common prefix (LCP)
+    lcp = os.path.commonprefix(file_paths) 
+    
+    for src_file_path in file_paths:
+        s_fp = src_file_path[len(lcp):] # ignores LCP from path   
+        dest_dp, _ = os.path.split(s_fp)
+        dest_dir_path = os.path.join(output_dir_path, dest_dp)
+
+        if not os.path.exists(dest_dir_path):
+            os.makedirs(dest_dir_path)
+        
+        shutil.copy2(src_file_path, dest_dir_path)
+
+
+def copy_random_files(dir_path, random_list):
     '''Copies the random files to a given folder. 
     
     TODO: Throws error for sample already existing. Need to fix
