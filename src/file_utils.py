@@ -10,7 +10,7 @@ Created On: Jan 28, 2013
 import os
 import shutil
 
-def copy_files_with_dir_tree(file_paths, output_dir_path):
+def copy_files_with_dir_tree(file_paths, output_dir_path, in_file_prefix=''):
     '''Copies the files given in path list into 
     the specified output directory. The directory structure 
     is preserved during this process. 
@@ -33,6 +33,9 @@ def copy_files_with_dir_tree(file_paths, output_dir_path):
 
         if not os.path.exists(dest_dir_path):
             os.makedirs(dest_dir_path)
+        
+        if in_file_prefix <> '':
+            src_file_path = os.path.join(in_file_prefix, src_file_path)
         
         shutil.copy2(src_file_path, dest_dir_path)
 
