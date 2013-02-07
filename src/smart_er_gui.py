@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import os 
 import wx
+from file_utils import read_config
 
 
 
@@ -192,8 +193,9 @@ class SMARTeRGUI(wx.Frame):
         super(SMARTeRGUI, self).__init__(*args, **kwargs) 
         
         # Initialize the class variables 
-        self.file_name = ''
-        self.dir_path = ''
+        self.mdl_file_name = ''
+        self.mdl_dir = ''
+        self.mdl_cfg = {} 
         
         self._init_GUI()
         
@@ -213,11 +215,69 @@ class SMARTeRGUI(wx.Frame):
 
         icon_tool_bar = self._create_icon_toolbar()
         
+        
+        sb = wx.StaticBox(self, label="Model details", size=(300, -1))
+        info_box_sizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        info_gd_sizer = wx.GridBagSizer(5, 4)
+        
+        self.select_mdl_tbx = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
+        self.select_mdl_tbx.SetEditable(False)
+        self.select_mdl_tbx.SetValue(self.mdl_dir)
+        select_mdl_btn = wx.BitmapButton(self, wx.ID_OPEN, bitmap=Open_32_PNG.GetBitmap())
+        select_mdl_btn.SetToolTip( wx.ToolTip("Select a model") )
+        self.Bind(wx.EVT_BUTTON, self._on_open, select_mdl_btn)
+        
+        info_gd_sizer.Add(wx.StaticText(self, label="Model file"), pos=(0, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        info_gd_sizer.Add(self.select_mdl_tbx, pos=(0, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        info_gd_sizer.Add(select_mdl_btn, pos=(0, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        
+        
+        topic_mdl_lbl = wx.StaticText(self, label="Topic model index: ")
+        self.is_topic_mdl_lbl = wx.StaticText(self, label="NA")
+        info_gd_sizer.Add(topic_mdl_lbl, pos=(1, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        info_gd_sizer.Add(self.is_topic_mdl_lbl, pos=(1, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=15)
+
+        lc_mdl_lbl = wx.StaticText(self, label="Lucene index: ")
+        self.is_lc_mdl_lbl = wx.StaticText(self, label="NA")
+        info_gd_sizer.Add(lc_mdl_lbl, pos=(1, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        info_gd_sizer.Add(self.is_lc_mdl_lbl, pos=(1, 3), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        
+        info_box_sizer.Add(info_gd_sizer, 0, wx.ALL, 5)
+        
+        
+        
+
+        sb = wx.StaticBox(self, label="Search", size=(300, -1))
+        query_box_sizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        query_gd_sizer = wx.GridBagSizer(2, 3)
+
+        self.search_query_tbx = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
+        self.search_query_tbx.SetEditable(False)
+        search_query_btn = wx.Button(self, wx.ID_OPEN, label='Search')
+        search_query_btn.SetToolTip( wx.ToolTip("Search query") )
+        self.Bind(wx.EVT_BUTTON, self._on_search, search_query_btn)
+        
+        query_gd_sizer.Add(wx.StaticText(self, label="Search query"), pos=(0, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        query_gd_sizer.Add(self.search_query_tbx, pos=(0, 1), flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        query_gd_sizer.Add(search_query_btn, pos=(0, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+
+        self.topic_model_chbx = wx.CheckBox(self, label='Topic modeling')
+        self.filter_attributes_chbx = wx.CheckBox(self, label='Filter attributes')
+        query_gd_sizer.Add(wx.StaticText(self, label="Search options"), pos=(1, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        query_gd_sizer.Add(self.topic_model_chbx, pos=(1, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+        query_gd_sizer.Add(self.filter_attributes_chbx, pos=(1, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=15)
+
+        query_box_sizer.Add(query_gd_sizer, 0, wx.ALL, 5)
+        
+       
         # Adding a panel sizer 
         
-        panel_sizer = wx.BoxSizer( wx.VERTICAL ) 
-        panel_sizer.Add(icon_tool_bar, proportion=0, flag=wx.EXPAND)
-        self.SetSizerAndFit(panel_sizer)
+        main_sizer = wx.BoxSizer( wx.VERTICAL ) 
+        main_sizer.Add(icon_tool_bar, proportion=0, flag=wx.EXPAND)
+        main_sizer.Add(info_box_sizer, 0, wx.EXPAND | wx.ALL, border=5)
+        main_sizer.Add(query_box_sizer, 0, wx.EXPAND | wx.ALL, border=5)
+        
+        self.SetSizerAndFit(main_sizer)
                 
         # Handles the basic window events 
         
@@ -268,12 +328,20 @@ class SMARTeRGUI(wx.Frame):
         dlg.Destroy() # finally destroy it when finished.
 
 
+
+    def _on_search(self, e):
+        None 
+        
+
     def _on_open(self, e):
         """ Open a file"""
-        dlg = wx.FileDialog(self, "Choose a file", self.dir_path, "", "*.*", wx.OPEN)
+        dlg = wx.FileDialog(self, "Choose a file", self.mdl_dir, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
-            self.file_name = dlg.GetFilename()
-            self.dir_path = dlg.GetDirectory()
+            self.mdl_file_name = dlg.GetFilename()
+            self.mdl_dir = dlg.GetDirectory()
+            self.select_mdl_tbx.SetValue(os.path.join(self.mdl_dir, self.mdl_file_name))
+            self.mdl_cfg = read_config(os.path.join(self.mdl_dir, self.mdl_file_name))
+            self.SetStatusText("The selected model is %s" % self.mdl_cfg['DATA']['name'])
         dlg.Destroy()
 
 
@@ -338,6 +406,12 @@ class SMARTeRGUI(wx.Frame):
 
 def main():
     
+    # read application configurations 
+    
+#    CONFIG_FILE_NAME = 'smart_er_gui.ini'
+#    app_config = read_config(CONFIG_FILE_NAME)
+#    model_config_file = app_config['APP_CONFIG']['model_config_file'] 
+
     ex = wx.App()
     SMARTeRGUI(None)
     ex.MainLoop()    

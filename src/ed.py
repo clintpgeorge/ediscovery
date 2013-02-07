@@ -26,11 +26,11 @@ Global variables
 TODO: The hard coded values should be removed 
 '''
 
-DATA_PATH = '/media/Store/Research/datasets/enron/'# '/data/ediscovery/enron' # raw_input('Data path: ')
+DATA_PATH = '/home/cgeorge/ediscovey/enron_mail_20110402'# '/data/ediscovery/enron' # raw_input('Data path: ')
 dictionary_file = os.path.join(DATA_PATH, 'fs_enron.dict')
 doc_paths_file = os.path.join(DATA_PATH, 'fs_enron.email_paths')
 lda_mdl_file = os.path.join(DATA_PATH, 'fs_enron.lda_mdl')
-lda_index_file = os.path.join(DATA_PATH, 'fs_enron.lda_index')
+lda_index_file = os.path.join(DATA_PATH, 'fs_enron.lda_index_kl')
 SEEDCONSTANT = 2013 
 
 # Loads the LDA model and file details 
@@ -79,19 +79,19 @@ while choice <> 'y':
         print f 
     
     
-    ## Enter confidence intervals to get samples  
-    
-    confidence = float( raw_input('Confidence: '))
-    precision = float(raw_input('Precision: '))
-    sampled_nrd_paths = random_sampler(nrd_paths, confidence, precision, SEEDCONSTANT)
-    print 'Number of samples', len(sampled_nrd_paths), 'out of', len(nrd_paths) 
-    
-    
-    timestamp_appender = "non-responsive -- "+ str(datetime.datetime.now())
-    nrd_file_folder= os.path.join(output_folder,timestamp_appender)
-    copy_files_with_dir_tree(sampled_nrd_paths, nrd_file_folder, DATA_PATH)
-    
-
-    choice = raw_input('Exit [Y - Yes or N - No]: ').lower()
+#    ## Enter confidence intervals to get samples  
+#    
+#    confidence = float( raw_input('Confidence: '))
+#    precision = float(raw_input('Precision: '))
+#    sampled_nrd_paths = random_sampler(nrd_paths, confidence, precision, SEEDCONSTANT)
+#    print 'Number of samples', len(sampled_nrd_paths), 'out of', len(nrd_paths) 
+#    
+#    
+#    timestamp_appender = "non-responsive -- "+ str(datetime.datetime.now())
+#    nrd_file_folder= os.path.join(output_folder,timestamp_appender)
+#    copy_files_with_dir_tree(sampled_nrd_paths, nrd_file_folder, DATA_PATH)
+#    
+#
+#    choice = raw_input('Exit [Y - Yes or N - No]: ').lower()
 
 

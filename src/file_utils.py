@@ -9,6 +9,7 @@ Created On: Jan 28, 2013
 
 import os
 import shutil
+import ConfigParser
 
 def copy_files_with_dir_tree(file_paths, output_dir_path, in_file_prefix=''):
     '''Copies the files given in path list into 
@@ -81,3 +82,28 @@ def find_files_in_folder(input_dir):
         for file_name in files:
             file_list.append(os.path.join(root, file_name))
     return file_list
+
+
+
+def read_config(file_name):
+    
+    config = ConfigParser.ConfigParser()
+    config.read(file_name)
+    config_dict = {}
+    
+    for section in config.sections():
+        options_dict = {}
+        for option in config.options(section):
+            try:
+                options_dict[option] = config.get(section, option)
+                if options_dict[option] == -1: print "skip: %s" % option
+            except:
+                print("exception on %s!" % option)
+                options_dict[option] = None
+        config_dict[section] = options_dict
+    
+    return config_dict
+
+
+
+
