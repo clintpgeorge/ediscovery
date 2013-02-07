@@ -1,6 +1,10 @@
 #!/usr/bin/env python2.7
 '''
-TODO: (1) Add description ???
+This samples a folder specified by the user and generates a random sample from the folder which agrees
+with a user given confidence and precision. The mathematical details are covered here: 
+
+1) http://www.surveysystem.com/sample-size-formula.htm
+2) http://www.edrm.net/resources/guides/edrm-search-guide/appendix-2
 
 Created by: Abhiram J.  
 Created On: Jan 28, 2013   
@@ -103,19 +107,21 @@ def main():
 
 
 
-# SEEDCONSTANT unused currently
 def random_sampler(message_id_list, confidence, precision, SEEDCONSTANT):
 	'''Description ??
-	TODO: Add function details (see 'the tm package' files)
+	Returns a random sample as a list from an input list with certain precision and confidence
 	
 	Returns: 
-		???
-	Arguments: 
-		???
+		Random sample as a list
+	Arguments:
+	        message_id_list: list of inputs to sample from
+	        confidence: Confidence expressed out of 1. Example: 0.95 for 95%. See documentation
+	        at top of file for details.
+	        precision: Precision expressed out of 1. Example: 0.04 for +/- 4%.See documentation
+	        at top of file for details.
+		
 	'''
-	
-	# Uncomment to test sample size of big numbers and verify
-	# message_id_list = xrange(10000)
+
 	random.seed(SEEDCONSTANT)
 
 
