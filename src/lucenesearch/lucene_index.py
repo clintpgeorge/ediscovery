@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-
+'''
+ This script indexes the plain text in all the files in a given folder using Lucene 3.6
+'''
 import lucene
 import os
 import logging
