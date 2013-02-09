@@ -216,8 +216,8 @@ class SMARTeRGUI(wx.Frame):
         icon_tool_bar = self._create_icon_toolbar()
         
         
-        sb = wx.StaticBox(self, label="Model details", size=(300, -1))
-        info_box_sizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        mdl_sb = wx.StaticBox(self, label="Model details", size=(300, -1))
+        info_box_sizer = wx.StaticBoxSizer(mdl_sb, wx.VERTICAL)
         info_gd_sizer = wx.GridBagSizer(5, 4)
         
         self.select_mdl_tbx = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
@@ -247,13 +247,13 @@ class SMARTeRGUI(wx.Frame):
         
         
 
-        sb = wx.StaticBox(self, label="Search", size=(300, -1))
-        query_box_sizer = wx.StaticBoxSizer(sb, wx.VERTICAL)
+        search_sb = wx.StaticBox(self, label="Search", size=(300, -1))
+        query_box_sizer = wx.StaticBoxSizer(search_sb, wx.VERTICAL)
         query_gd_sizer = wx.GridBagSizer(2, 3)
 
         self.search_query_tbx = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
         self.search_query_tbx.SetEditable(False)
-        search_query_btn = wx.Button(self, wx.ID_OPEN, label='Search')
+        search_query_btn = wx.Button(self, -1, label='Search')
         search_query_btn.SetToolTip( wx.ToolTip("Search query") )
         self.Bind(wx.EVT_BUTTON, self._on_search, search_query_btn)
         
@@ -261,11 +261,11 @@ class SMARTeRGUI(wx.Frame):
         query_gd_sizer.Add(self.search_query_tbx, pos=(0, 1), flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
         query_gd_sizer.Add(search_query_btn, pos=(0, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
 
-        self.topic_model_chbx = wx.CheckBox(self, label='Topic modeling')
-        self.filter_attributes_chbx = wx.CheckBox(self, label='Filter attributes')
-        query_gd_sizer.Add(wx.StaticText(self, label="Search options"), pos=(1, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
-        query_gd_sizer.Add(self.topic_model_chbx, pos=(1, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
-        query_gd_sizer.Add(self.filter_attributes_chbx, pos=(1, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=15)
+#        self.topic_model_chbx = wx.CheckBox(self, label='Topic modeling')
+#        self.filter_attributes_chbx = wx.CheckBox(self, label='Filter attributes')
+#        query_gd_sizer.Add(wx.StaticText(self, label="Search options"), pos=(1, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+#        query_gd_sizer.Add(self.topic_model_chbx, pos=(1, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=15)
+#        query_gd_sizer.Add(self.filter_attributes_chbx, pos=(1, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=15)
 
         query_box_sizer.Add(query_gd_sizer, 0, wx.ALL, 5)
         
@@ -289,6 +289,9 @@ class SMARTeRGUI(wx.Frame):
         self.SetTitle('SMARTeR')
         self.Centre()
         self.Show(True)
+        
+        
+        
         
     def _create_menu_bar(self):
         
@@ -330,7 +333,10 @@ class SMARTeRGUI(wx.Frame):
 
 
     def _on_search(self, e):
-        None 
+        # A message dialog box with an OK button
+        dlg = wx.MessageDialog( self, "SMARTeR", "Performs search", wx.OK)
+        dlg.ShowModal() # Show it
+        dlg.Destroy() # finally destroy it when finished.
         
 
     def _on_open(self, e):
