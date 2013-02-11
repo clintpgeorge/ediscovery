@@ -1,11 +1,12 @@
 import wx
 import os
 from wx.lib.masked import NumCtrl
-
 from file_utils import find_files_in_folder, copy_files_with_dir_tree
-from sampler.random_sampler2 import random_sampler, SUPPORTED_CONFIDENCES
+from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES
+from file_list_control import file_list_control
+from ed import output_folder
 
-
+file_dict = {}
 class RandomSamplerGUI(wx.Frame):
     
     def __init__(self, parent):
@@ -77,17 +78,16 @@ class RandomSamplerGUI(wx.Frame):
         self.button_run = wx.Button(self, wx.ID_ANY, "Run Sampler")        
         self.Bind(wx.EVT_BUTTON, self._on_exit, self.button_exit)
         self.Bind(wx.EVT_BUTTON, self._on_run_sampler, self.button_run)
-
         
         # Setting parameters
         self.confidence_text = wx.StaticText(self, label="Confidence (%)")
         self.precision_text = wx.StaticText(self, label="Precision (%)")
         
         z_values = ['%.3f' % (w * 100.0) for w in  SUPPORTED_CONFIDENCES.keys()]
+        z_values.sort()
         self.confidence = wx.ComboBox(self, -1, z_values[0], size=(150, -1), choices=z_values, style=wx.CB_READONLY) 
         self.precision = wx.lib.masked.NumCtrl(self, size=(20,1), fractionWidth=0, integerWidth=2, allowNegative=False, min=1, max=99, value=1) 
-        
-        
+
         # Layouts 
         
         sizer_input_folder = wx.BoxSizer(wx.HORIZONTAL)
@@ -113,6 +113,12 @@ class RandomSamplerGUI(wx.Frame):
         sizer_cb.Add(self.button_exit, 0, wx.ALIGN_CENTER | wx.ALL, border=5)
         sizer_cb.Add(self.button_run, 0, wx.ALIGN_CENTER | wx.ALL, border=5)
         
+        sizer_process_files = wx.BoxSizer(wx.VERTICAL)
+        self.process_files_tree = file_list_control(None, -1, "",output_folder)
+#        self.process_files_tree = wx.TreeCtrl(self, 1, wx.DefaultPosition, (-1,-1), wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
+#        self.process_files_tree.AddRoot("")
+        sizer_process_files.Add(self.process_files_tree, 0,
+                                wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, border=5)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_main.Add(self.banner, 0, wx.EXPAND | wx.ALL, border=5)
@@ -122,6 +128,7 @@ class RandomSamplerGUI(wx.Frame):
         sizer_main.Add(sizer_cp, 1, wx.EXPAND | wx.ALL, border=5)
         sizer_main.Add(self.line, 1, wx.EXPAND | wx.ALL, border=5)
         sizer_main.Add(sizer_cb, 1, wx.ALIGN_CENTER | wx.ALL, border=5)
+        sizer_main.Add(sizer_process_files, 1, wx.ALIGN_CENTER | wx.ALL, border=5)
         
         self.SetSizerAndFit(sizer_main)
 
@@ -217,17 +224,12 @@ class RandomSamplerGUI(wx.Frame):
             
             copy_files_with_dir_tree(sampled_files, self.output_dir_path)
             self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(sampled_files), len(file_list)))
-     
-
+            
         except Exception as anyException:
             dlg = wx.MessageDialog(self, str(anyException), "Error", wx.ICON_ERROR)
             dlg.ShowModal()
         
-        return     
-
-
-
-
+        return      
 
 def main():
     
@@ -236,8 +238,7 @@ def main():
     app.MainLoop()  
 
 
-if __name__ == '__main__':
-    
+if __name__ == '__main__':    
     main()
     
     

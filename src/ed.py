@@ -26,7 +26,7 @@ Global variables
 TODO: The hard coded values should be removed 
 '''
 
-DATA_PATH = '/media/Non OS/EDiscovery/enron_mail_20110402'# '/data/ediscovery/enron' # raw_input('Data path: ')
+DATA_PATH =  '/media/Non OS/EDiscovery/enron_mail_20110402' #'/data/ediscovery/enron/maildir'  # raw_input('Data path: ')
 dictionary_file = os.path.join(DATA_PATH, 'fs_enron.dict')
 doc_paths_file = os.path.join(DATA_PATH, 'fs_enron.email_paths')
 lda_mdl_file = os.path.join(DATA_PATH, 'fs_enron.lda_mdl')
