@@ -207,6 +207,9 @@ class SMARTeRGUI(wx.Frame):
         
         
     def _init_GUI(self):   
+        '''Initializes basic GUI controls 
+        
+        '''
 
         # A StatusBar in the bottom of the window
         self.CreateStatusBar() 
@@ -220,26 +223,26 @@ class SMARTeRGUI(wx.Frame):
 
         icon_tool_bar = self._create_icon_toolbar()
         
-        mdl_box_sizer = self._create_mdl_loader_panel()
+        sizer_mdl_box = self._create_mdl_loader_panel()
         
-        query_box_sizer = self._create_search_panel()
+        sizer_query_box = self._create_search_panel()
         
         
         # Adding a panel sizer 
         
-        main_sizer = wx.BoxSizer( wx.VERTICAL ) 
-        main_sizer.Add(icon_tool_bar, proportion=0, flag=wx.EXPAND)
-        main_sizer.Add(mdl_box_sizer, 0, wx.EXPAND | wx.ALL, border=5)
-        main_sizer.Add(query_box_sizer, 0, wx.EXPAND | wx.ALL, border=5)
+        sizer_main = wx.BoxSizer( wx.VERTICAL ) 
+        sizer_main.Add(icon_tool_bar, proportion=0, flag=wx.EXPAND)
+        sizer_main.Add(sizer_mdl_box, 0, wx.EXPAND | wx.ALL, border=5)
+        sizer_main.Add(sizer_query_box, 0, wx.EXPAND | wx.ALL, border=5)
         
-        main_sizer.Add(wx.StaticText(self, label="Responsive documents "), 0, wx.EXPAND | wx.ALL, border=5)
-        main_sizer.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, border=5)
-        self.search_results_tbx = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, 200))
-        self.search_results_tbx.SetEditable(False)
-        self.search_results_tbx.SetValue('No records found.')
-        main_sizer.Add(self.search_results_tbx, 0, wx.EXPAND | wx.ALL, border=5)
+        sizer_main.Add(wx.StaticText(self, label="Responsive documents "), 0, wx.EXPAND | wx.ALL, border=5)
+        sizer_main.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, border=5)
+        self.tbx_search_results = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, 200))
+        self.tbx_search_results.SetEditable(False)
+        self.tbx_search_results.SetValue('No records found.')
+        sizer_main.Add(self.tbx_search_results, 0, wx.EXPAND | wx.ALL, border=5)
         
-        self.SetSizerAndFit(main_sizer)
+        self.SetSizerAndFit(sizer_main)
                 
         # Handles the basic window events 
         
@@ -253,84 +256,80 @@ class SMARTeRGUI(wx.Frame):
         self.Show(True)
         
     def _create_mdl_loader_panel(self):
+        '''Initializes the model loader panel 
+        '''
         
         mdl_sb = wx.StaticBox(self, label="Model details", size=(300, -1))
-        mdl_box_sizer = wx.StaticBoxSizer(mdl_sb, wx.VERTICAL)
-        info_gd_sizer = wx.GridBagSizer(5, 4)
+        sizer_mdl_box = wx.StaticBoxSizer(mdl_sb, wx.VERTICAL)
+        grd_sizer_info = wx.GridBagSizer(5, 4)
         
-        self.select_mdl_tbx = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
-        self.select_mdl_tbx.SetEditable(False)
-        self.select_mdl_tbx.SetValue(self.mdl_dir)
-        select_mdl_btn = wx.BitmapButton(self, wx.ID_OPEN, bitmap=Open_32_PNG.GetBitmap())
-        select_mdl_btn.SetToolTip( wx.ToolTip("Select a model") )
-        self.Bind(wx.EVT_BUTTON, self._on_select_model, select_mdl_btn)
+        self.tbx_model_cfg_path = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
+        self.tbx_model_cfg_path.SetEditable(False)
+        self.tbx_model_cfg_path.SetValue(self.mdl_dir)
+        btn_select_mdl = wx.BitmapButton(self, wx.ID_OPEN, bitmap=Open_32_PNG.GetBitmap())
+        btn_select_mdl.SetToolTip( wx.ToolTip("Select a model") )
+        self.Bind(wx.EVT_BUTTON, self._on_select_model, btn_select_mdl)
         
-        info_gd_sizer.Add(wx.StaticText(self, label="Model file"), pos=(0, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        info_gd_sizer.Add(self.select_mdl_tbx, pos=(0, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        info_gd_sizer.Add(select_mdl_btn, pos=(0, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_info.Add(wx.StaticText(self, label="Model file"), pos=(0, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_info.Add(self.tbx_model_cfg_path, pos=(0, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_info.Add(btn_select_mdl, pos=(0, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
         
+        self.lbl_topic_mdl_exists = wx.StaticText(self, label="NA")
+        grd_sizer_info.Add(wx.StaticText(self, label="Topic model index: "), pos=(1, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_info.Add(self.lbl_topic_mdl_exists, pos=(1, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=5)
         
-        topic_mdl_lbl = wx.StaticText(self, label="Topic model index: ")
-        self.is_topic_mdl_lbl = wx.StaticText(self, label="NA")
-        info_gd_sizer.Add(topic_mdl_lbl, pos=(1, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        info_gd_sizer.Add(self.is_topic_mdl_lbl, pos=(1, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=5)
+        grd_sizer_info.Add(wx.StaticText(self, label="Number of files: "), pos=(2, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        self.lbl_num_corpus_files = wx.StaticText(self, label="NA")
+        grd_sizer_info.Add(self.lbl_num_corpus_files, pos=(2, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=5)
         
-        nf_lbl = wx.StaticText(self, label="Number of files: ")
-        info_gd_sizer.Add(nf_lbl, pos=(2, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        self.num_files_lbl = wx.StaticText(self, label="NA")
-        info_gd_sizer.Add(self.num_files_lbl, pos=(2, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=5)
+        grd_sizer_info.Add(wx.StaticText(self, label="Vocabulary size: "), pos=(3, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        self.lbl_vocab_size = wx.StaticText(self, label="NA")        
+        grd_sizer_info.Add(self.lbl_vocab_size, pos=(3, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=5)
         
-#        vs_lbl = wx.StaticText(self, label="Vocabulary size: ")
-#        info_gd_sizer.Add(vs_lbl, pos=(3, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-#        self.vocabulary_size_lbl = wx.StaticText(self, label="NA")        
-#        info_gd_sizer.Add(self.vocabulary_size_lbl, pos=(3, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=5)
+        self.lbl_lucene_mdl_exists = wx.StaticText(self, label="NA")
+        grd_sizer_info.Add(wx.StaticText(self, label="Lucene index: "), pos=(1, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_info.Add(self.lbl_lucene_mdl_exists, pos=(1, 3), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
         
+        sizer_mdl_box.Add(grd_sizer_info, 0, wx.ALL, 5)
         
-#        info_gd_sizer.Add(wx.StaticLine(self), pos=(2, 0), flag=wx.LEFT|wx.BOTTOM|wx.RIGHT, border=15)
-        
-        lc_mdl_lbl = wx.StaticText(self, label="Lucene index: ")
-        self.is_lc_mdl_lbl = wx.StaticText(self, label="NA")
-        info_gd_sizer.Add(lc_mdl_lbl, pos=(1, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        info_gd_sizer.Add(self.is_lc_mdl_lbl, pos=(1, 3), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        
-        mdl_box_sizer.Add(info_gd_sizer, 0, wx.ALL, 5)
-        
-        return mdl_box_sizer
+        return sizer_mdl_box
     
     
     def _create_search_panel(self):
+        '''Initializes the search panel 
+        '''
         
         search_sb = wx.StaticBox(self, label="Search", size=(300, -1))
-        query_box_sizer = wx.StaticBoxSizer(search_sb, wx.VERTICAL)
-        query_gd_sizer = wx.GridBagSizer(2, 3)
+        sizer_query_box = wx.StaticBoxSizer(search_sb, wx.VERTICAL)
+        grd_sizer_query = wx.GridBagSizer(2, 3)
 
-        self.search_query_tbx = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
-        search_query_btn = wx.Button(self, -1, label='Search')
-        search_query_btn.SetToolTip( wx.ToolTip("Search query") )
-        self.Bind(wx.EVT_BUTTON, self._on_search, search_query_btn)
+        self.tbx_search_query = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
+        btn_search_query = wx.Button(self, -1, label='Search')
+        btn_search_query.SetToolTip( wx.ToolTip("Search query") )
+        self.Bind(wx.EVT_BUTTON, self._on_search, btn_search_query)
         
-        query_gd_sizer.Add(wx.StaticText(self, label="Search query"), pos=(0, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        query_gd_sizer.Add(self.search_query_tbx, pos=(0, 1), flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        query_gd_sizer.Add(search_query_btn, pos=(0, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_query.Add(wx.StaticText(self, label="Search query"), pos=(0, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_query.Add(self.tbx_search_query, pos=(0, 1), flag=wx.EXPAND|wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_query.Add(btn_search_query, pos=(0, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
 
-        self.topic_model_chbx = wx.CheckBox(self, label='Topic modeling')
-        self.filter_attributes_chbx = wx.CheckBox(self, label='Lucene search')
-        query_gd_sizer.Add(wx.StaticText(self, label="Search options"), pos=(1, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        query_gd_sizer.Add(self.topic_model_chbx, pos=(1, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        query_gd_sizer.Add(self.filter_attributes_chbx, pos=(1, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=5)
+        self.chbx_topic_model = wx.CheckBox(self, label='Topic modeling')
+        self.chbx_filter_attributes = wx.CheckBox(self, label='Lucene search')
+        grd_sizer_query.Add(wx.StaticText(self, label="Search options"), pos=(1, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_query.Add(self.chbx_topic_model, pos=(1, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_query.Add(self.chbx_filter_attributes, pos=(1, 2), flag=wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT, border=5)
         
-        query_gd_sizer.Add(wx.StaticText(self, label="Responsive documents limit"), pos=(2, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
-        self.resp_doc_limit_tbx = wx.lib.masked.NumCtrl(self, size=(20,1), fractionWidth=0, integerWidth=5, allowNegative=False, min=1, max=9999, value=100) 
-        query_gd_sizer.Add(self.resp_doc_limit_tbx, pos=(2, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        grd_sizer_query.Add(wx.StaticText(self, label="Responsive documents limit"), pos=(2, 0), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
+        self.tbx_resp_doc_limit = wx.lib.masked.NumCtrl(self, size=(20,1), fractionWidth=0, integerWidth=5, allowNegative=False, min=1, max=9999, value=100) 
+        grd_sizer_query.Add(self.tbx_resp_doc_limit, pos=(2, 1), flag=wx.TOP|wx.LEFT|wx.BOTTOM, border=5)
 
+        sizer_query_box.Add(grd_sizer_query, 0, wx.ALL, 5)
         
-
-        query_box_sizer.Add(query_gd_sizer, 0, wx.ALL, 5)
-        
-        return query_box_sizer
+        return sizer_query_box
         
         
     def _create_menu_bar(self):
+        '''Creates the menu bar 
+        '''
         
         # Setting up the menu.
         menu_file = wx.Menu()
@@ -352,6 +351,9 @@ class SMARTeRGUI(wx.Frame):
 
         
     def _on_quit(self, e):
+        '''Handles the application termination signal 
+        '''
+        
         dlg = wx.MessageDialog(self,
                                "Do you really want to close this application?",
                                "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
@@ -362,6 +364,8 @@ class SMARTeRGUI(wx.Frame):
 
 
     def _on_about(self, e):
+        '''Displays the application basic information 
+        '''
         # A message dialog box with an OK button
         dlg = wx.MessageDialog( self, "SMARTeR", "About SMART eDiscovery ranking", wx.OK)
         dlg.ShowModal() # Show it
@@ -370,10 +374,19 @@ class SMARTeRGUI(wx.Frame):
 
 
     def _on_search(self, e):
+        '''Handles the search query button click event  
+        '''
         
         if self.tm_index_available or self.lucene_index_available:
-            query = self.search_query_tbx.GetValue()
-            self.resp_docs_limit = int(self.resp_doc_limit_tbx.GetValue())
+            query = self.tbx_search_query.GetValue()
+            self.resp_docs_limit = int(self.tbx_resp_doc_limit.GetValue())
+            
+            if query.strip() == '':
+                # error 
+                dlg = wx.MessageDialog(self, 'Please enter a search query.', 'Search query missing!', wx.OK|wx.ICON_INFORMATION)
+                dlg.ShowModal()
+                dlg.Destroy()
+                return 
             
             print 'Performing query processing...'
             responsive_docs, non_responsive_docs = process_query(query, self.lda_dictionary, self.lda_mdl, self.lda_index, self.lda_doc_paths, self.resp_docs_limit)
@@ -383,27 +396,30 @@ class SMARTeRGUI(wx.Frame):
             rd = np.array(responsive_docs)
             rd_paths = [os.path.join(dir_path, rd[idx,2]) for idx, dir_path in enumerate(rd[:,1])] # looks like i'm not getting full file paths
             results_str = ', '.join(rd_paths)
-            self.search_results_tbx.SetValue(results_str)
+            self.tbx_search_results.SetValue(results_str)
             
         else: 
             # error 
-            dlg = wx.MessageDialog(self, 'You have to load the model to perform a search.', 'Select a model', wx.OK|wx.ICON_INFORMATION)
+            dlg = wx.MessageDialog(self, 'You have to load the model to perform a search.', 'Select a model!', wx.OK|wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
         
 
     def _on_select_model(self, e):
-        """ Open a file"""
+        '''Handles the select model button click event. Loads a model file 
+        '''
         dlg = wx.FileDialog(self, "Choose a file", self.mdl_dir, "", "*.*", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             self.mdl_file_name = dlg.GetFilename()
             self.mdl_dir = dlg.GetDirectory()
-            self.select_mdl_tbx.SetValue(os.path.join(self.mdl_dir, self.mdl_file_name))
+            self.tbx_model_cfg_path.SetValue(os.path.join(self.mdl_dir, self.mdl_file_name))
             self._load_model(os.path.join(self.mdl_dir, self.mdl_file_name))
 
         dlg.Destroy()
 
     def _load_model(self, model_cfg_file):
+        '''Loads the models specified in the model configuration file  
+        '''
         
         self.mdl_cfg = read_config(model_cfg_file)
         
@@ -422,16 +438,26 @@ class SMARTeRGUI(wx.Frame):
                 self.lda_num_files = len(self.lda_doc_paths)
                 self.lda_vocab_size = len(self.lda_dictionary)        
                 
-                self.is_topic_mdl_lbl.SetLabel("Yes")
+                self.lbl_topic_mdl_exists.SetLabel("Yes")
                 self.tm_index_available = True                 
-                self.num_files_lbl.SetLabel(str(self.lda_num_files))
-#                self.vocabulary_size_lbl.Setlabel(str(self.lda_vocab_size))
+                self.lbl_num_corpus_files.SetLabel(str(self.lda_num_files))
+                self.lbl_vocab_size.Setlabel(str(self.lda_vocab_size))
 
         
+        # Loads Lucene index files 
+        self.lucene_index_file = self.mdl_cfg['LUCENE']['lucene_index_file']
+        
+        if self.lucene_index_file <> None:
+            if os.path.exists(self.lucene_index_file): 
+                self.lbl_lucene_mdl_exists.SetLabel("Yes")
+                self.lucene_index_available = True  
+         
         self.SetStatusText("The %s model is loaded." % self.mdl_cfg['DATA']['name'])
 
 
     def _create_icon_toolbar(self):
+        '''Initializes the icon toolbar control 
+        '''
 
         toolbar = wx.ToolBar(self, -1)
 
@@ -443,40 +469,6 @@ class SMARTeRGUI(wx.Frame):
         self.Bind( wx.EVT_TOOL, self._on_select_model, id=open_file_id )
 
         toolbar.AddSeparator()
-
-#        # COPY
-#
-#        copySelectedID = wx.NewId()
-#        tool = toolbar.AddLabelTool( copySelectedID, label='Copy',
-#                                     bitmap=Copy_32_PNG.GetBitmap() )
-#        self.Bind( wx.EVT_TOOL, self.OnCopy, id=copySelectedID )
-#
-#        # CUT
-#
-#        cutSelectedID = wx.NewId()
-#        tool = toolbar.AddLabelTool( cutSelectedID, label='Cut',
-#                                     bitmap=Cut_32_PNG.GetBitmap() )
-#        self.Bind( wx.EVT_TOOL, self.OnCut, id=cutSelectedID )
-#        #Open_32_PNG.GetBitmap().SaveFile( 'Open-32.PNG', wx.BITMAP_TYPE_PNG )
-#
-#
-#        # PASTE any text previously copied text
-#
-#        pasteID = wx.NewId()
-#        tool = toolbar.AddLabelTool( pasteID, label='Paste',
-#                                     bitmap=Paste_32_PNG.GetBitmap() )
-#        self.Bind( wx.EVT_TOOL, self.OnPaste, id=pasteID )
-#
-#        toolbar.AddSeparator()
-#
-#        # SAVE TO FILE editor's current text
-#
-#        saveFileID = wx.NewId()
-#        tool = toolbar.AddLabelTool( saveFileID, label='Save',
-#                                     bitmap=Save_32_PNG.GetBitmap() )
-#        self.Bind( wx.EVT_TOOL, self.OnSaveFile, id=saveFileID )
-#        #Save_32_PNG.GetBitmap().SaveFile( 'Save-32.PNG', wx.BITMAP_TYPE_PNG )
-
 
         # EXIT the application 
 
@@ -491,6 +483,9 @@ class SMARTeRGUI(wx.Frame):
 
 
 def main():
+    '''
+    The main function call 
+    '''
     
     # read application configurations 
     
