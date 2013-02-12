@@ -4,9 +4,7 @@ from wx.lib.masked import NumCtrl
 from file_utils import find_files_in_folder, copy_files_with_dir_tree
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES
 from file_list_control import file_list_control
-from ed import output_folder
 
-file_dict = {}
 class RandomSamplerGUI(wx.Frame):
     
     def __init__(self, parent):
@@ -46,9 +44,8 @@ class RandomSamplerGUI(wx.Frame):
 
         # Sets the main window properties 
         
-        self.SetSize((500, 300))
-        self.SetTitle("Random Sampler")
-        self.Centre()
+        self.Center()
+        self.SetSize((1024,768))
         self.Show(True)
 
 
@@ -89,48 +86,45 @@ class RandomSamplerGUI(wx.Frame):
         self.precision = wx.lib.masked.NumCtrl(self, size=(20,1), fractionWidth=0, integerWidth=2, allowNegative=False, min=1, max=99, value=1) 
 
         # Layouts 
-        
-        sizer_input_folder = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_input_folder.Add(self.input_folder_label, 1, wx.ALIGN_LEFT | wx.EXPAND | wx.ALL, border=5, )
-        sizer_input_folder.Add(self.input_folder, 1, wx.EXPAND | wx.ALL, border=5)
-        sizer_input_folder.Add(self.input_folder_button, 0, wx.EXPAND | wx.ALL, border=5)
-        
-        
-        sizer_output_folder = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_output_folder.Add(self.output_folder_label, 1, wx.ALIGN_LEFT | wx.EXPAND | wx.ALL, border=5)
-        sizer_output_folder.Add(self.output_folder, 1, wx.EXPAND | wx.ALL, border=5)
-        sizer_output_folder.Add(self.output_folder_button, 0, wx.EXPAND | wx.ALL, border=5)
+        sizer_input_output = wx.GridBagSizer(2,3)
+        sizer_input_output.Add(self.input_folder_label,pos = (0,0), flag =  wx.ALIGN_LEFT | wx.ALL, border=5 )
+        sizer_input_output.Add(self.input_folder,pos = (0,1), flag = wx.EXPAND | wx.ALL, border=5)
+        sizer_input_output.Add(self.input_folder_button,pos = (0,2), flag = wx.EXPAND | wx.ALL, border=5)
         
         
-        sizer_cp = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_cp.Add(self.confidence_text, 1, wx.EXPAND | wx.ALL, border=5)
-        sizer_cp.Add(self.confidence, 0, wx.ALL, border=5)
-        sizer_cp.Add(self.precision_text, 1, wx.ALL, border=5)
-        sizer_cp.Add(self.precision, 0, wx.ALL, border=5)
+        sizer_input_output.Add(self.output_folder_label,pos = (1,0), flag = wx.ALIGN_LEFT | wx.EXPAND | wx.ALL, border=5)
+        sizer_input_output.Add(self.output_folder,pos = (1,1), flag = wx.EXPAND | wx.ALL, border=5)
+        sizer_input_output.Add(self.output_folder_button,pos = (1,2), flag = wx.EXPAND | wx.ALL, border=5)
         
         
-        sizer_cb = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_cb.Add(self.button_exit, 0, wx.ALIGN_CENTER | wx.ALL, border=5)
-        sizer_cb.Add(self.button_run, 0, wx.ALIGN_CENTER | wx.ALL, border=5)
+        sizer_cp = wx.GridBagSizer(2, 2)
+
+        sizer_cp.Add(self.confidence_text,pos=(0,0), flag = wx.ALL, border=5)
+        sizer_cp.Add(self.confidence,pos=(0,1), flag = wx.ALL, border=5)
+        sizer_cp.Add(self.precision_text,pos=(1,0), flag = wx.ALL, border=5)
+        sizer_cp.Add(self.precision,pos=(1,1), flag = wx.ALL, border=5)
         
-        sizer_process_files = wx.BoxSizer(wx.VERTICAL)
-        self.process_files_tree = file_list_control(None, -1, "",output_folder)
-#        self.process_files_tree = wx.TreeCtrl(self, 1, wx.DefaultPosition, (-1,-1), wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
-#        self.process_files_tree.AddRoot("")
+        sizer_process_files = wx.BoxSizer(wx.HORIZONTAL)
+        self.process_files_tree = file_list_control(self, -1,self.output_dir_path)
+        self.process_files_tree.Show(False)
         sizer_process_files.Add(self.process_files_tree, 0,
                                 wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, border=5)
+        
+        sizer_cb = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_cb.Add(self.button_exit, wx.ALIGN_CENTER | wx.ALL, border=5)
+        sizer_cb.Add(self.button_run, wx.ALIGN_CENTER | wx.ALL, border=5)
 
-        sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_main.Add(self.banner, 0, wx.EXPAND | wx.ALL, border=5)
-        sizer_main.Add(sizer_input_folder, 0, wx.EXPAND | wx.ALL, border=5)
-        sizer_main.Add(sizer_output_folder, 0, wx.EXPAND | wx.ALL, border=5)
-        sizer_main.Add(self.line, 1, wx.EXPAND | wx.ALL, border=5)
-        sizer_main.Add(sizer_cp, 1, wx.EXPAND | wx.ALL, border=5)
-        sizer_main.Add(self.line, 1, wx.EXPAND | wx.ALL, border=5)
-        sizer_main.Add(sizer_cb, 1, wx.ALIGN_CENTER | wx.ALL, border=5)
-        sizer_main.Add(sizer_process_files, 1, wx.ALIGN_CENTER | wx.ALL, border=5)
+        sizer_main = wx.GridBagSizer(7,3)
+        sizer_main.Add(self.banner,pos = (0,0), span = (1,3), flag =  wx.ALL | wx.EXPAND, border=5)
+        sizer_main.Add(sizer_input_output,pos = (1,0), span = (1,3), flag =  wx.ALL, border=5)
+        sizer_main.Add(self.line, pos = (2,0), span = (1,3), flag = wx.ALL, border=5)
+        sizer_main.Add(sizer_cp,pos = (3,0), span = (1,3), flag = wx.ALL, border=5)
+        sizer_main.Add(self.line,pos = (4,0), span = (1,3), flag = wx.ALL, border=5)
+        sizer_main.Add(sizer_cb,pos = (5,0), span = (1,3), flag = wx.ALIGN_CENTER | wx.ALL, border=5)
+        sizer_main.Add(sizer_process_files,pos = (6,0), span = (1,3), flag = wx.ALL, border=5)
         
         self.SetSizerAndFit(sizer_main)
+        
 
 
     def _create_menu_bar(self):
@@ -224,11 +218,14 @@ class RandomSamplerGUI(wx.Frame):
             
             copy_files_with_dir_tree(sampled_files, self.output_dir_path)
             self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(sampled_files), len(file_list)))
-            
+            self.process_files_tree.on_changed_output_dir(self.output_folder.GetValue())
+            self.process_files_tree.Refresh()
         except Exception as anyException:
             dlg = wx.MessageDialog(self, str(anyException), "Error", wx.ICON_ERROR)
             dlg.ShowModal()
-        
+        self.process_files_tree.Show(True)
+        self.GetSizer().Layout()
+        self.Refresh()
         return      
 
 def main():

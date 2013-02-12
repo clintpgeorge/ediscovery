@@ -10,9 +10,9 @@ Mark returns marked files
 Author: Abhiram J
 Date: 10 Feb 13
 '''
-class file_list_control(wx.Frame):
-    def __init__(self, parent, id, title, target_dir):
-        wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(450, 350))
+class file_list_control(wx.Panel):
+    def __init__(self, parent, id, target_dir):
+        wx.Panel.__init__(self, parent, id)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -46,7 +46,13 @@ class file_list_control(wx.Frame):
         self.SetSizer(hbox) 
         
         self.Centre()
-
+         
+    def on_changed_output_dir(self, target_dir):
+        self.tree.DeleteAllItems()
+        self.display.Clear()
+        root = self.tree.AddRoot(target_dir)
+        self.get_dirs(root)
+    
     def on_sel_changed(self, event):
         item =  event.GetItem()
         self.get_dirs(item)
@@ -62,9 +68,12 @@ class file_list_control(wx.Frame):
             
     def on_marked(self, evt):
         current_item = evt.GetItem()
+        file_path = self.tree.GetPyData(current_item)
+        if not file_path in self.display.GetItems():
+            self.display.Append(self.tree.GetPyData(current_item))
         #root = self.tree.GetRootItem()
         #current_count = self.display.GetItemCount()
-        self.display.Append(self.tree.GetPyData(current_item))
+        
         #print current_count
         #self.display.InsertStringItem(current_count+1, self.tree.GetPyData(current_item))
     def on_unmarked(self,evt):
