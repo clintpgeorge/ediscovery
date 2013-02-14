@@ -1,5 +1,6 @@
 import wx
 import os
+import time
 from wx.lib.masked import NumCtrl
 from file_utils import find_files_in_folder, copy_files_with_dir_tree
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES
@@ -45,7 +46,7 @@ class RandomSamplerGUI(wx.Frame):
         # Sets the main window properties 
         
         self.Center()
-        self.SetSize((1024,768))
+        self.SetSize((800,600))
         self.Show(True)
 
 
@@ -92,15 +93,9 @@ class RandomSamplerGUI(wx.Frame):
         sizer_input_output.Add(self.input_folder_label,pos = (0,0), flag =  wx.ALIGN_LEFT | wx.ALL, border=5 )
         sizer_input_output.Add(self.input_folder,pos = (0,1), flag = wx.EXPAND | wx.ALL, border=5)
         sizer_input_output.Add(self.input_folder_button,pos = (0,2), flag = wx.EXPAND | wx.ALL, border=5)
-        
-        
         sizer_input_output.Add(self.output_folder_label,pos = (1,0), flag = wx.ALIGN_LEFT | wx.EXPAND | wx.ALL, border=5)
         sizer_input_output.Add(self.output_folder,pos = (1,1), flag = wx.EXPAND | wx.ALL, border=5)
         sizer_input_output.Add(self.output_folder_button,pos = (1,2), flag = wx.EXPAND | wx.ALL, border=5)
-        
-        
-        
-
         sizer_input_output.Add(self.confidence_text,pos=(2,0), flag = wx.ALL, border=5)
         sizer_input_output.Add(self.confidence,pos=(2,1), flag = wx.ALL, border=5)
         sizer_input_output.Add(self.precision_text,pos=(3,0), flag = wx.ALL, border=5)
@@ -111,22 +106,9 @@ class RandomSamplerGUI(wx.Frame):
         sizer_process_files = wx.BoxSizer(wx.HORIZONTAL)
         sizer_process_files.Add(self.process_files_tree, 0, wx.EXPAND | wx.ALL, border=5)
 
-#
-#        sizer_main = wx.BoxSizer( wx.VERTICAL ) 
-#        sizer_main.Add(self.banner, proportion=0, flag=wx.EXPAND)
-#        sizer_main.Add(sizer_input_output, 0, wx.EXPAND | wx.ALL, border=5)
-#        sizer_main.Add(sizer_cp, 0, wx.EXPAND | wx.ALL, border=5)
-#
-#
         sizer_btn = wx.BoxSizer( wx.HORIZONTAL ) 
-        sizer_btn.Add(self.button_run, proportion=0, flag=wx.ALL, border=5)
-        sizer_btn.Add(self.button_exit, proportion=0, flag=wx.ALL, border=5)
-#        sizer_main.Add(sizer_btn, 0, wx.EXPAND | wx.ALL, border=5)
-#        
-#        sizer_main.Add(sizer_process_files, 0, wx.EXPAND | wx.ALL, border=5)
-#        self.process_files_tree.Show(True) 
-#        
-        
+        sizer_btn.Add(self.button_run, proportion=0, flag=wx.ALL | wx.ALIGN_LEFT, border=5)
+        sizer_btn.Add(self.button_exit, proportion=0, flag=wx.ALL | wx.ALIGN_RIGHT, border=5) 
 
         sizer_main = wx.GridBagSizer(5,5)
         sizer_main.Add(self.banner,pos = (0,0), span = (1,3), flag =  wx.ALL | wx.EXPAND, border=5)
@@ -211,6 +193,7 @@ class RandomSamplerGUI(wx.Frame):
         '''Handles the run sampler button click event 
         
         '''
+        file_list = []
         try:
             
             self.confidence_val = float(self.confidence.GetValue()) / 100.0
@@ -236,7 +219,21 @@ class RandomSamplerGUI(wx.Frame):
         self.process_files_tree.Show(True)
         self.GetSizer().Layout()
         self.Refresh()
-        return      
+        return file_list
+    
+    def save_marked_history(self, target_dir, save_files):
+        '''
+        Saves the marked history to a file in a specified folder
+        '''
+        save_filename = 'save history_' + time.asctime(time.localtime())
+        try:
+            with open(os.path.join(target_dir,save_filename), 'w') as f:
+                for save_file in save_files:
+                    f.write(save_file)
+        except Exception:
+            dlg = wx.MessageDialog(self, "Unable to write save history of files.", "Error", wx.ICON_ERROR)
+            dlg.ShowModal()
+
 
 def main():
     

@@ -15,61 +15,45 @@ class file_list_control(wx.Panel):
     def __init__(self, parent, id, target_dir):
         wx.Panel.__init__(self, parent, id)
         
+         
         
-        if not os.path.isdir(target_dir):
-            target_dir = os.path.curdir
-        
-        # Adding sizers
-        sizer_main = wx.GridBagSizer(5, 5)
-        panel_left = wx.BoxSizer(wx.VERTICAL)
-        panel_center = wx.BoxSizer(wx.VERTICAL)
-        panel_right = wx.BoxSizer(wx.VERTICAL)
+        # Instantiating all the sizers
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox2 = wx.BoxSizer(wx.VERTICAL)
+        panel1 = wx.Panel(self, -1)
+        panel2 = wx.Panel(self, -1)
         
         # Adding controls
-        # Tree is a directory of files - input from target directory
-        # Display shows selected items. Items are selected by right 
-        # clicking in the tree. Items are deleted by double clicking on display
-        # Mark/Activate returns the files as a list
-        self.tree = wx.TreeCtrl(self, 1, wx.DefaultPosition, (-1,-1),
+        self.tree = wx.TreeCtrl(panel1, 1, wx.DefaultPosition, (-1,-1),
                                 wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS\
                                 | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HAS_VARIABLE_ROW_HEIGHT\
                                 | wx.SUNKEN_BORDER)
-        self.display = wx.ListBox(self, -1, style=wx.LB_SINGLE )
-        self.activate = wx.Button(self, wx.ID_APPLY, "Mark")
-        self.help_label_files = wx.StaticText(self, label = 'Files to add')
-        self.help_label_selected_files = wx.StaticText(self, label = 'Selected files')
-        
+        if not os.path.isdir(target_dir):
+            target_dir = os.path.curdir
         root = self.tree.AddRoot(target_dir)
         self.get_dirs(root)
         
-        # Adding event handlers 
+        # Binding events
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_sel_changed, id=1)
-        self.tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK,
-                       self.on_marked, self.tree, id =1)
-        self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED,
-                       self.on_open_file, self.tree, id = wx.ID_OPEN)
-        self.Bind(wx.EVT_LISTBOX_DCLICK,
-                  self.on_unmarked, self.display, id = wx.ID_DELETE)
+        self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_open_file, id=1)
+        self.tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_marked, self.tree, id =1)
+        self.display = wx.ListBox(panel2, -1, style=wx.LB_SINGLE )
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_unmarked, self.display, id = wx.ID_DELETE)
+        self.activate = wx.Button(self,wx.ID_APPLY, "Mark")
         self.Bind(wx.EVT_BUTTON, self.on_return, self.activate,  id =1)
         
-        # Setting layout
-        panel_left.Add(self.tree, flag = wx.EXPAND)
-        panel_center.Add(self.display, flag = wx.EXPAND)
-        panel_right.Add(self.activate, flag = wx.EXPAND)
-        sizer_main.Add(self.help_label_files,pos = (0,0), span = (1,1),
-                       flag = wx.ALL , border = 2)
-        sizer_main.Add(self.help_label_selected_files,pos = (0,1), span = (1,1),
-                       flag = wx.ALL, border =  2)
-        sizer_main.Add(panel_left,pos = (1,0), span = (1,1),
-                       flag = wx.ALL | wx.EXPAND, border = 2)
-        sizer_main.Add(panel_center,pos = (1,1), span = (1,1),
-                       flag = wx.ALL | wx.EXPAND, border = 2)
-        sizer_main.Add(panel_right,pos = (1,2), span = (1,1),
-                       flag = wx.ALL | wx.EXPAND, border = 2)
-        self.SetSizeHints(200,100,400,200)
-        sizer_main.Fit(self)
-        self.Layout()
-        self.Refresh()
+        #Setting layout
+        vbox.Add(self.tree, 1, wx.EXPAND)
+        vbox2.Add(self.display, 1, wx.EXPAND)
+        hbox.Add(panel1, 1, wx.EXPAND)
+        hbox.Add(panel2, 1, wx.EXPAND)
+        hbox.Add(self.activate, 1)
+        panel1.SetSizer(vbox)
+        panel2.SetSizer(vbox2)
+        self.SetSizer(hbox) 
+        
+        self.Centre()
          
     def on_changed_output_dir(self, target_dir):
         '''
