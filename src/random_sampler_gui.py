@@ -45,9 +45,11 @@ class RandomSamplerGUI(wx.Frame):
         # Sets the main window properties 
         
         self.Center()
-        self.SetSize((800,600))
+        self.SetSize((1024,768))
         self.Show(True)
 
+
+                            
 
     def _create_layout(self):
         '''Creates the main window layout
@@ -97,36 +99,45 @@ class RandomSamplerGUI(wx.Frame):
         sizer_input_output.Add(self.output_folder_button,pos = (1,2), flag = wx.EXPAND | wx.ALL, border=5)
         
         
-        sizer_cp = wx.GridBagSizer(2, 2)
+        
 
-        sizer_cp.Add(self.confidence_text,pos=(0,0), flag = wx.ALL, border=5)
-        sizer_cp.Add(self.confidence,pos=(0,1), flag = wx.ALL, border=5)
-        sizer_cp.Add(self.precision_text,pos=(1,0), flag = wx.ALL, border=5)
-        sizer_cp.Add(self.precision,pos=(1,1), flag = wx.ALL, border=5)
+        sizer_input_output.Add(self.confidence_text,pos=(2,0), flag = wx.ALL, border=5)
+        sizer_input_output.Add(self.confidence,pos=(2,1), flag = wx.ALL, border=5)
+        sizer_input_output.Add(self.precision_text,pos=(3,0), flag = wx.ALL, border=5)
+        sizer_input_output.Add(self.precision,pos=(3,1), flag = wx.ALL, border=5)
        
-        sizer_process_files = wx.BoxSizer(wx.HORIZONTAL)
+        
         self.process_files_tree = file_list_control(self, 0,self.output_dir_path)
-        sizer_process_files.Add(self.process_files_tree, 0,
-                                wx.EXPAND | wx.ALL, border=5)
-        self.process_files_tree.Show(True)
+        sizer_process_files = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_process_files.Add(self.process_files_tree, 0, wx.EXPAND | wx.ALL, border=5)
+
+#
+#        sizer_main = wx.BoxSizer( wx.VERTICAL ) 
+#        sizer_main.Add(self.banner, proportion=0, flag=wx.EXPAND)
+#        sizer_main.Add(sizer_input_output, 0, wx.EXPAND | wx.ALL, border=5)
+#        sizer_main.Add(sizer_cp, 0, wx.EXPAND | wx.ALL, border=5)
+#
+#
+        sizer_btn = wx.BoxSizer( wx.HORIZONTAL ) 
+        sizer_btn.Add(self.button_run, proportion=0, flag=wx.ALL, border=5)
+        sizer_btn.Add(self.button_exit, proportion=0, flag=wx.ALL, border=5)
+#        sizer_main.Add(sizer_btn, 0, wx.EXPAND | wx.ALL, border=5)
+#        
+#        sizer_main.Add(sizer_process_files, 0, wx.EXPAND | wx.ALL, border=5)
+#        self.process_files_tree.Show(True) 
+#        
+        
 
         sizer_main = wx.GridBagSizer(5,5)
         sizer_main.Add(self.banner,pos = (0,0), span = (1,3), flag =  wx.ALL | wx.EXPAND, border=5)
         sizer_main.Add(sizer_input_output,pos = (1,0), span = (1,3), flag =  wx.ALL, border=5)
-        sizer_main.Add(self.line, pos = (2,0), span = (1,3), flag = wx.ALL, border=5)
-        sizer_main.Add(sizer_cp,pos = (3,0), span = (1,3), flag = wx.ALL, border=5)
+        sizer_main.Add(sizer_btn, pos = (2,0), span = (1,3), flag = wx.ALIGN_CENTER | wx.ALL, border=5)
+        sizer_main.Add(sizer_process_files,pos = (3,0), span = (3,3), flag = wx.EXPAND | wx.ALL, border=5)
         sizer_main.Add(self.line,pos = (4,0), span = (1,3), flag = wx.ALL, border=5)
-        sizer_main.Add(self.button_run,pos = (5,1), span = (1,1), flag = wx.ALIGN_CENTER | wx.ALL, border=5)
-        sizer_main.Add(self.button_exit,pos = (5,2), span = (1,1), flag = wx.ALIGN_CENTER | wx.ALL, border=5)
-        #sizer_main.Add(self.banner,pos = (6,0), span = (3,3), flag =  wx.ALL | wx.EXPAND, border=5)
-        sizer_main.Add(sizer_process_files,pos = (6,0), span = (3,3), flag = wx.EXPAND | wx.ALL, border=5)
-        sizer_main.Add(self.line,pos = (9,0), span = (1,3), flag = wx.ALL, border=5)
         
         self.SetSizerAndFit(sizer_main)
         self.Layout()
         
-
-
     def _create_menu_bar(self):
         
         # Setting up the menu.
