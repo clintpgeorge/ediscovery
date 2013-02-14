@@ -45,7 +45,7 @@ class RandomSamplerGUI(wx.Frame):
         # Sets the main window properties 
         
         self.Center()
-        self.SetSize((1024,768))
+        self.SetSize((800,600))
         self.Show(True)
 
 
@@ -86,7 +86,7 @@ class RandomSamplerGUI(wx.Frame):
         self.precision = wx.lib.masked.NumCtrl(self, size=(20,1), fractionWidth=0, integerWidth=2, allowNegative=False, min=1, max=99, value=1) 
 
         # Layouts 
-        sizer_input_output = wx.GridBagSizer(2,3)
+        sizer_input_output = wx.GridBagSizer(2,2)
         sizer_input_output.Add(self.input_folder_label,pos = (0,0), flag =  wx.ALIGN_LEFT | wx.ALL, border=5 )
         sizer_input_output.Add(self.input_folder,pos = (0,1), flag = wx.EXPAND | wx.ALL, border=5)
         sizer_input_output.Add(self.input_folder_button,pos = (0,2), flag = wx.EXPAND | wx.ALL, border=5)
@@ -103,27 +103,27 @@ class RandomSamplerGUI(wx.Frame):
         sizer_cp.Add(self.confidence,pos=(0,1), flag = wx.ALL, border=5)
         sizer_cp.Add(self.precision_text,pos=(1,0), flag = wx.ALL, border=5)
         sizer_cp.Add(self.precision,pos=(1,1), flag = wx.ALL, border=5)
-        
+       
         sizer_process_files = wx.BoxSizer(wx.HORIZONTAL)
-        self.process_files_tree = file_list_control(self, -1,self.output_dir_path)
-        self.process_files_tree.Show(False)
+        self.process_files_tree = file_list_control(self, 0,self.output_dir_path)
         sizer_process_files.Add(self.process_files_tree, 0,
-                                wx.ALIGN_CENTER | wx.EXPAND | wx.ALL, border=5)
-        
-        sizer_cb = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_cb.Add(self.button_exit, wx.ALIGN_CENTER | wx.ALL, border=5)
-        sizer_cb.Add(self.button_run, wx.ALIGN_CENTER | wx.ALL, border=5)
+                                wx.EXPAND | wx.ALL, border=5)
+        self.process_files_tree.Show(True)
 
-        sizer_main = wx.GridBagSizer(7,3)
+        sizer_main = wx.GridBagSizer(5,5)
         sizer_main.Add(self.banner,pos = (0,0), span = (1,3), flag =  wx.ALL | wx.EXPAND, border=5)
         sizer_main.Add(sizer_input_output,pos = (1,0), span = (1,3), flag =  wx.ALL, border=5)
         sizer_main.Add(self.line, pos = (2,0), span = (1,3), flag = wx.ALL, border=5)
         sizer_main.Add(sizer_cp,pos = (3,0), span = (1,3), flag = wx.ALL, border=5)
         sizer_main.Add(self.line,pos = (4,0), span = (1,3), flag = wx.ALL, border=5)
-        sizer_main.Add(sizer_cb,pos = (5,0), span = (1,3), flag = wx.ALIGN_CENTER | wx.ALL, border=5)
-        sizer_main.Add(sizer_process_files,pos = (6,0), span = (1,3), flag = wx.ALL, border=5)
+        sizer_main.Add(self.button_run,pos = (5,1), span = (1,1), flag = wx.ALIGN_CENTER | wx.ALL, border=5)
+        sizer_main.Add(self.button_exit,pos = (5,2), span = (1,1), flag = wx.ALIGN_CENTER | wx.ALL, border=5)
+        #sizer_main.Add(self.banner,pos = (6,0), span = (3,3), flag =  wx.ALL | wx.EXPAND, border=5)
+        sizer_main.Add(sizer_process_files,pos = (6,0), span = (3,3), flag = wx.EXPAND | wx.ALL, border=5)
+        sizer_main.Add(self.line,pos = (9,0), span = (1,3), flag = wx.ALL, border=5)
         
         self.SetSizerAndFit(sizer_main)
+        self.Layout()
         
 
 
@@ -219,7 +219,6 @@ class RandomSamplerGUI(wx.Frame):
             copy_files_with_dir_tree(sampled_files, self.output_dir_path)
             self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(sampled_files), len(file_list)))
             self.process_files_tree.on_changed_output_dir(self.output_folder.GetValue())
-            self.process_files_tree.Refresh()
         except Exception as anyException:
             dlg = wx.MessageDialog(self, str(anyException), "Error", wx.ICON_ERROR)
             dlg.ShowModal()
