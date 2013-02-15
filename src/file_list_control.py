@@ -2,6 +2,7 @@
 import os
 import wx
 import webbrowser
+import time
 '''
 This control is used to list, mark and unmark files in a directory.
 Right click adds to Middle list of selected items
@@ -25,6 +26,7 @@ class file_list_control(wx.Panel):
         panel2 = wx.Panel(self, -1)
         
         # Adding controls
+        self.target_dir = os.curdir
         self.tree = wx.TreeCtrl(panel1, 1, wx.DefaultPosition, (-1,-1),
                                 wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS\
                                 | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HAS_VARIABLE_ROW_HEIGHT\
@@ -41,7 +43,7 @@ class file_list_control(wx.Panel):
         self.display = wx.ListBox(panel2, -1, style=wx.LB_SINGLE )
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_unmarked, self.display, id = wx.ID_DELETE)
         self.activate = wx.Button(self,wx.ID_APPLY, "Mark")
-        self.Bind(wx.EVT_BUTTON, self.on_return, self.activate,  id =1)
+        self.Bind(wx.EVT_BUTTON, self.on_save_marked_history, self.activate, id = wx.ID_ANY)
         
         #Setting layout
         vbox.Add(self.tree, 1, wx.EXPAND)
@@ -60,10 +62,12 @@ class file_list_control(wx.Panel):
         Action on changing the directory to view files - refresh
         the file directory 
         '''
+        self.target_dir = target_dir
         self.tree.DeleteAllItems()
         self.display.Clear()
         root = self.tree.AddRoot(target_dir)
         self.get_dirs(root)
+
     
     def on_sel_changed(self, event):
         '''
@@ -93,6 +97,9 @@ class file_list_control(wx.Panel):
         file_path = self.tree.GetPyData(current_item)
         if not file_path in self.display.GetItems():
             self.display.Append(self.tree.GetPyData(current_item))
+        fire_mark  = wx.PyCommandEvent(wx.EVT_FILEPICKER_CHANGED.typeId)
+        fire_mark.SetClientData(self.display.GetCount())
+        self.GetEventHandler().ProcessEvent(fire_mark)
 
     def on_open_file (self, event):
         '''
@@ -112,11 +119,28 @@ class file_list_control(wx.Panel):
         Delete a file from the selected list(display)
         '''
         self.display.Delete(self.display.GetSelection())
+        fire_unmark  = wx.PyCommandEvent(wx.EVT_FILEPICKER_CHANGED.typeId)
+        fire_unmark.SetClientData(self.display.GetCount())
+        self.GetEventHandler().ProcessEvent(fire_unmark)
         
-    def on_return(self, evt):
+
+    def on_save_marked_history(self, evt):
         '''
-        Action on pressing Mark/Activate control
-        Returns a list of selcted items to process
+        Saves the marked history to a file in a specified folder
         '''
-        return self.display.GetItems()
+        save_files = self.display.GetStrings()
+        save_filename = 'save history_' + time.asctime(time.localtime())
+        fire_mark_saved  = wx.PyCommandEvent(wx.EVT_ACTIVATE.typeId)
+        try:
+            with open(os.path.join(self.target_dir,save_filename), 'w') as file_handle:
+                for save_file in save_files:
+                    file_handle.write(save_file + '\n')
+            fire_mark_saved.SetClientData(self.display.GetCount())
+            self.GetEventHandler().ProcessEvent(fire_mark_saved)
+        except Exception as anyException:
+            print str(anyException)
+            fire_mark_saved.SetClientData(str(anyException))
+            self.GetEventHandler().ProcessEvent(fire_mark_saved)
+            dlg = wx.MessageDialog(self, "Unable to write save history of files.", "Error", wx.ICON_ERROR)
+            dlg.ShowModal()
         

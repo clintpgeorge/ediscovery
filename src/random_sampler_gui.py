@@ -1,6 +1,5 @@
 import wx
 import os
-import time
 from wx.lib.masked import NumCtrl
 from file_utils import find_files_in_folder, copy_files_with_dir_tree
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES
@@ -101,10 +100,11 @@ class RandomSamplerGUI(wx.Frame):
         sizer_input_output.Add(self.precision_text,pos=(3,0), flag = wx.ALL, border=5)
         sizer_input_output.Add(self.precision,pos=(3,1), flag = wx.ALL, border=5)
        
-        
-        self.process_files_tree = file_list_control(self, 0,self.output_dir_path)
         sizer_process_files = wx.BoxSizer(wx.HORIZONTAL)
+        self.process_files_tree = file_list_control(self, 0,self.output_dir_path)
         sizer_process_files.Add(self.process_files_tree, 0, wx.EXPAND | wx.ALL, border=5)
+        self.Bind(wx.EVT_FILEPICKER_CHANGED, self._on_update_mark, self.process_files_tree)
+        self.Bind(wx.EVT_ACTIVATE, self._on_save_mark_file_status, self.process_files_tree)
 
         sizer_btn = wx.BoxSizer( wx.HORIZONTAL ) 
         sizer_btn.Add(self.button_run, proportion=0, flag=wx.ALL | wx.ALIGN_LEFT, border=5)
@@ -191,7 +191,7 @@ class RandomSamplerGUI(wx.Frame):
         
     def _on_run_sampler(self, e):
         '''Handles the run sampler button click event 
-        
+
         '''
         file_list = []
         try:
@@ -209,7 +209,6 @@ class RandomSamplerGUI(wx.Frame):
             
             sampled_files = random_sampler(file_list, self.confidence_val, self.precision_val, self.SEED)
             self.SetStatusText('%d files are sampled out of %d files.' % (len(sampled_files), len(file_list)))
-            
             copy_files_with_dir_tree(sampled_files, self.output_dir_path)
             self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(sampled_files), len(file_list)))
             self.process_files_tree.on_changed_output_dir(self.output_folder.GetValue())
@@ -221,18 +220,19 @@ class RandomSamplerGUI(wx.Frame):
         self.Refresh()
         return file_list
     
-    def save_marked_history(self, target_dir, save_files):
+    def _on_update_mark(self, e):
         '''
-        Saves the marked history to a file in a specified folder
+        Handles status update to upper control on new file marked/unmarked
         '''
-        save_filename = 'save history_' + time.asctime(time.localtime())
-        try:
-            with open(os.path.join(target_dir,save_filename), 'w') as f:
-                for save_file in save_files:
-                    f.write(save_file)
-        except Exception:
-            dlg = wx.MessageDialog(self, "Unable to write save history of files.", "Error", wx.ICON_ERROR)
-            dlg.ShowModal()
+        file_count = e.GetClientData()
+        self.SetStatusText("Number of files selected %s." %file_count)
+        
+    def _on_save_mark_file_status(self, e):
+        '''
+        Handles status update to upper control on saving marked file
+        '''
+        update_message = e.GetClientData()
+        self.SetStatusText(str(update_message))
 
 
 def main():
