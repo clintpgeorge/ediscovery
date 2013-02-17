@@ -33,7 +33,7 @@ class file_list_control(wx.Panel):
         self.display_label = wx.StaticText(display_panel, label=self.display_label_text)
         self.target_dir = os.curdir
         self.tree = wx.TreeCtrl(tree_panel, 1, wx.DefaultPosition, (-1,-1),
-                                wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS\
+                                wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT
                                 | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HAS_VARIABLE_ROW_HEIGHT\
                                 | wx.SUNKEN_BORDER)
         if not os.path.isdir(target_dir):
@@ -94,6 +94,7 @@ class file_list_control(wx.Panel):
         '''
         Fetches the contents of a directory 
         '''
+
         dirname = self.tree.GetItemText(item)
         dir_list = []
         if os.path.isdir(dirname) is  True:
@@ -124,8 +125,8 @@ class file_list_control(wx.Panel):
         file_path = self.tree.GetPyData(current_item)
         try:
             webbrowser.open(file_path)
-        except Exception:
-            dlg = wx.MessageDialog(self, str(Exception), "Cannot open this file", wx.ICON_ERROR)
+        except Exception as anyException:
+            dlg = wx.MessageDialog(self, str(anyException), "Cannot open this file", wx.ICON_ERROR)
             dlg.ShowModal()             
         
     def on_unmarked(self,evt):

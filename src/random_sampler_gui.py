@@ -117,7 +117,6 @@ class RandomSamplerGUI(wx.Frame):
         sizer_main.Add(sizer_input_output,pos = (1,0), span = (1,3), flag =  wx.ALL, border=5)
         sizer_main.Add(sizer_btn, pos = (2,0), span = (1,3), flag = wx.ALIGN_CENTER | wx.ALL, border=5)
         sizer_main.Add(sizer_process_files,pos = (3,0), span = (3,3), flag = wx.EXPAND | wx.ALL, border=5)
-        sizer_main.Add(self.line,pos = (4,0), span = (1,3), flag = wx.ALL, border=5)
         
         self.SetSizerAndFit(sizer_main)
         self.Layout()
@@ -234,7 +233,7 @@ class RandomSamplerGUI(wx.Frame):
         Handles status update to upper control on saving marked file
         '''
         update_message = e.GetClientData()
-        self.SetStatusText("Saved " + str(update_message) + " files at " + self.output_dir_path)
+        self.SetStatusText("Saved " + str(update_message) + " files at " + os.path.basename(self.output_dir_path))
 
 
 def main():
