@@ -57,18 +57,18 @@ class RandomSamplerGUI(wx.Frame):
         
         # Input folder section
         self.input_folder_label = wx.StaticText(self, label="Input directory")
-        self.input_folder = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
-        self.input_folder.SetEditable(False)
-        self.input_folder.SetValue(self.dir_path)
+        self.input_folder_control = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
+        self.input_folder_control.SetEditable(False)
+        self.input_folder_control.SetValue(self.dir_path)
         self.input_folder_button = wx.Button(self, wx.ID_OPEN, "Select")
         self.Bind(wx.EVT_BUTTON, self._on_select_input_folder, self.input_folder_button)
         self.line = wx.StaticLine(self)
         
         # Setting output folder section
         self.output_folder_label = wx.StaticText(self, label="Output directory")
-        self.output_folder = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
-        self.output_folder.SetEditable(False)
-        self.output_folder.SetValue(self.output_dir_path)
+        self.output_folder_control = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
+        self.output_folder_control.SetEditable(False)
+        self.output_folder_control.SetValue(self.output_dir_path)
         self.output_folder_button = wx.Button(self, wx.ID_ANY, "Select")
         self.Bind(wx.EVT_BUTTON, self._on_select_output_folder, self.output_folder_button)
         
@@ -90,10 +90,10 @@ class RandomSamplerGUI(wx.Frame):
         # Layouts 
         sizer_input_output = wx.GridBagSizer(2,2)
         sizer_input_output.Add(self.input_folder_label,pos = (0,0), flag =  wx.ALIGN_LEFT | wx.ALL, border=5 )
-        sizer_input_output.Add(self.input_folder,pos = (0,1), flag = wx.EXPAND | wx.ALL, border=5)
+        sizer_input_output.Add(self.input_folder_control,pos = (0,1), flag = wx.EXPAND | wx.ALL, border=5)
         sizer_input_output.Add(self.input_folder_button,pos = (0,2), flag = wx.EXPAND | wx.ALL, border=5)
         sizer_input_output.Add(self.output_folder_label,pos = (1,0), flag = wx.ALIGN_LEFT | wx.EXPAND | wx.ALL, border=5)
-        sizer_input_output.Add(self.output_folder,pos = (1,1), flag = wx.EXPAND | wx.ALL, border=5)
+        sizer_input_output.Add(self.output_folder_control,pos = (1,1), flag = wx.EXPAND | wx.ALL, border=5)
         sizer_input_output.Add(self.output_folder_button,pos = (1,2), flag = wx.EXPAND | wx.ALL, border=5)
         sizer_input_output.Add(self.confidence_text,pos=(2,0), flag = wx.ALL, border=5)
         sizer_input_output.Add(self.confidence,pos=(2,1), flag = wx.ALL, border=5)
@@ -105,6 +105,8 @@ class RandomSamplerGUI(wx.Frame):
         sizer_process_files.Add(self.process_files_tree, 0, wx.EXPAND | wx.ALL, border=5)
         self.Bind(wx.EVT_FILEPICKER_CHANGED, self._on_update_mark, self.process_files_tree)
         self.Bind(wx.EVT_ACTIVATE, self._on_save_mark_file_status, self.process_files_tree)
+        # Not showing the file_list_control initially
+        self.process_files_tree.Show(False) 
 
         sizer_btn = wx.BoxSizer( wx.HORIZONTAL ) 
         sizer_btn.Add(self.button_run, proportion=0, flag=wx.ALL | wx.ALIGN_LEFT, border=5)
@@ -175,7 +177,7 @@ class RandomSamplerGUI(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             self.dir_path = dlg.GetPath()
         dlg.Destroy()
-        self.input_folder.SetValue(self.dir_path)
+        self.input_folder_control.SetValue(self.dir_path)
         self.SetStatusText("The selected input folder is %s" % self.dir_path)
         
     def _on_select_output_folder(self, e):
@@ -186,7 +188,7 @@ class RandomSamplerGUI(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             self.output_dir_path = dlg.GetPath()
         dlg.Destroy()
-        self.output_folder.SetValue(self.output_dir_path)
+        self.output_folder_control.SetValue(self.output_dir_path)
         self.SetStatusText("The selected output folder is %s" % self.output_dir_path)
         
     def _on_run_sampler(self, e):
@@ -211,7 +213,7 @@ class RandomSamplerGUI(wx.Frame):
             self.SetStatusText('%d files are sampled out of %d files.' % (len(sampled_files), len(file_list)))
             copy_files_with_dir_tree(sampled_files, self.output_dir_path)
             self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(sampled_files), len(file_list)))
-            self.process_files_tree.on_changed_output_dir(self.output_folder.GetValue())
+            self.process_files_tree.on_changed_output_dir(self.output_folder_control.GetValue())
         except Exception as anyException:
             dlg = wx.MessageDialog(self, str(anyException), "Error", wx.ICON_ERROR)
             dlg.ShowModal()
@@ -232,7 +234,7 @@ class RandomSamplerGUI(wx.Frame):
         Handles status update to upper control on saving marked file
         '''
         update_message = e.GetClientData()
-        self.SetStatusText(str(update_message))
+        self.SetStatusText("Saved " + str(update_message) + " files at " + self.output_dir_path)
 
 
 def main():

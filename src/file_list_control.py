@@ -19,15 +19,20 @@ class file_list_control(wx.Panel):
          
         
         # Instantiating all the sizers
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox2 = wx.BoxSizer(wx.VERTICAL)
-        panel1 = wx.Panel(self, -1)
-        panel2 = wx.Panel(self, -1)
+        control_layout_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        tree_sizer = wx.BoxSizer(wx.VERTICAL)
+        control_sizer = wx.BoxSizer(wx.VERTICAL)
+        display_sizer = wx.BoxSizer(wx.VERTICAL)
+        tree_panel = wx.Panel(self, -1)
+        display_panel = wx.Panel(self, -1)
         
         # Adding controls
+        self.tree_label_text = "Directory contents"
+        self.tree_label = wx.StaticText(tree_panel, label=self.tree_label_text)
+        self.display_label_text = "Selected files"
+        self.display_label = wx.StaticText(display_panel, label=self.display_label_text)
         self.target_dir = os.curdir
-        self.tree = wx.TreeCtrl(panel1, 1, wx.DefaultPosition, (-1,-1),
+        self.tree = wx.TreeCtrl(tree_panel, 1, wx.DefaultPosition, (-1,-1),
                                 wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS\
                                 | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HAS_VARIABLE_ROW_HEIGHT\
                                 | wx.SUNKEN_BORDER)
@@ -40,20 +45,29 @@ class file_list_control(wx.Panel):
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_sel_changed, id=1)
         self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_open_file, id=1)
         self.tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_marked, self.tree, id =1)
-        self.display = wx.ListBox(panel2, -1, style=wx.LB_SINGLE )
+        self.display = wx.ListBox(display_panel, -1, style=wx.LB_SINGLE )
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_unmarked, self.display, id = wx.ID_DELETE)
-        self.activate = wx.Button(self,wx.ID_APPLY, "Mark")
-        self.Bind(wx.EVT_BUTTON, self.on_save_marked_history, self.activate, id = wx.ID_ANY)
+        self.save_button = wx.Button(self,wx.ID_APPLY, "Save List")
+        self.select_button = wx.Button(self,wx.ID_ADD, "Select")
+        self.remove_button = wx.Button(self,wx.ID_REMOVE, "Remove")
+        self.Bind(wx.EVT_BUTTON, self.on_save_marked_history, self.save_button, id = wx.ID_ANY)
+        self.Bind(wx.EVT_BUTTON, self.on_marked, self.select_button, id = wx.ID_ANY)
+        self.Bind(wx.EVT_BUTTON, self.on_unmarked, self.remove_button, id = wx.ID_ANY)
         
         #Setting layout
-        vbox.Add(self.tree, 1, wx.EXPAND)
-        vbox2.Add(self.display, 1, wx.EXPAND)
-        hbox.Add(panel1, 1, wx.EXPAND)
-        hbox.Add(panel2, 1, wx.EXPAND)
-        hbox.Add(self.activate, 1)
-        panel1.SetSizer(vbox)
-        panel2.SetSizer(vbox2)
-        self.SetSizer(hbox) 
+        tree_sizer.Add(self.tree_label)
+        tree_sizer.Add(self.tree, 1, wx.EXPAND)
+        display_sizer.Add(self.display_label)
+        display_sizer.Add(self.display, 1, wx.EXPAND)
+        control_sizer.Add(self.select_button, 1, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER, 5)
+        control_sizer.Add(self.remove_button, 1, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER, 5)
+        control_sizer.Add(self.save_button, 1, wx.ALL | wx.EXPAND | wx.ALIGN_CENTER, 5)
+        control_layout_sizer.Add(tree_panel, 1, wx.EXPAND)
+        control_layout_sizer.Add(display_panel, 1, wx.EXPAND)
+        control_layout_sizer.Add(control_sizer, 1)
+        tree_panel.SetSizer(tree_sizer)
+        display_panel.SetSizer(display_sizer)
+        self.SetSizer(control_layout_sizer) 
         
         self.Centre()
          
@@ -93,11 +107,12 @@ class file_list_control(wx.Panel):
         Gets the file path marked in the file tree by a right click
         and adds it to display control which shows selected files 
         '''
-        current_item = evt.GetItem()
-        file_path = self.tree.GetPyData(current_item)
-        if not file_path in self.display.GetItems():
-            self.display.Append(self.tree.GetPyData(current_item))
-        fire_mark  = wx.PyCommandEvent(wx.EVT_FILEPICKER_CHANGED.typeId)
+        current_items = self.tree.GetSelections()
+        for current_item in current_items:
+            file_path = self.tree.GetPyData(current_item)
+            if not file_path in self.display.GetItems():
+                self.display.Append(self.tree.GetPyData(current_item))
+            fire_mark  = wx.PyCommandEvent(wx.EVT_FILEPICKER_CHANGED.typeId)
         fire_mark.SetClientData(self.display.GetCount())
         self.GetEventHandler().ProcessEvent(fire_mark)
 
