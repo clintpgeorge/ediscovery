@@ -33,7 +33,7 @@ class file_list_control(wx.Panel):
         self.display_label = wx.StaticText(display_panel, label=self.display_label_text)
         self.target_dir = os.curdir
         self.tree = wx.TreeCtrl(tree_panel, 1, wx.DefaultPosition, (-1,-1),
-                                wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT
+                                wx.TR_HAS_BUTTONS | wx.TR_LINES_AT_ROOT
                                 | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HAS_VARIABLE_ROW_HEIGHT\
                                 | wx.SUNKEN_BORDER)
         if not os.path.isdir(target_dir):
@@ -145,7 +145,7 @@ class file_list_control(wx.Panel):
         Saves the marked history to a file in a specified folder
         '''
         save_files = self.display.GetStrings()
-        save_filename = 'save history_' + time.asctime(time.localtime())
+        save_filename = 'save history ' + time.strftime("%b %d %Y %H %M %S",time.localtime())
         fire_mark_saved  = wx.PyCommandEvent(wx.EVT_ACTIVATE.typeId)
         try:
             with open(os.path.join(self.target_dir,save_filename), 'w') as file_handle:
