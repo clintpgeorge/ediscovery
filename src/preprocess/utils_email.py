@@ -13,6 +13,7 @@ Created On: Jan 29, 2013
 import re 
 import quopri
 import codecs
+import email 
 from nltk.tokenize import PunktWordTokenizer
 
 
@@ -87,4 +88,38 @@ def load_en_stopwords(filename):
         for line in fSW: 
             stopwords.append(line.strip().lower())
     return stopwords
+
+
+
+def parse_plain_text_email(file_path):
+    '''Processes a single email file in plain/text format 
+    
+    Arguments: 
+        file_path - the email file path 
+    '''
+    
+    # Handles different text encoding 
+    email_text = ''
+    for body_charset in 'US-ASCII', 'ISO-8859-1', 'UTF-8':
+        try:
+            fp = codecs.open(file_path, 'r', body_charset)
+            email_text = fp.read()
+            email_text = email_text.encode('UTF-8') # encodes to UNICODE 
+            fp.close()
+        except UnicodeError: pass
+        else: break
+    if email_text == '': return ''
+    
+    msg = email.message_from_string(email_text)  
+    
+    receiver = str(msg['to'])
+    sender = str(msg['from'])
+    cc = str(msg['cc'])
+    subject = str(msg['subject'])
+    body_text = msg.get_payload()
+    message_text =  ' '.join(line.strip() for line in body_text.strip().split('\n') if line.strip() <> '')
+    message_text = ' '.join(punkt_word_tokenizer(message_text.lower())) 
+    
+    return (receiver, sender, cc, subject, message_text)
+    
 
