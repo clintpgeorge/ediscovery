@@ -32,13 +32,14 @@ class file_list_control(wx.Panel):
         self.display_label_text = "Selected files"
         self.display_label = wx.StaticText(display_panel, label=self.display_label_text)
         self.target_dir = os.curdir
-        self.tree = wx.TreeCtrl(tree_panel, 1, wx.DefaultPosition, (-1,-1),
-                                wx.TR_HAS_BUTTONS | wx.TR_LINES_AT_ROOT
+        self.tree = wx.TreeCtrl(tree_panel, 1, wx.DefaultPosition, wx.Size(300,200),
+                                wx.TR_HAS_BUTTONS
                                 | wx.TR_FULL_ROW_HIGHLIGHT | wx.TR_HAS_VARIABLE_ROW_HEIGHT\
                                 | wx.SUNKEN_BORDER)
         if not os.path.isdir(target_dir):
-            target_dir = os.path.curdir
+            target_dir = os.path.curdir 
         root = self.tree.AddRoot(target_dir)
+        self.tree.SetPyData(root, os.path.abspath(target_dir))
         self.get_dirs(root)
         
         # Binding events
@@ -80,6 +81,7 @@ class file_list_control(wx.Panel):
         self.tree.DeleteAllItems()
         self.display.Clear()
         root = self.tree.AddRoot(target_dir)
+        self.tree.SetPyData(root, os.path.abspath(target_dir))
         self.get_dirs(root)
 
     
@@ -94,14 +96,14 @@ class file_list_control(wx.Panel):
         '''
         Fetches the contents of a directory 
         '''
-
-        dirname = self.tree.GetItemText(item)
+        
+        dirname = self.tree.GetPyData(item)
         dir_list = []
-        if os.path.isdir(dirname) is  True:
+        if os.path.isdir(dirname) is  True and self.tree.GetChildrenCount(item, False) == 0:
             dir_list += os.listdir(dirname)
         for pathname in dir_list:
             new_item = self.tree.AppendItem(item,pathname)
-            self.tree.SetPyData(new_item,os.path.abspath(pathname))
+            self.tree.SetPyData(new_item,os.path.join(dirname, pathname))
             
     def on_marked(self, evt):
         '''
@@ -145,7 +147,7 @@ class file_list_control(wx.Panel):
         Saves the marked history to a file in a specified folder
         '''
         save_files = self.display.GetStrings()
-        save_filename = 'save history ' + time.strftime("%b %d %Y %H %M %S",time.localtime())
+        save_filename = 'save history_' + time.asctime(time.localtime())
         fire_mark_saved  = wx.PyCommandEvent(wx.EVT_ACTIVATE.typeId)
         try:
             with open(os.path.join(self.target_dir,save_filename), 'w') as file_handle:
