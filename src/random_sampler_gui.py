@@ -24,10 +24,8 @@ class RandomSamplerGUI(wx.Frame):
 
         # Sets the banner text 
         
-        banner_text = """Random sampler for E-Discovery: 
-        This application randomly (selects) samples the files given in the input directory 
-        and copies to the output directory. The sample size is calculated by the given 
-        confidence interval."""
+        banner_text = """Random sampler: 
+        This application randomly selects the files given in the input directory and copies to the output directory. The sample size is calculated by the given confidence interval."""
         self.banner = wx.StaticText(self, id=wx.ID_ABOUT, label=banner_text, style=wx.TE_AUTO_SCROLL)
         
         # A Status bar in the bottom of the window
@@ -45,8 +43,10 @@ class RandomSamplerGUI(wx.Frame):
         # Sets the main window properties 
         
         self.Center()
+        self.SetTitle('Random file sampler')
         self.SetSize((800,600))
         self.Show(True)
+        
 
 
                             
@@ -247,4 +247,3 @@ if __name__ == '__main__':
     main()
     
     
-

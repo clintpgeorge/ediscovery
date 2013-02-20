@@ -105,5 +105,19 @@ def read_config(file_name):
     return config_dict
 
 
+def get_file_info(dir_path):
+    '''Loads the file paths from a given directory 
+    through directory walk 
+    
+    Returns: 
+        a list of tuples 
+    Arguments: 
+        the directory path 
+    '''
+    file_tuples = []
+    for root, dirs, files in os.walk(dir_path): # Walk directory tree
+        for f in files:
+            file_tuples.append((root, dirs, f)) 
+    return file_tuples
 
 

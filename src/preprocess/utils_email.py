@@ -117,9 +117,9 @@ def parse_plain_text_email(file_path):
     cc = str(msg['cc'])
     subject = str(msg['subject'])
     body_text = msg.get_payload()
-    message_text =  ' '.join(line.strip() for line in body_text.strip().split('\n') if line.strip() <> '')
-    message_text = ' '.join(punkt_word_tokenizer(message_text.lower())) 
+#    message_text =  ' '.join(line.strip() for line in body_text.strip().split('\n') if line.strip() <> '')
+#    message_text = ' '.join(punkt_word_tokenizer(message_text.lower())) 
     
-    return (receiver, sender, cc, subject, message_text)
+    return (receiver, sender, cc, subject, body_text)
     
 
