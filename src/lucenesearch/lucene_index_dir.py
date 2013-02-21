@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+
+'''
+This script is to create lucene indices for 
+all files stored in a directory 
+   
+Created By: Clint P. George 
+Created On: Feb 19, 2013 
+
+'''
+
 import os
 import sys 
 from lucene import IndexWriter, StandardAnalyzer, Document, Field, LimitTokenCountAnalyzer
@@ -41,6 +52,21 @@ STD_ANALYZER = StandardAnalyzer(Version.LUCENE_CURRENT)
 
 
 def index_plain_text_emails(input_dir, store_dir):
+    '''
+    Indexes all the plain text emails in the input directory 
+    and stores the index in the store_dir  
+    
+    Arguments: 
+        input_dir - input directory absolute path 
+        store_dir - index store directory absolute path 
+    Returns: 
+        None 
+
+    TODO: 
+        1. Need to handle dates 
+        2. Need to handle general meta data of files (e.g. last modified date, modified by, owner, etc)
+    '''
+    
     
     if not os.path.exists(store_dir): 
         os.mkdir(store_dir)
@@ -89,6 +115,9 @@ def index_plain_text_emails(input_dir, store_dir):
 
 
 def test_search(index_dir):
+    '''
+    The test function to test the created index 
+    '''
 
     initVM()
     store = SimpleFSDirectory(File(index_dir))
@@ -121,8 +150,8 @@ if __name__ == '__main__':
         print "Usage: python lucene_index_dir.py <input dir> <store dir>"
 
     else:
-        input_dir = '/home/cgeorge/data/maildir' # sys.argv[1]
-        store_dir = '/home/cgeorge/data/lucene_index'# sys.argv[2]
+        input_dir = sys.argv[1] # '/home/cgeorge/data/maildir' # 
+        store_dir = sys.argv[2] # '/home/cgeorge/data/lucene_index'# 
 
         index_plain_text_emails(input_dir, store_dir)
 
