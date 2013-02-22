@@ -1,12 +1,16 @@
 Data preprocess module 
 ======================
 
-This module contains the source code for preprocessing datasets. 
+This module contains the source code for preprocessing datasets. This includes methods such as 
+* deduplication 
+* deNISTing 
+* handling different file types 
+* NLP techniques such as tokenization, stemming, lemmatization, stopwords removal  
 
 
 Supported public datasets 
 -------------------------
-Enron [http://www.cs.cmu.edu/~enron/]: This module has scripts to 
+[Enron](http://www.cs.cmu.edu/~enron/) dataset: This module has scripts to 
 - process the enron emails which is in the plain text format
 - insert into Postgres database
 - convert the documents collections to topic modeling input format (e.g. Blei corpus)
@@ -15,14 +19,14 @@ Enron [http://www.cs.cmu.edu/~enron/]: This module has scripts to
 
 Source dependencies
 --------------------
-- The Gensim package is used for creating the LDA corpus and dictionary for topic modeling. Please see http://radimrehurek.com/gensim/ for more details 
+The [Gensim package](http://radimrehurek.com/gensim/) is used for creating the LDA corpus and dictionary for topic modeling. 
 
 
 
 Database configurations 
 ------------------------
 
-This section describes how to setup a Postgres server in a Unix environment. For a detailed review see http://www.cyberciti.biz/faq/howto-add-postgresql-user-account/
+This section describes how to setup a Postgres server in a Unix environment. For a detailed review [see](http://www.cyberciti.biz/faq/howto-add-postgresql-user-account/)
 
 Steps: 
 
