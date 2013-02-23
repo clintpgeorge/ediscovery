@@ -1,5 +1,6 @@
 import wx
 import os
+import tempfile
 from wx.lib.masked import NumCtrl
 from file_utils import find_files_in_folder, copy_files_with_dir_tree
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES
@@ -9,10 +10,10 @@ class RandomSamplerGUI(wx.Frame):
     
     def __init__(self, parent):
         
-        wx.Frame.__init__(self, parent)
+        wx.Frame.__init__(self, parent)        
         
-        self.dir_path = os.getcwd()
-        self.output_dir_path = os.getcwd()
+        self.dir_path = tempfile.gettempdir() # a cross-platform way of getting the path to the temp directory
+        self.output_dir_path = tempfile.gettempdir()
         self.confidence_val = 0.75
         self.precision_val = 0.01
         self.SEED = 2013 
@@ -194,7 +195,6 @@ class RandomSamplerGUI(wx.Frame):
         '''Handles the run sampler button click event 
 
         '''
-        file_list = []
         try:
             
             self.confidence_val = float(self.confidence.GetValue()) / 100.0
@@ -210,16 +210,23 @@ class RandomSamplerGUI(wx.Frame):
             
             sampled_files = random_sampler(file_list, self.confidence_val, self.precision_val, self.SEED)
             self.SetStatusText('%d files are sampled out of %d files.' % (len(sampled_files), len(file_list)))
+            
             copy_files_with_dir_tree(sampled_files, self.output_dir_path)
             self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(sampled_files), len(file_list)))
+
+            
+            # shows the tree list control 
             self.process_files_tree.on_changed_output_dir(self.output_folder_control.GetValue())
+            self.process_files_tree.Show(True)
+            self.GetSizer().Layout()
+            self.Refresh()
+
+        
+        
         except Exception as anyException:
             dlg = wx.MessageDialog(self, str(anyException), "Error", wx.ICON_ERROR)
             dlg.ShowModal()
-        self.process_files_tree.Show(True)
-        self.GetSizer().Layout()
-        self.Refresh()
-        return file_list
+
     
     def _on_update_mark(self, e):
         '''

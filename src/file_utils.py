@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 '''
-TODO: (1) Add description ???
+This script has all the basic file access/process 
+utility functions 
 
 Created by: Abhiram J.  
 Created On: Jan 28, 2013   
@@ -29,7 +30,7 @@ def copy_files_with_dir_tree(file_paths, output_dir_path, in_file_prefix=''):
     
     for src_file_path in file_paths:
         s_fp = src_file_path[len(lcp):] # ignores LCP from path   
-        dest_dp, _ = os.path.split(s_fp)
+        dest_dp, _ = os.path.split(s_fp) # to preserve source files directory structure 
         dest_dir_path = os.path.join(output_dir_path, dest_dp)
 
         if not os.path.exists(dest_dir_path):
@@ -47,9 +48,10 @@ def copy_random_files(dir_path, random_list):
     TODO: Throws error for sample already existing. Need to fix
     
     Returns: 
-        ??
+        None 
     Arguments: 
-        ??
+        dir_path - output directory path 
+        random_list - list of file paths 
     '''
     try:
         if  not os.path.exists(dir_path):
@@ -64,7 +66,7 @@ def copy_random_files(dir_path, random_list):
     except OSError:
             print str(OSError)
             print "Cannot copy the required files. Check that destination directory is empty"
-    return
+    
 
 
 def find_files_in_folder(input_dir):
