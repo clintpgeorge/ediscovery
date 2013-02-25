@@ -27,9 +27,9 @@ class file_list_control(wx.Panel):
         display_panel = wx.Panel(self, -1)
         
         # Adding controls
-        self.tree_label_text = "Directory contents"
+        self.tree_label_text = "Sampled documents to be reviewed"
         self.tree_label = wx.StaticText(tree_panel, label=self.tree_label_text)
-        self.display_label_text = "Selected files"
+        self.display_label_text = "Exceptions"
         self.display_label = wx.StaticText(display_panel, label=self.display_label_text)
         self.target_dir = os.curdir
         self.tree = wx.TreeCtrl(tree_panel, 1, wx.DefaultPosition, wx.Size(300,200),
@@ -48,9 +48,9 @@ class file_list_control(wx.Panel):
         self.tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_marked, self.tree, id =1)
         self.display = wx.ListBox(display_panel, -1, style=wx.LB_SINGLE )
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_unmarked, self.display, id = wx.ID_DELETE)
-        self.save_button = wx.Button(self,wx.ID_APPLY, "Save List")
-        self.select_button = wx.Button(self,wx.ID_ADD, "Select")
-        self.remove_button = wx.Button(self,wx.ID_REMOVE, "Remove")
+        self.save_button = wx.Button(self,wx.ID_APPLY, "Log exceptions")
+        self.select_button = wx.Button(self,wx.ID_ADD, "Add to list")
+        self.remove_button = wx.Button(self,wx.ID_REMOVE, "Remove file")
         self.Bind(wx.EVT_BUTTON, self.on_save_marked_history, self.save_button, id = wx.ID_ANY)
         self.Bind(wx.EVT_BUTTON, self.on_marked, self.select_button, id = wx.ID_ANY)
         self.Bind(wx.EVT_BUTTON, self.on_unmarked, self.remove_button, id = wx.ID_ANY)

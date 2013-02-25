@@ -12,7 +12,7 @@ import os
 import shutil
 import ConfigParser
 
-def copy_files_with_dir_tree(file_paths, output_dir_path, in_file_prefix=''):
+def copy_files_with_dir_tree(lcp, file_paths, output_dir_path, in_file_prefix=''):
     '''Copies the files given in path list into 
     the specified output directory. The directory structure 
     is preserved during this process. 
@@ -21,12 +21,14 @@ def copy_files_with_dir_tree(file_paths, output_dir_path, in_file_prefix=''):
         None 
         
     Arguments: 
+        lcp - input directory 
         file_paths - list of files paths 
         output_dir_path - the output directory path 
     '''
     
     # find the longest common prefix (LCP)
-    lcp = os.path.commonprefix(file_paths) 
+    # lcp = os.path.commonprefix(file_paths) 
+    
     for src_file_path in file_paths:
         s_fp = os.path.relpath(src_file_path, lcp)#src_file_path[len(lcp):] # ignores LCP from path   
         dest_dp, _ = os.path.split(s_fp) # to preserve source files directory structure 
@@ -35,38 +37,10 @@ def copy_files_with_dir_tree(file_paths, output_dir_path, in_file_prefix=''):
         if not os.path.exists(dest_dir_path):
             os.makedirs(dest_dir_path)
         
-        if in_file_prefix <> '':
-            
+        if in_file_prefix <> '':            
             src_file_path = os.path.join(in_file_prefix, src_file_path)
         
         shutil.copy2(src_file_path, dest_dir_path)
-
-
-def copy_random_files(dir_path, random_list):
-    '''Copies the random files to a given folder. 
-    
-    TODO: Throws error for sample already existing. Need to fix
-    
-    Returns: 
-        None 
-    Arguments: 
-        dir_path - output directory path 
-        random_list - list of file paths 
-    '''
-    try:
-        if  not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-        i = 1
-        for file_name in random_list:
-            curr_file_name = os.path.basename(file_name)
-            shutil.copy2(file_name, dir_path)
-            # Do rename to avoid overwriting files with same name
-            os.rename(os.path.join(dir_path, curr_file_name), os.path.join(dir_path, curr_file_name + "--" + str(i)))
-            i += 1
-    except OSError:
-            print str(OSError)
-            print "Cannot copy the required files. Check that destination directory is empty"
-    
 
 
 def find_files_in_folder(input_dir):
@@ -108,3 +82,31 @@ def read_config(file_name):
 
 
 
+'''
+Obsolete methods 
+'''
+
+def copy_random_files(dir_path, random_list):
+    '''Copies the random files to a given folder. 
+    
+    TODO: Throws error for sample already existing. Need to fix
+    
+    Returns: 
+        None 
+    Arguments: 
+        dir_path - output directory path 
+        random_list - list of file paths 
+    '''
+    try:
+        if  not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        i = 1
+        for file_name in random_list:
+            curr_file_name = os.path.basename(file_name)
+            shutil.copy2(file_name, dir_path)
+            # Do rename to avoid overwriting files with same name
+            os.rename(os.path.join(dir_path, curr_file_name), os.path.join(dir_path, curr_file_name + "--" + str(i)))
+            i += 1
+    except OSError:
+            print str(OSError)
+            print "Cannot copy the required files. Check that destination directory is empty"

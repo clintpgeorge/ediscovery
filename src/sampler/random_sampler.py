@@ -18,7 +18,7 @@ import argparse
 import datetime
 import logging
 from file_utils import find_files_in_folder, copy_random_files
-from decimal import *
+from decimal import Decimal
 
 # setting up z , the diction of confidence -> zvalues
 SUPPORTED_CONFIDENCES = {}
@@ -31,7 +31,8 @@ SUPPORTED_CONFIDENCES[Decimal('0.90')] =1.645
 SUPPORTED_CONFIDENCES[Decimal('0.85')] = 1.439
 SUPPORTED_CONFIDENCES[Decimal('0.75')] = 1.151
 
-
+DEFAULT_CONFIDENCE_LEVEL = Decimal('95.000')
+DEFAULT_CONFIDENCE_INTERVAL = 5.0
 
 # PREVALENCE is the likelihood of finding a responsive/positive example in population
 # We assume this as 0.5 (most conservative) as we do not know prior information about data
@@ -108,7 +109,7 @@ def main():
 
 
 def random_sampler(message_id_list, confidence, precision, SEEDCONSTANT):
-	'''Description ??
+	'''
 	Returns a random sample as a list from an input list with certain precision and confidence
 	
 	Returns: 

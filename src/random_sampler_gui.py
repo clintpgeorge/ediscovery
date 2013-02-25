@@ -3,9 +3,9 @@ import os
 import tempfile
 from wx.lib.masked import NumCtrl
 from file_utils import find_files_in_folder, copy_files_with_dir_tree
-from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES
-from file_list_control import file_list_control
-from decimal import *
+from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
+from gui.file_list_control import file_list_control
+from decimal import Decimal
 
 class RandomSamplerGUI(wx.Frame):
     
@@ -26,10 +26,10 @@ class RandomSamplerGUI(wx.Frame):
 
         # Sets the banner text 
         
-        banner_text = """Random sampler for E-Discovery: 
-        This application randomly (selects) samples the files given in the input directory 
-        and copies to the output directory. The sample size is calculated by the given 
-        confidence interval."""
+        banner_text = """Random sampler: 
+        This application randomly samples the files given in the input directory 
+        and copies them to the output directory. The sample size is calculated by 
+        the given confidence interval."""
         self.banner = wx.StaticText(self, id=wx.ID_ABOUT, label=banner_text, style=wx.TE_AUTO_SCROLL)
         
         # A Status bar in the bottom of the window
@@ -45,7 +45,7 @@ class RandomSamplerGUI(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self._on_exit)
 
         # Sets the main window properties 
-        
+        self.SetTitle('Random Sampler')
         self.Center()
         self.SetSize((800,600))
         self.Show(True)
@@ -58,7 +58,7 @@ class RandomSamplerGUI(wx.Frame):
         '''
         
         # Input folder section
-        self.input_folder_label = wx.StaticText(self, label="Input directory")
+        self.input_folder_label = wx.StaticText(self, label="Data folder")
         self.input_folder_control = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
         self.input_folder_control.SetEditable(False)
         self.input_folder_control.SetValue(self.dir_path)
@@ -67,7 +67,7 @@ class RandomSamplerGUI(wx.Frame):
         self.line = wx.StaticLine(self)
         
         # Setting output folder section
-        self.output_folder_label = wx.StaticText(self, label="Output directory")
+        self.output_folder_label = wx.StaticText(self, label="Sampled output")
         self.output_folder_control = wx.TextCtrl(self, style=wx.TE_BESTWRAP, size=(400, -1))
         self.output_folder_control.SetEditable(False)
         self.output_folder_control.SetValue(self.output_dir_path)
@@ -81,13 +81,13 @@ class RandomSamplerGUI(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self._on_run_sampler, self.button_run)
         
         # Setting parameters
-        self.confidence_text = wx.StaticText(self, label="Confidence (%)")
-        self.precision_text = wx.StaticText(self, label="Precision (%)")
+        self.confidence_text = wx.StaticText(self, label="Confidence Level (%)")
+        self.precision_text = wx.StaticText(self, label="Confidence Interval (%)")
         
-        z_values = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
-        z_values.sort()
-        self.confidence = wx.ComboBox(self, -1, z_values[0], size=(150, -1), choices=z_values, style=wx.CB_READONLY) 
-        self.precision = wx.lib.masked.NumCtrl(self, size=(20,1), fractionWidth=0, integerWidth=2, allowNegative=False, min=1, max=99, value=1) 
+        confidence_levels = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
+        confidence_levels.sort()
+        self.confidence = wx.ComboBox(self, -1, str(DEFAULT_CONFIDENCE_LEVEL), size=(150, -1), choices=confidence_levels, style=wx.CB_READONLY) 
+        self.precision = wx.lib.masked.NumCtrl(self, size=(20,1), fractionWidth=0, integerWidth=2, allowNegative=False, min=1, max=99, value=DEFAULT_CONFIDENCE_INTERVAL) 
 
         # Layouts 
         sizer_input_output = wx.GridBagSizer(2,2)
@@ -150,8 +150,8 @@ class RandomSamplerGUI(wx.Frame):
         '''
         
         about_text = """Random sampler: 
-        This application randomly (selects) samples the files 
-        given in the input directory and copies to the output 
+        This application randomly samples the files 
+        given in the input directory and copies them to the output 
         directory. The sample size is calculated by the given 
         confidence interval."""
         dlg = wx.MessageDialog(self, about_text, "About Random Sampler", wx.OK)
@@ -212,7 +212,7 @@ class RandomSamplerGUI(wx.Frame):
             sampled_files = random_sampler(file_list, self.confidence_val, self.precision_val, self.SEED)
             self.SetStatusText('%d files are sampled out of %d files.' % (len(sampled_files), len(file_list)))
             
-            copy_files_with_dir_tree(sampled_files, self.output_dir_path)
+            copy_files_with_dir_tree(self.dir_path, sampled_files, self.output_dir_path)
             self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(sampled_files), len(file_list)))
 
             
