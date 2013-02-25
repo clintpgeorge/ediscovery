@@ -27,9 +27,8 @@ def copy_files_with_dir_tree(file_paths, output_dir_path, in_file_prefix=''):
     
     # find the longest common prefix (LCP)
     lcp = os.path.commonprefix(file_paths) 
-    
     for src_file_path in file_paths:
-        s_fp = src_file_path[len(lcp):] # ignores LCP from path   
+        s_fp = os.path.relpath(src_file_path, lcp)#src_file_path[len(lcp):] # ignores LCP from path   
         dest_dp, _ = os.path.split(s_fp) # to preserve source files directory structure 
         dest_dir_path = os.path.join(output_dir_path, dest_dp)
 
@@ -37,6 +36,7 @@ def copy_files_with_dir_tree(file_paths, output_dir_path, in_file_prefix=''):
             os.makedirs(dest_dir_path)
         
         if in_file_prefix <> '':
+            
             src_file_path = os.path.join(in_file_prefix, src_file_path)
         
         shutil.copy2(src_file_path, dest_dir_path)

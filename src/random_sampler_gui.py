@@ -5,6 +5,7 @@ from wx.lib.masked import NumCtrl
 from file_utils import find_files_in_folder, copy_files_with_dir_tree
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES
 from file_list_control import file_list_control
+from decimal import *
 
 class RandomSamplerGUI(wx.Frame):
     
@@ -83,7 +84,7 @@ class RandomSamplerGUI(wx.Frame):
         self.confidence_text = wx.StaticText(self, label="Confidence (%)")
         self.precision_text = wx.StaticText(self, label="Precision (%)")
         
-        z_values = ['%.3f' % (w * 100.0) for w in  SUPPORTED_CONFIDENCES.keys()]
+        z_values = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
         z_values.sort()
         self.confidence = wx.ComboBox(self, -1, z_values[0], size=(150, -1), choices=z_values, style=wx.CB_READONLY) 
         self.precision = wx.lib.masked.NumCtrl(self, size=(20,1), fractionWidth=0, integerWidth=2, allowNegative=False, min=1, max=99, value=1) 
@@ -197,7 +198,7 @@ class RandomSamplerGUI(wx.Frame):
         '''
         try:
             
-            self.confidence_val = float(self.confidence.GetValue()) / 100.0
+            self.confidence_val = Decimal(self.confidence.GetValue()) / Decimal('100')
             self.precision_val = float(self.precision.GetValue()) / 100.0 
             
             if not os.path.exists(self.dir_path) or not os.path.exists(self.output_dir_path):
