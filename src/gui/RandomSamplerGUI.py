@@ -17,9 +17,9 @@ import wx.xrc
 class RandomSamplerGUI ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Random Sampler", pos = wx.DefaultPosition, size = wx.Size( 1000,-1 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.STAY_ON_TOP|wx.SYSTEM_MENU|wx.HSCROLL|wx.TAB_TRAVERSAL )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Random Sampler", pos = wx.DefaultPosition, size = wx.Size( 1024,800 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.FRAME_FLOAT_ON_PARENT|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.STAY_ON_TOP|wx.SYSTEM_MENU|wx.HSCROLL|wx.TAB_TRAVERSAL )
 		
-		self.SetSizeHintsSz( wx.Size( 1000,500 ), wx.DefaultSize )
+		self.SetSizeHintsSz( wx.Size( 1024,800 ), wx.DefaultSize )
 		self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 		
@@ -153,13 +153,65 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_main.Add( sbsizer_sampler, 0, wx.ALL|wx.EXPAND, 10 )
 		
-		sbsizer_samples = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"Samples" ), wx.VERTICAL )
+		bsizer_samples = wx.BoxSizer( wx.VERTICAL )
 		
 		self._panel_samples = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( 950,300 ), wx.TAB_TRAVERSAL )
-		sbsizer_samples.Add( self._panel_samples, 0, wx.EXPAND |wx.ALL, 10 )
+		self._panel_samples.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHTTEXT ) )
+		
+		sbsizer_samples = wx.StaticBoxSizer( wx.StaticBox( self._panel_samples, wx.ID_ANY, u"Samples" ), wx.VERTICAL )
+		
+		gbsizer_sampler = wx.GridBagSizer( 0, 5 )
+		gbsizer_sampler.SetFlexibleDirection( wx.BOTH )
+		gbsizer_sampler.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._gdc_results = wx.GenericDirCtrl( self._panel_samples, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 400,250 ), wx.DIRCTRL_3D_INTERNAL|wx.SUNKEN_BORDER, wx.EmptyString, 0 )
+		
+		self._gdc_results.ShowHidden( False )
+		gbsizer_sampler.Add( self._gdc_results, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.BOTTOM|wx.EXPAND|wx.LEFT|wx.RIGHT, 5 )
+		
+		self._st_docs_to_be_reviewed = wx.StaticText( self._panel_samples, wx.ID_ANY, u"Documents to be reviewed", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_docs_to_be_reviewed.Wrap( -1 )
+		self._st_docs_to_be_reviewed.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		
+		gbsizer_sampler.Add( self._st_docs_to_be_reviewed, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		
+		self.m_staticText9 = wx.StaticText( self._panel_samples, wx.ID_ANY, u"Marked files", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText9.Wrap( -1 )
+		self.m_staticText9.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		
+		gbsizer_sampler.Add( self.m_staticText9, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		
+		_lb_marked_filesChoices = []
+		self._lb_marked_files = wx.ListBox( self._panel_samples, wx.ID_ANY, wx.DefaultPosition, wx.Size( 400,250 ), _lb_marked_filesChoices, 0 )
+		gbsizer_sampler.Add( self._lb_marked_files, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.BOTTOM|wx.LEFT|wx.RIGHT, 5 )
+		
+		bsizer_samples_buttons = wx.BoxSizer( wx.VERTICAL )
+		
+		self._btn_add_list_item = wx.Button( self._panel_samples, wx.ID_ANY, u"Add to list", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bsizer_samples_buttons.Add( self._btn_add_list_item, 1, wx.ALL, 5 )
+		
+		self._btn_remove_list_item = wx.Button( self._panel_samples, wx.ID_ANY, u"Remove from list", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bsizer_samples_buttons.Add( self._btn_remove_list_item, 1, wx.ALL, 5 )
+		
+		self._btn_log_files = wx.Button( self._panel_samples, wx.ID_ANY, u"Log details", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bsizer_samples_buttons.Add( self._btn_log_files, 0, wx.ALL, 5 )
 		
 		
-		bsizer_main.Add( sbsizer_samples, 1, wx.ALL|wx.EXPAND, 10 )
+		gbsizer_sampler.Add( bsizer_samples_buttons, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5 )
+		
+		
+		gbsizer_sampler.AddGrowableCol( 3 )
+		gbsizer_sampler.AddGrowableRow( 2 )
+		
+		sbsizer_samples.Add( gbsizer_sampler, 0, wx.EXPAND, 5 )
+		
+		
+		self._panel_samples.SetSizer( sbsizer_samples )
+		self._panel_samples.Layout()
+		bsizer_samples.Add( self._panel_samples, 0, wx.EXPAND |wx.ALL, 10 )
+		
+		
+		bsizer_main.Add( bsizer_samples, 0, wx.EXPAND, 5 )
 		
 		
 		self.SetSizer( bsizer_main )
@@ -177,6 +229,10 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_run_sampler.Bind( wx.EVT_BUTTON, self._on_click_run_sampler )
 		self._btn_copy_files.Bind( wx.EVT_BUTTON, self._on_click_copy_files )
 		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_exit )
+		self._lb_marked_files.Bind( wx.EVT_LISTBOX_DCLICK, self._on_dclick_lb_marked_files )
+		self._btn_add_list_item.Bind( wx.EVT_BUTTON, self._on_click_add_list_item )
+		self._btn_remove_list_item.Bind( wx.EVT_BUTTON, self._on_click_remove_list_item )
+		self._btn_log_files.Bind( wx.EVT_BUTTON, self._on_click_log_details )
 	
 	def __del__( self ):
 		pass
@@ -208,6 +264,18 @@ class RandomSamplerGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_click_exit( self, event ):
+		event.Skip()
+	
+	def _on_dclick_lb_marked_files( self, event ):
+		event.Skip()
+	
+	def _on_click_add_list_item( self, event ):
+		event.Skip()
+	
+	def _on_click_remove_list_item( self, event ):
+		event.Skip()
+	
+	def _on_click_log_details( self, event ):
 		event.Skip()
 	
 

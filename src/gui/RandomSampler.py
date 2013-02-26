@@ -6,12 +6,15 @@ Created on Feb 26, 2013
 import os 
 import wx 
 import tempfile
+import webbrowser
+import time
 
 from decimal import Decimal 
 from gui.RandomSamplerGUI import RandomSamplerGUI
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
 from file_utils import find_files_in_folder, copy_files_with_dir_tree
-from gui.file_list_control import file_list_control
+
+
 
 class RandomSampler(RandomSamplerGUI):
     '''
@@ -35,24 +38,30 @@ class RandomSampler(RandomSamplerGUI):
         
 
         self._set_confidence_level_and_interval()
+
+        self._gdc_tree = self._gdc_results.GetTreeCtrl()
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self._on_item_double_click, self._gdc_tree, id=1)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self._on_add_list, self._gdc_tree, id =1)
         
-        _bsizer_process_files = wx.BoxSizer(wx.HORIZONTAL)
-        
-        self._process_files_tree = file_list_control(self._panel_samples, 0, self.output_dir_path)
-        _bsizer_process_files.Add(self._process_files_tree, 0, wx.EXPAND | wx.ALL, border=5)
-        
-        self.Bind(wx.EVT_FILEPICKER_CHANGED, self._on_update_mark, self._process_files_tree)
-        self.Bind(wx.EVT_ACTIVATE, self._on_save_mark_file_status, self._process_files_tree)
-        self._process_files_tree.Show(False) # Not showing the file_list_control initially
-        self._panel_samples.SetSizerAndFit(_bsizer_process_files) 
+        self._panel_samples.Show(False) # make the tree list control invisible  
 
         self.Center()
         self.Show(True)
    
+    def _on_remove_list(self, event):
+        '''
+        Action on double click on display panel:
+        Delete a file from the selected list(display)
+        '''
+        self._lb_marked_files.Delete(self._lb_marked_files.GetSelection())
+        
+        fire_unmark  = wx.PyCommandEvent(wx.EVT_FILEPICKER_CHANGED.typeId)
+        fire_unmark.SetClientData(self._lb_marked_files.GetCount())
+        self.GetEventHandler().ProcessEvent(fire_unmark)
 
     def _on_appln_close( self, event ):
         super(RandomSampler, self)._on_appln_close(event) 
-        self._handles_close()
+        self._on_close()
     
     def _on_mitem_about( self, event ):
         super(RandomSampler, self)._on_mitem_about(event) 
@@ -71,11 +80,11 @@ class RandomSampler(RandomSamplerGUI):
     
     def _on_mitem_exit( self, event ):
         super(RandomSampler, self)._on_mitem_exit(event) 
-        self._handles_close()
+        self._on_close()
     
     def _on_click_sel_data_dir( self, event ):
         """
-        Open a folder for input
+        Select the data folder
         
         """
         super(RandomSampler, self)._on_click_sel_data_dir(event) 
@@ -90,7 +99,7 @@ class RandomSampler(RandomSamplerGUI):
     
     def _on_click_sel_output_dir( self, event ):
         """ 
-        Open a folder for output 
+        Selects the output folder 
         
         """
         super(RandomSampler, self)._on_click_sel_output_dir(event) 
@@ -132,17 +141,17 @@ class RandomSampler(RandomSamplerGUI):
 
             
             # shows the tree list control 
-            self._process_files_tree.on_changed_output_dir(self.output_dir_path)
-            self._process_files_tree.Show(True)
+            self._gdc_results.SetPath(self.output_dir_path)
+            self._gdc_results.SetDefaultPath(self.output_dir_path)
             
+            self._panel_samples.Show(True)
             self._panel_samples.GetSizer().Layout()
-            self._panel_samples.Refresh()
+            self.GetSizer().Layout()
 
         
         except Exception as anyException:
             dlg = wx.MessageDialog(self, str(anyException), "Error", wx.ICON_ERROR)
             dlg.ShowModal()
-
     
     def _on_update_mark(self, e):
         '''
@@ -156,18 +165,56 @@ class RandomSampler(RandomSamplerGUI):
         Handles status update to upper control on saving marked file
         '''
         update_message = e.GetClientData()
-        self.SetStatusText("Saved " + str(update_message) + " files at " + os.path.basename(self.output_dir_path))
-
-        
+        self.SetStatusText("Saved " + str(update_message) + " files at " + os.path.basename(self.output_dir_path))        
     
     def _on_click_copy_files( self, event ):
         super(RandomSampler, self)._on_click_copy_files(event) 
     
     def _on_click_exit( self, event ):
         super(RandomSampler, self)._on_click_exit(event) 
-        self._handles_close()
+        self._on_close()
+ 
+ 
+    def _on_dclick_lb_marked_files( self, event ):
+        super(RandomSampler, self)._on_dclick_lb_marked_files(event) 
+        self._on_remove_list(event)
    
-    def _handles_close(self):
+    def _on_click_add_list_item( self, event ):
+        super(RandomSampler, self)._on_click_add_list_item(event) 
+        self._on_add_list(event)
+        
+    
+    def _on_click_remove_list_item( self, event ):
+        super(RandomSampler, self)._on_click_remove_list_item(event) 
+        self._on_remove_list(event)
+    
+    def _on_click_log_details( self, event ):
+        '''
+        Saves the marked history to a file in a specified folder
+        '''
+        super(RandomSampler, self)._on_click_log_details(event) 
+
+        save_files = self._lb_marked_files.GetStrings()
+        
+        save_filename = 'Log_history_' + time.strftime("%b%d%Y%H%M%S", time.localtime())
+        fire_mark_saved  = wx.PyCommandEvent(wx.EVT_ACTIVATE.typeId)
+        
+        try:
+            with open(os.path.join(self.target_dir,save_filename), 'w') as file_handle:
+                for save_file in save_files:
+                    file_handle.write(save_file + '\n')
+            fire_mark_saved.SetClientData(self._lb_marked_files.GetCount())
+            self.GetEventHandler().ProcessEvent(fire_mark_saved)
+        
+        except Exception as anyException:
+            print str(anyException)
+            fire_mark_saved.SetClientData(str(anyException))
+            self.GetEventHandler().ProcessEvent(fire_mark_saved)
+            dlg = wx.MessageDialog(self, "Unable to write save history of files.", "Error", wx.ICON_ERROR)
+            dlg.ShowModal()
+   
+   
+    def _on_close(self):
         
         dlg = wx.MessageDialog(self,
                                "Do you really want to close this application?",
@@ -196,7 +243,35 @@ class RandomSampler(RandomSamplerGUI):
         self._tc_confidence_interval.SetValue(str(DEFAULT_CONFIDENCE_INTERVAL))
         
         
+    def _on_item_double_click (self, event):
+        '''
+        Open a file
+        '''
+        try:
+            webbrowser.open(self._gdc_results.GetFilePath())
+        except Exception as anyException:
+            dlg = wx.MessageDialog(self, str(anyException), "Cannot open this file", wx.ICON_ERROR)
+            dlg.ShowModal()   
+
+
+    def _on_add_list(self, event):
+        '''
+        Gets the file path marked in the file tree by a right click
+        and adds it to display control which shows selected files 
+        '''
+        try:
+
+            file_path = self._gdc_results.GetFilePath()
+            if not file_path in self._lb_marked_files.GetItems():
+                self._lb_marked_files.Append(file_path)
+                
+            fire_mark  = wx.PyCommandEvent(wx.EVT_FILEPICKER_CHANGED.typeId)
+            fire_mark.SetClientData(self._lb_marked_files.GetCount())
+            self.GetEventHandler().ProcessEvent(fire_mark)
         
+        except Exception as anyException:
+            dlg = wx.MessageDialog(self, str(anyException), "Cannot mark files", wx.ICON_ERROR)
+            dlg.ShowModal() 
 
 def main():
     '''
