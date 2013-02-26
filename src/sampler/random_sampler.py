@@ -32,7 +32,7 @@ SUPPORTED_CONFIDENCES[Decimal('0.85')] = 1.439
 SUPPORTED_CONFIDENCES[Decimal('0.75')] = 1.151
 
 DEFAULT_CONFIDENCE_LEVEL = Decimal('95.000')
-DEFAULT_CONFIDENCE_INTERVAL = 5.0
+DEFAULT_CONFIDENCE_INTERVAL = 5
 
 # PREVALENCE is the likelihood of finding a responsive/positive example in population
 # We assume this as 0.5 (most conservative) as we do not know prior information about data
