@@ -226,6 +226,8 @@ class RandomSamplerGUI ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self._on_mitem_exit, id = self._mitem_exit.GetId() )
 		self._btn_sel_data_dir.Bind( wx.EVT_BUTTON, self._on_click_sel_data_dir )
 		self._btn_sel_output_dir.Bind( wx.EVT_BUTTON, self._on_click_sel_output_dir )
+		self._cbx_confidence_levels.Bind( wx.EVT_COMBOBOX, self._on_confidence_changed )
+		self._tc_confidence_interval.Bind( wx.EVT_TEXT, self._on_precision_changed )
 		self._btn_run_sampler.Bind( wx.EVT_BUTTON, self._on_click_run_sampler )
 		self._btn_copy_files.Bind( wx.EVT_BUTTON, self._on_click_copy_files )
 		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_exit )
@@ -255,6 +257,12 @@ class RandomSamplerGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_click_sel_output_dir( self, event ):
+		event.Skip()
+	
+	def _on_confidence_changed( self, event ):
+		event.Skip()
+	
+	def _on_precision_changed( self, event ):
 		event.Skip()
 	
 	def _on_click_run_sampler( self, event ):

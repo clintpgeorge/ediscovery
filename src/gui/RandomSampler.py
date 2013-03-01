@@ -1,7 +1,7 @@
 '''
 Created on Feb 26, 2013
 
-@author: cgeorge
+@author: abhiramj  & cgeorge
 '''
 import os 
 import wx 
@@ -12,7 +12,7 @@ import time
 from decimal import Decimal 
 from gui.RandomSamplerGUI import RandomSamplerGUI
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
-from file_utils import find_files_in_folder, copy_files_with_dir_tree
+from file_utils import find_files_in_folder, copy_files_with_dir_tree, convert_size, start_thread, copy_with_dialog
 
 
 
@@ -26,22 +26,35 @@ class RandomSampler(RandomSamplerGUI):
         '''
         Constructor
         '''
+        # Some value needs to initialized for this to run without exception
+        self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
+        self.precision_val = DEFAULT_CONFIDENCE_INTERVAL
+                
         # Calls the parent class's method 
         super(RandomSampler, self).__init__(parent) 
         
+        
+        self._st_num_samples.Hide()
         self.dir_path = tempfile.gettempdir() # a cross-platform way of getting the path to the temp directory
         self.output_dir_path = tempfile.gettempdir()
         self._tc_data_dir.SetValue(self.dir_path)
         self._tc_output_dir.SetValue(self.output_dir_path)
         
-        self.SEED = 2013 
+        self.file_list = find_files_in_folder(self.dir_path)
+        self._st_num_data_dir_files.SetLabel('%d files found' % len(self.file_list))
         
+        self.SEED = 2013
 
         self._set_confidence_level_and_interval()
+        self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()
+                                          )/ Decimal('100')
+        self.get_precision_as_float()
 
         self._gdc_tree = self._gdc_results.GetTreeCtrl()
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self._on_item_double_click, self._gdc_tree, id=1)
-        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self._on_add_list, self._gdc_tree, id =1)
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self._on_item_double_click,
+                  self._gdc_tree, id=1)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self._on_add_list,
+                  self._gdc_tree, id =1)
         
         self._panel_samples.Show(False) # make the tree list control invisible  
 
@@ -89,14 +102,83 @@ class RandomSampler(RandomSamplerGUI):
         """
         super(RandomSampler, self)._on_click_sel_data_dir(event) 
         
-        dlg = wx.DirDialog(self, "Choose the input folder to sample", self.dir_path, wx.DD_DIR_MUST_EXIST)
+        dlg = wx.DirDialog(self, "Choose the input folder to sample",
+                           self.dir_path, wx.DD_DIR_MUST_EXIST)
         if dlg.ShowModal() == wx.ID_OK:
             self.dir_path = dlg.GetPath()
         dlg.Destroy()
         self._tc_data_dir.SetValue(self.dir_path)
         self.SetStatusText("The selected input folder is %s" % self.dir_path)
         
+        self.file_list = find_files_in_folder(self.dir_path)
+        self._st_num_data_dir_files.SetLabel('%d files found' % len(self.file_list))
+        
+        
+        self.sampled_files = random_sampler(self.file_list,
+                                            self.confidence_val,
+                                            self.precision_val, self.SEED)
+        self.SetStatusText('%d files are sampled out of %d files.'
+                               % (len(self.sampled_files), len(self.file_list)))
+        self._st_num_samples.Show()
+        self.sampled_files = random_sampler(self.file_list,
+                                                self.confidence_val,
+                                                self.precision_val, self.SEED)
+        self._st_num_samples.Show()
+        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        
+    def _on_precision_changed(self, event):
+        '''
+        Triggers an event and updates the sample list on precision - aka 
+        confidence interval change.
+        '''
+        super(RandomSampler, self)._on_precision_changed(event)
+        # Maybe intermittently null string, escaping 
+        try:
+            self.get_precision_as_float()
+        except ValueError:
+            return None 
+        self.sampled_files = random_sampler(self.file_list, self.confidence_val,
+                                            self.precision_val, self.SEED)
+        self.SetStatusText('%d files are sampled out of %d files.'
+                               % (len(self.sampled_files), len(self.file_list)))
+        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        self._st_num_samples.Show()
     
+    def get_precision_as_float(self):
+        '''
+        Converts precision to float
+        
+        Returns: Nothing
+        Arguments: Nothing
+        '''
+        try:
+            self.precision_val = float(self._tc_confidence_interval.GetValue()
+                                       ) / 100.0 
+        except ValueError:
+            self.precision_val = float(int(self._tc_confidence_interval.GetValue())
+                                       ) / 100.0 
+            
+        
+    def _on_confidence_changed(self, event):
+        '''
+        Triggers an event and updates the sample list on confidence - aka 
+        confidence level change
+        '''
+        
+        
+        super(RandomSampler, self)._on_confidence_changed(event)
+        self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()
+                                          )/ Decimal('100')
+        self.sampled_files = random_sampler(self.file_list, self.confidence_val,
+                                            self.precision_val, self.SEED)
+        self.SetStatusText('%d files are sampled out of %d files.'
+                               % (len(self.sampled_files), len(self.file_list)))
+        self._st_num_samples.Show()
+        self._st_num_samples.SetLabel('%d files found' % len(self.sampled_files))
+        self.GetSizer().Layout()
+
+        
+        
     def _on_click_sel_output_dir( self, event ):
         """ 
         Selects the output folder 
@@ -104,7 +186,8 @@ class RandomSampler(RandomSamplerGUI):
         """
         super(RandomSampler, self)._on_click_sel_output_dir(event) 
         
-        dlg = wx.DirDialog(self, "Choose the output folder to save", self.output_dir_path, wx.DD_DIR_MUST_EXIST)
+        dlg = wx.DirDialog(self, "Choose the output folder to save",
+                           self.output_dir_path, wx.DD_DIR_MUST_EXIST)
         if dlg.ShowModal() == wx.ID_OK:
             self.output_dir_path = dlg.GetPath()
         dlg.Destroy()
@@ -122,24 +205,26 @@ class RandomSampler(RandomSamplerGUI):
         
         try:
             
-            self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()) / Decimal('100')
-            self.precision_val = float(self._tc_confidence_interval.GetValue()) / 100.0 
-            
-            if not os.path.exists(self.dir_path) or not os.path.exists(self.output_dir_path):
-                dlg = wx.MessageDialog(self, "Please enter a valid input/output directory", "Error", wx.ICON_ERROR)
+            self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()
+                                          )/ Decimal('100')
+            self.get_precision_as_float()
+            if (not os.path.exists(self.dir_path) or
+                not os.path.exists(self.output_dir_path)):
+                dlg = wx.MessageDialog(self, "Please enter a valid \
+                input/output directory", "Error", wx.ICON_ERROR)
                 dlg.ShowModal()
                 return 
             
-            file_list = find_files_in_folder(self.dir_path)
-            self.SetStatusText('%d files found in %s.' % (len(file_list), self.dir_path) )
             
-            sampled_files = random_sampler(file_list, self.confidence_val, self.precision_val, self.SEED)
-            self.SetStatusText('%d files are sampled out of %d files.' % (len(sampled_files), len(file_list)))
+            self.sampled_files = random_sampler(self.file_list,
+                                                self.confidence_val,
+                                                self.precision_val, self.SEED)
+            self.SetStatusText('%d files are sampled out of %d files.'
+                               % (len(self.sampled_files), len(self.file_list)))
+            self._st_num_samples.Show()
+            self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
             
-            copy_files_with_dir_tree(self.dir_path, sampled_files, self.output_dir_path)
-            self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(sampled_files), len(file_list)))
-
-            
+                        
             # shows the tree list control 
             self._gdc_results.SetPath(self.output_dir_path)
             self._gdc_results.SetDefaultPath(self.output_dir_path)
@@ -150,7 +235,8 @@ class RandomSampler(RandomSamplerGUI):
 
         
         except Exception as anyException:
-            dlg = wx.MessageDialog(self, str(anyException), "Error", wx.ICON_ERROR)
+            dlg = wx.MessageDialog(self, str(anyException), "Error",
+                                   wx.ICON_ERROR)
             dlg.ShowModal()
     
     def _on_update_mark(self, e):
@@ -165,10 +251,47 @@ class RandomSampler(RandomSamplerGUI):
         Handles status update to upper control on saving marked file
         '''
         update_message = e.GetClientData()
-        self.SetStatusText("Saved " + str(update_message) + " files at " + os.path.basename(self.output_dir_path))        
+        self.SetStatusText("Saved " + str(update_message) + " files at " 
+                           + os.path.basename(self.output_dir_path))        
+    def do_copy(self, total_size, dialog):
+        '''
+        Thread to handle copy
+        '''
+        copy_with_dialog(self.dir_path, self.sampled_files,
+                                     self.output_dir_path, total_size, dialog)
+        wx.CallAfter(dialog.Destroy)
+
+        
     
     def _on_click_copy_files( self, event ):
-        super(RandomSampler, self)._on_click_copy_files(event) 
+        '''
+        Handles event of copy files button pressed
+        '''
+        super(RandomSampler, self)._on_click_copy_files(event)
+        total_file_size = 0
+        try:
+            for x in map(os.path.getsize, self.sampled_files):
+                total_file_size += long(x)
+        except OSError:
+            print "One or more files could not be read due to errors, check permissions", str(OSError)  
+        print_total_file_size = convert_size(total_file_size)
+        dlg = wx.MessageDialog(self,
+                               "Do you really want to copy {} files to {}? This will take {} space".format(len(self.sampled_files),
+                                self.output_dir_path, print_total_file_size),
+                               "Confirm Copy", wx.YES|wx.NO|wx.ICON_QUESTION)
+        result = dlg.ShowModal()
+        
+        if result == wx.ID_YES:
+            progress_dialog = wx.ProgressDialog('Copying', 'Please wait...', parent = self, style = wx.PD_CAN_ABORT
+                                | wx.PD_APP_MODAL
+                                | wx.PD_ELAPSED_TIME
+                                | wx.PD_ESTIMATED_TIME
+                                | wx.PD_REMAINING_TIME)
+            start_thread(self.do_copy, total_file_size, progress_dialog)
+            progress_dialog.ShowModal()
+            self.SetStatusText('%d randomly sampled files (from %d files) are copied \
+            to the output folder.' % (len(self.sampled_files), len(self.file_list)))
+         
     
     def _on_click_exit( self, event ):
         super(RandomSampler, self)._on_click_exit(event) 
@@ -210,7 +333,8 @@ class RandomSampler(RandomSamplerGUI):
             print str(anyException)
             fire_mark_saved.SetClientData(str(anyException))
             self.GetEventHandler().ProcessEvent(fire_mark_saved)
-            dlg = wx.MessageDialog(self, "Unable to write save history of files.", "Error", wx.ICON_ERROR)
+            dlg = wx.MessageDialog(self, "Unable to write save history\
+             of files.", "Error", wx.ICON_ERROR)
             dlg.ShowModal()
    
    
@@ -227,7 +351,9 @@ class RandomSampler(RandomSamplerGUI):
 
     def _set_confidence_level_and_interval(self):
         
-        confidence_levels = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
+        confidence_levels = ['%.3f' % (w * Decimal('100')) 
+                             for w in  SUPPORTED_CONFIDENCES.keys()]
+        confidence_levels.sort()
         self._cbx_confidence_levels.Clear()
         for cl in confidence_levels:
             self._cbx_confidence_levels.Append(cl)
@@ -240,7 +366,7 @@ class RandomSampler(RandomSamplerGUI):
         except ValueError:
             self._cbx_confidence_levels.SetValue(str(DEFAULT_CONFIDENCE_LEVEL))
             
-        self._tc_confidence_interval.SetValue(str(DEFAULT_CONFIDENCE_INTERVAL))
+        self._tc_confidence_interval.SetValue(str(int(DEFAULT_CONFIDENCE_INTERVAL)))
         
         
     def _on_item_double_click (self, event):
@@ -250,7 +376,8 @@ class RandomSampler(RandomSamplerGUI):
         try:
             webbrowser.open(self._gdc_results.GetFilePath())
         except Exception as anyException:
-            dlg = wx.MessageDialog(self, str(anyException), "Cannot open this file", wx.ICON_ERROR)
+            dlg = wx.MessageDialog(self, str(anyException), "Cannot open this file",
+                                    wx.ICON_ERROR)
             dlg.ShowModal()   
 
 
@@ -270,7 +397,8 @@ class RandomSampler(RandomSamplerGUI):
             self.GetEventHandler().ProcessEvent(fire_mark)
         
         except Exception as anyException:
-            dlg = wx.MessageDialog(self, str(anyException), "Cannot mark files", wx.ICON_ERROR)
+            dlg = wx.MessageDialog(self, str(anyException), "Cannot mark files",
+                                    wx.ICON_ERROR)
             dlg.ShowModal() 
 
 def main():

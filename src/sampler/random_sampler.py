@@ -32,7 +32,7 @@ SUPPORTED_CONFIDENCES[Decimal('0.85')] = 1.439
 SUPPORTED_CONFIDENCES[Decimal('0.75')] = 1.151
 
 DEFAULT_CONFIDENCE_LEVEL = Decimal('95.000')
-DEFAULT_CONFIDENCE_INTERVAL = 5
+DEFAULT_CONFIDENCE_INTERVAL = 5.0
 
 # PREVALENCE is the likelihood of finding a responsive/positive example in population
 # We assume this as 0.5 (most conservative) as we do not know prior information about data
@@ -124,7 +124,10 @@ def random_sampler(message_id_list, confidence, precision, SEEDCONSTANT):
 	'''
 
 	random.seed(SEEDCONSTANT)
-
+	
+	# Special case for 0 elements
+	if len(message_id_list) is 0:
+		return []
 
 	# check that the confidence interval is supported
 	if confidence in SUPPORTED_CONFIDENCES:
@@ -139,8 +142,8 @@ def random_sampler(message_id_list, confidence, precision, SEEDCONSTANT):
 		random_sample = random.sample(message_id_list,corrected_sample_size)
 		return random_sample
 	else:
-		logger.debug("Exiting with reason: Confidence interval not supported")
-		raise Exception, "Confidence interval not supported"
+		logger.debug("Exiting with reason: Confidence level not supported")
+		raise Exception, "Confidence level not supported"
 		sys.exit(1)
 
 

@@ -11,6 +11,8 @@ Created On: Jan 28, 2013
 import os
 import shutil
 import ConfigParser
+import threading
+import wx
 
 def copy_files_with_dir_tree(lcp, file_paths, output_dir_path, in_file_prefix=''):
     '''Copies the files given in path list into 
@@ -42,6 +44,42 @@ def copy_files_with_dir_tree(lcp, file_paths, output_dir_path, in_file_prefix=''
         
         shutil.copy2(src_file_path, dest_dir_path)
 
+def copy_with_dialog(lcp, file_paths, output_dir_path, size, dialog, in_file_prefix=''):
+    '''Copies the files given in path list into 
+    the specified output directory. The directory structure 
+    is preserved during this process. 
+    This additionally allows for a progress bar to be set to show
+    progress of copy.
+    
+    Returns: 
+        None 
+        
+    Arguments: 
+        lcp - input directory 
+        file_paths - list of files paths 
+        output_dir_path - the output directory path
+        size - total size of files to copy in bytes
+        dialog - front-end dialog to update 
+    '''
+    
+    # find the longest common prefix (LCP)
+    # lcp = os.path.commonprefix(file_paths) 
+    current_copy = 0
+    for src_file_path in file_paths:
+        s_fp = os.path.relpath(src_file_path, lcp)#src_file_path[len(lcp):] # ignores LCP from path   
+        dest_dp, _ = os.path.split(s_fp) # to preserve source files directory structure 
+        dest_dir_path = os.path.join(output_dir_path, dest_dp)
+
+        if not os.path.exists(dest_dir_path):
+            os.makedirs(dest_dir_path)
+        
+        if in_file_prefix <> '':            
+            src_file_path = os.path.join(in_file_prefix, src_file_path)
+        
+        shutil.copy2(src_file_path, dest_dir_path)
+        current_copy += os.path.getsize(src_file_path)
+        wx.CallAfter(dialog.Update, int(100*current_copy/size))
+        wx.MilliSleep(8)
 
 def find_files_in_folder(input_dir):
     '''Recursive descent to find files in folder.
@@ -80,7 +118,44 @@ def read_config(file_name):
     
     return config_dict
 
+def convert_size(size_bytes):
+    '''
+    Size in bytes to human readable file sizes
+    
+    Returns:
+    Human readable size string
+    
+    Arguments:
+    Size in bytes
+    '''
+    # Unit of reference
+    UNIT_MULTIPLIER = 1024
+    conversion = [
+    (UNIT_MULTIPLIER ** 5, ' PB'),
+    (UNIT_MULTIPLIER ** 4, ' TB'), 
+    (UNIT_MULTIPLIER ** 3, ' GB'), 
+    (UNIT_MULTIPLIER ** 2, ' MB'), 
+    (UNIT_MULTIPLIER ** 1, ' KB'),
+    (UNIT_MULTIPLIER ** 0, (' byte', ' bytes')),
+    ]
+    
+    for factor, suffix in conversion:
+        if size_bytes >= factor:
+            break
+    amount = int(size_bytes/factor)
+    if isinstance(suffix, tuple):
+        singular, multiple = suffix
+        if amount == 1:
+            suffix = singular
+        else:
+            suffix = multiple
+    return str(amount) + suffix
 
+# helper method to run a function in another thread
+def start_thread(func, *args): 
+    thread = threading.Thread(target=func, args=args)
+    thread.setDaemon(True)
+    thread.start()
 
 '''
 Obsolete methods 

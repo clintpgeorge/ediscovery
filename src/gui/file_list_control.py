@@ -40,7 +40,7 @@ class file_list_control(wx.Panel):
             target_dir = os.path.curdir 
         root = self.tree.AddRoot(target_dir)
         self.tree.SetPyData(root, os.path.abspath(target_dir))
-        self.get_dirs(root)
+        self.get_dirs(root,0)
         
         # Binding events
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_sel_changed, id=1)
@@ -82,7 +82,7 @@ class file_list_control(wx.Panel):
         self.display.Clear()
         root = self.tree.AddRoot(target_dir)
         self.tree.SetPyData(root, os.path.abspath(target_dir))
-        self.get_dirs(root)
+        self.get_dirs(root,0)
 
     
     def on_sel_changed(self, event):
@@ -90,21 +90,29 @@ class file_list_control(wx.Panel):
         Action on opening a directory in the file tree
         '''
         item =  event.GetItem()
-        self.get_dirs(item)
+        self.get_dirs(item,0)
+        self.tree.Refresh()
         
-    def get_dirs(self, item):
+    def get_dirs(self, item, level):
         '''
         Fetches the contents of a directory 
         '''
-        
+        if level == 2:
+            return  
         dirname = self.tree.GetPyData(item)
         dir_list = []
         if os.path.isdir(dirname) is  True and self.tree.GetChildrenCount(item, False) == 0:
-            dir_list += os.listdir(dirname)
-        for pathname in dir_list:
-            new_item = self.tree.AppendItem(item,pathname)
-            self.tree.SetPyData(new_item,os.path.join(dirname, pathname))
+            try:
+                dir_list += os.listdir(dirname)
+                for pathname in dir_list:
+                    new_item = self.tree.AppendItem(item,pathname)
+                    self.tree.SetPyData(new_item,os.path.join(dirname, pathname))
+                    self.get_dirs(new_item, level +1)
+
+            except OSError:
+                None
             
+                        
     def on_marked(self, evt):
         '''
         Gets the file path marked in the file tree by a right click
