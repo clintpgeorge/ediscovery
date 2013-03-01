@@ -13,9 +13,10 @@ Created By: Clint P. George
 
 
 import numpy as np
-import logging, gensim
+import gensim
 
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+CHUNK_SIZE = 10000
+
 
 def is_number(s):
     '''Checks whether a given token is a number 
@@ -64,61 +65,44 @@ def normalize_rows(arr):
             arr[row, :] = 0 
     return arr 
 
+def run_lda_estimation(dictionary_file, ldac_file, lda_mdl_file, lda_beta_file, lda_theta_file, lda_index_file, num_topics, num_passes):
+    '''The main function that does the LDA estimation 
+    process and saves all the model parameters and the 
+    index created by the Gensim Similarity class.   
+    '''
 
-'''
-Performs LDA estimation process 
-
-
-TODO: make it a proper executable with parameters (instead of hard coding)
-'''
-
-# Initializes the variables 
-
-dictionary_file = 'fs_enron.dict'
-ldac_file = 'fs_enron.ldac'
-lda_mdl_file = 'fs_enron.lda_mdl'
-lda_beta_file = 'fs_enron.lda_beta'
-lda_theta_file = 'fs_enron.lda_theta'
-lda_index_file = 'fs_enron.lda_index'
-num_topics = 100
-passes = 10 
-
-
-# loads the corpus 
-
-corpus = gensim.corpora.BleiCorpus(ldac_file)
-id2word = gensim.corpora.Dictionary().load(dictionary_file)
-
-# runs the LDA inference 
-
-lda = gensim.models.ldamodel.LdaModel(corpus=corpus, id2word=id2word, num_topics=num_topics, update_every=1, chunksize=10000, passes=passes)
-lda.save(lda_mdl_file)
-
-# saves the LDA beta 
-
-beta = lda.expElogbeta
-np.savetxt(lda_beta_file, beta)
-
-# Saves document topic distributions 
-
-doc_topics = lda[corpus] # get topic probability distribution for a document
-num_docs = len(doc_topics)
-theta_matrix = np.zeros((num_docs, num_topics))
-count = 0
-for doc in doc_topics: 
-    doc = dict(doc)
-    theta_matrix[count, doc.keys()] = doc.values()
-    count += 1 
-np.savetxt(lda_theta_file, theta_matrix)
-
-
-# Saves index 
-
-index = gensim.similarities.MatrixSimilarity(lda[corpus]) # transform corpus to LDA topic space and index it
-index.save(lda_index_file)
-
-
-
+    # loads the corpus 
+    
+    corpus = gensim.corpora.BleiCorpus(ldac_file)
+    id2word = gensim.corpora.Dictionary().load(dictionary_file)
+    
+    # runs the LDA inference 
+    
+    lda = gensim.models.ldamodel.LdaModel(corpus=corpus, id2word=id2word, num_topics=num_topics, update_every=1, chunksize=CHUNK_SIZE, passes=num_passes)
+    lda.save(lda_mdl_file)
+    
+    # saves the LDA beta 
+    
+    beta = lda.expElogbeta
+    np.savetxt(lda_beta_file, beta)
+    
+    # Saves document topic distributions 
+    
+    doc_topics = lda[corpus] # get topic probability distribution for a document
+    num_docs = len(doc_topics)
+    theta_matrix = np.zeros((num_docs, num_topics))
+    count = 0
+    for doc in doc_topics: 
+        doc = dict(doc)
+        theta_matrix[count, doc.keys()] = doc.values()
+        count += 1 
+    np.savetxt(lda_theta_file, theta_matrix)
+    
+    
+    # Saves index 
+    
+    index = gensim.similarities.MatrixSimilarity(lda[corpus]) # transform corpus to LDA topic space and index it
+    index.save(lda_index_file)
 
 
 
