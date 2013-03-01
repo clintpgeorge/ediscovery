@@ -10,13 +10,18 @@ Created On: Feb 19, 2013
 '''
 
 import os
-import sys 
-from lucene import IndexWriter, StandardAnalyzer, Document, Field, LimitTokenCountAnalyzer
+import logging 
+from lucene import IndexWriter, StandardAnalyzer, Document, Field, LimitTokenCountAnalyzer 
 from lucene import SimpleFSDirectory, File, initVM, Version
 from lucene import IndexSearcher, QueryParser
-from preprocess.utils_email import parse_plain_text_email 
-from file_utils import get_file_info
+from utils.utils_email import parse_plain_text_email 
+from utils.utils_file import get_file_paths_index, load_file_paths_index, store_file_paths_index
 
+'''
+The analyzer used for both indexing and searching  
+'''
+initVM()
+STD_ANALYZER = StandardAnalyzer(Version.LUCENE_CURRENT) 
 
 class MetadataType:
     '''
@@ -27,6 +32,7 @@ class MetadataType:
 
     FILE_NAME = 'file_name'
     FILE_PATH = 'file_path' 
+    FILE_ID = 'file_id' 
 
     # for email files 
         
@@ -45,19 +51,17 @@ class MetadataType:
               'email_bcc', 'email_date']
 
 
-'''
-The analyzer used for both indexing and searching  
-'''
-STD_ANALYZER = StandardAnalyzer(Version.LUCENE_CURRENT) 
 
 
-def index_plain_text_emails(input_dir, store_dir):
+
+def index_plain_text_emails(data_folder, path_index_file, store_dir):
     '''
     Indexes all the plain text emails in the input directory 
     and stores the index in the store_dir  
     
     Arguments: 
-        input_dir - input directory absolute path 
+        data_folder - input directory absolute path 
+        path_index_file - file paths index file 
         store_dir - index store directory absolute path 
     Returns: 
         None 
@@ -71,55 +75,63 @@ def index_plain_text_emails(input_dir, store_dir):
     if not os.path.exists(store_dir): 
         os.mkdir(store_dir)
     
-    initVM()
+    
+    if os.path.exists(path_index_file): 
+        logging.info('Loading file paths index...')
+        file_tuples = load_file_paths_index(path_index_file)
+        logging.info('%d files found in the file paths index.' % len(file_tuples))
+    else: 
+        logging.info('Loading files in the data folder %s...' % data_folder)
+        file_tuples = get_file_paths_index(data_folder)
+        logging.info('%d email documents found.' % len(file_tuples))
+    
+        store_file_paths_index(path_index_file, file_tuples)
+        logging.info('File paths index is stored into %s' % path_index_file)
+    
+    logging.info('Lucene indexing..')
+    
+    
+    
+    
     store = SimpleFSDirectory(File(store_dir))
     writer = IndexWriter(store, STD_ANALYZER, True, IndexWriter.MaxFieldLength.LIMITED)
     
-    file_tuples = get_file_info(input_dir)
+    print 'Count ', len(file_tuples)
     
-    # Stores the email paths into a text 
-    # file for future reference 
-    file_paths = os.path.join(store_dir, 'index.file_paths')
-    with open(file_paths, 'w') as fw:
-        for idx, ft in enumerate(file_tuples): 
-            root, _, file_name = ft
-            print >>fw, idx, root, file_name
-    
-    for idx, ft in enumerate(file_tuples): 
-        root, _, file_name = ft
-
+    for ft in file_tuples: 
+        idx, root, file_name = ft
         file_path = os.path.join(root, file_name)
-        print "  File: ", file_name
         
         # parses the emails in plain text format 
         receiver, sender, cc, subject, message_text = parse_plain_text_email(file_path)
 
         doc = Document()
+        doc.add(Field(MetadataType.FILE_ID, str(idx), Field.Store.YES, Field.Index.NOT_ANALYZED))
         doc.add(Field(MetadataType.FILE_NAME, file_name, Field.Store.YES, Field.Index.NOT_ANALYZED, Field.TermVector.YES))
         doc.add(Field(MetadataType.FILE_PATH, file_path, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
         doc.add(Field(MetadataType.EMAIL_RECEIVER, receiver, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
-        doc.add(Field(MetadataType.SENDER, sender, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
+        doc.add(Field(MetadataType.EMAIL_SENDER, sender, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
         doc.add(Field(MetadataType.EMAIL_CC, cc, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
         doc.add(Field(MetadataType.EMAIL_SUBJECT, subject, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
         if len(message_text) > 0:
             doc.add(Field(MetadataType.EMAIL_BODY, message_text, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES))
         else:
-            print "warning: no content in %s" % file_name
+            logging.error("[%d] file: %s - no contents found.", idx, file_name)
 
         writer.addDocument(doc)
+        logging.info("[%d] file: %s - added to index.", idx, file_name)
 
 
     writer.commit()
     writer.close()
 
+    logging.info('All files are indexed.')
 
 
 def test_search(index_dir):
     '''
     The test function to test the created index 
     '''
-
-    initVM()
     store = SimpleFSDirectory(File(index_dir))
     
     import datetime
@@ -140,21 +152,6 @@ def test_search(index_dir):
         table = dict((field.name(), field.stringValue())
                      for field in doc.getFields())
         print table
-
-
-
-
-if __name__ == '__main__':
-    
-    if len(sys.argv) != 3:
-        print "Usage: python lucene_index_dir.py <input dir> <store dir>"
-
-    else:
-        input_dir = sys.argv[1] # '/home/cgeorge/data/maildir' # 
-        store_dir = sys.argv[2] # '/home/cgeorge/data/lucene_index'# 
-
-        index_plain_text_emails(input_dir, store_dir)
-
 
 
 

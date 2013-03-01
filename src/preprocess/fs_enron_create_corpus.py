@@ -3,7 +3,7 @@
 '''
 
 This script is used to parse the enron emails 
-in the palin text format and create an LDA 
+in the plain text format and create an LDA 
 corpus from them. 
 
 Created by: Clint P. George
@@ -11,59 +11,26 @@ Created On: Jan 12, 2013
 
 '''
 
-
 import os 
 import logging
-import argparse
-import codecs
-import email 
+
 from gensim import corpora
-from utils_email import punkt_word_tokenizer, load_en_stopwords
+from utils.utils_email import punkt_word_tokenizer, load_en_stopwords, parse_plain_text_email
+from utils.utils_file import get_file_paths_index, load_file_paths_index, store_file_paths_index
 
-
-def process_msg(t, count):
+def process_msg(file_path_tuple):
     '''Processes a single email file 
     
     Arguments: 
-        t - the email file path information tuple 
-        count - the email uid, which is used for logging 
+        file_path_tuple - a tuple of (idx, root, file_name) 
     '''
     
-    root, _, file_name = t
-    logging.info('[#%d] file: %s' % (count, os.path.join(root, file_name)) )
+    (idx, root, file_name)  = file_path_tuple
+    logging.info('[#%d] file: %s' % (idx, os.path.join(root, file_name)) )
     
-    # Handles different text encoding 
-    email_text = ''
-    for body_charset in 'US-ASCII', 'ISO-8859-1', 'UTF-8':
-        try:
-            fp = codecs.open(os.path.join(root, file_name), 'r', body_charset)
-            email_text = fp.read()
-            email_text = email_text.encode('UTF-8') # encodes to UNICODE 
-            fp.close()
-            logging.info('[#%d] file encoding: %s --> UTF-8' % (count, body_charset))    
-        except UnicodeError: pass
-        else: break
-    if email_text == '': return []
     
-    msg = email.message_from_string(email_text)  
-    
-    receiver = str(msg['to'])
-    sender = str(msg['from'])
-    cc = str(msg['cc'])
-    if receiver is None and sender is None and cc is None: return []
-
-#    body_text = ''
-#    for part in msg.walk():
-#        # each part is a either non-multipart, or another multipart message
-#        # that contains further parts... Message is organized like a tree
-#        if part.get_content_type() == 'text/plain':
-#            body_text = quopri.decodestring(part.get_payload())
-#    if body_text == '': return []
-    body_text = msg.get_payload()
-    lines = body_text.strip().split('\n')
-    message_text =  ' '.join(line.strip() for line in lines if line.strip() <> '')
-    
-    tokens = punkt_word_tokenizer(message_text.lower())
+    _, _, _, _, body_text = parse_plain_text_email(os.path.join(root, file_name))
+    tokens = punkt_word_tokenizer(body_text.lower())
     
     return tokens
 
@@ -83,7 +50,7 @@ def create_dictionary(en_sw_file, file_tuples, dictionary_file, MIN_FREQUENCY, M
     # loads stop words 
     stoplist = load_en_stopwords(en_sw_file)
     # collect statistics about all tokens
-    dictionary = corpora.Dictionary(process_msg(ft, idx+1) for idx, ft in enumerate(file_tuples))
+    dictionary = corpora.Dictionary(process_msg(ft) for ft in file_tuples)
     
     # remove stop words and words that appear only once
     stop_ids = [dictionary.token2id[stopword] for stopword in stoplist if stopword in dictionary.token2id]
@@ -97,22 +64,6 @@ def create_dictionary(en_sw_file, file_tuples, dictionary_file, MIN_FREQUENCY, M
     logging.info(str(dictionary))
 
 
-def get_file_info(dir_path):
-    '''Loads the file paths from a given directory 
-    through directory walk 
-    
-    Returns: 
-        a list of tuples 
-    Arguments: 
-        the directory path 
-    '''
-    file_tuples = []
-    for root, dirs, files in os.walk(dir_path): # Walk directory tree
-        for f in files:
-            file_tuples.append((root, dirs, f)) 
-    return file_tuples
-
-
 class TextCorpus(object):
     '''The text corpus class 
     
@@ -120,7 +71,7 @@ class TextCorpus(object):
         a corpus object 
     Arguments: 
         _dictionary - a dictionary object 
-        _file_tuples - a list of file details 
+        _file_tuples - a list of file details (idx, root, file_name) 
     '''
     
     def __init__(self, _dictionary, _file_tuples):
@@ -130,69 +81,32 @@ class TextCorpus(object):
          
     def __iter__(self):
 
-        for idx, ft in enumerate(self.file_tuples):
-            tokens = process_msg(ft, idx+1)
+        for ft in self.file_tuples:
+            tokens = process_msg(ft)
             yield self.dictionary.doc2bow(tokens)
 
 
-
-
-
-
-'''
-The main function call 
-
-Examples: 
-    python fs_enron_create_corpus.py -h 
-    python fs_enron_create_corpus.py -l -d /media/Store/Research/datasets/enron/maildir/
-
-'''
-if __name__=="__main__":
+def build_lda_corpus(data_folder, path_index_file, stop_words_file, dictionary_file, ldac_file, min_frequency, min_word_len):
+    '''
+    The main function that does the job! 
     
-    arg_parser = argparse.ArgumentParser('Enron email topic modeling:')
-    arg_parser.add_argument("-d", dest="directory", type=str, help="the root directory for all the mails", required=True)
-    arg_parser.add_argument("-l", "--log", dest="log", default=False, action="store_true", help="log details into a log file (enron_insert_db.log)")
-    arg_parser.add_argument("-w", dest="stop_words_file", type=str, help="Stop words file", default='en_stopwords')
-    arg_parser.add_argument("-m", dest="min_frequency", type=int, help="Minimum frequency of vocabulary terms", default=15)
-    arg_parser.add_argument("-i", dest="min_word_len", type=int, help="Minimum length of vocabulary terms", default=2)
+    '''
     
-    output_folder = arg_parser.parse_args()
-
-    # create file handler which 
-    # logs even debug messages
-    if output_folder.log: 
-        logging.basicConfig(filename='fs_enron_create_corpus.log', 
-                            format='%(asctime)s : %(levelname)s : %(message)s', 
-                            level=logging.DEBUG)
+    if os.path.exists(path_index_file): 
+        logging.info('Loading file paths index...')
+        file_tuples = load_file_paths_index(path_index_file)
+        logging.info('%d files found in the index.' % len(file_tuples))
     else: 
-        logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', 
-                            level=logging.DEBUG)
-        
-    
-    
-    logging.info('=============================================================================================================')
-    
-    logging.info('Email root directory: %s' % output_folder.directory)
-    
-    logging.info('Loads email paths...')
-    file_tuples = get_file_info(output_folder.directory)
-    logging.info('%d email documents found.' % len(file_tuples))
-    
-    dictionary_file = 'fs_enron.dict'
-    ldac_file = 'fs_enron.ldac'
-    email_paths = 'fs_enron.email_paths'
-    
-    # Stores the email paths into a text 
-    # file for future reference 
-    with open(email_paths, 'w') as fw:
-        for idx, ft in enumerate(file_tuples): 
-            root, _, file_name = ft
-            print >>fw, idx, root, file_name
-        
-    
+        logging.info('Loading files in the data folder %s...' % data_folder)
+        file_tuples = get_file_paths_index(data_folder)
+        logging.info('%d email documents found.' % len(file_tuples))
+
+        store_file_paths_index(path_index_file, file_tuples)
+        logging.info('File paths index is stored into %s' % path_index_file)
+
     
     # Creates the dictionary 
-    create_dictionary(output_folder.stop_words_file, file_tuples, dictionary_file, output_folder.min_frequency, output_folder.min_word_len)
+    create_dictionary(stop_words_file, file_tuples, dictionary_file, min_frequency, min_word_len)
     
     # Creates the corpus 
     dictionary = corpora.Dictionary().load(dictionary_file)       
@@ -201,7 +115,8 @@ if __name__=="__main__":
     
     logging.info('The Enron corpus building is completed.')
     
-    logging.info('=============================================================================================================')
+    
+    
 
 
 

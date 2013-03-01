@@ -3,7 +3,7 @@
 '''
 
 This script has all the utility functions for 
-processing the enron email dataset  
+processing the enron email data set  
 
 Created by: Clint P. George
 Created On: Jan 29, 2013   
@@ -72,7 +72,7 @@ def punkt_word_tokenizer(text):
     
     '''
 
-    
+    text = ' '.join(text.split()) # removes newline, tab, and white space        
     tokens = tokenizer.tokenize(text)
     tokens = [cleanup(w) for w in tokens]
     tokens = [w for w in tokens if w not in REMOVE_LIST]
@@ -88,7 +88,7 @@ def load_en_stopwords(filename):
         the stop-words file name
     '''
     
-    stopwords = list();
+    stopwords = []
     with codecs.open(filename, mode='r', encoding='utf-8') as fSW: 
         for line in fSW: 
             stopwords.append(line.strip().lower())
@@ -121,7 +121,7 @@ def parse_plain_text_email(file_path):
         except UnicodeError: pass
         else: break
 
-    if email_text == '': 
+    if len(email_text) > 0: 
     
         msg = email.message_from_string(email_text)  
         receiver = xstr(msg['to'])
@@ -129,8 +129,7 @@ def parse_plain_text_email(file_path):
         cc = xstr(msg['cc'])
         subject = xstr(msg['subject'])
         body_text = msg.get_payload()
-        body_text = ' '.join(body_text.split())  # removes newline, tab, and white space 
-        
+        body_text = ' '.join(punkt_word_tokenizer(body_text.lower()))
     
     return (receiver, sender, cc, subject, body_text)
     
