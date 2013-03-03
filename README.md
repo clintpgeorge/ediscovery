@@ -21,6 +21,11 @@ General guide lines
 -------------------
 This section provides the general guidelines to access the Git Hub repository, coding style, enhancements, and issue tracking.  
 
+**To Edit this file**
+
+See GitHub markdown online [help](https://help.github.com/articles/github-flavored-markdown)
+
+
 **Enhancements and issues**
 
 * Use the [***issues***](https://github.com/clintpgeorge/ediscovery/issues?state=open) tab to keep track of all issues and enhancements. 
