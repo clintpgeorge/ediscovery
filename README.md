@@ -19,27 +19,35 @@ of an open-source system that can serve as the basis for an open EDiscovery fram
 
 General guide lines
 -------------------
-This section provides the general guidelines to access the Git Hub repository, coding stypes, enhancements, and issue tracking.  
+This section provides the general guidelines to access the Git Hub repository, coding style, enhancements, and issue tracking.  
 
 **Enhancements and issues**
 
-Use the *issues* tab to keep tack of all issues and enhancements. 
+* Use the [***issues***](https://github.com/clintpgeorge/ediscovery/issues?state=open) tab to keep track of all issues and enhancements. 
+* When we check in the soruce code to the repository, specify the inssue or enhancement number in the checkin message. 
+  e.g. ```git commit -a -m'issue #1 fix: see the issue details for information.'```
 
 
 **Git**
 
-To clone the ediscovery repository use the following command
+To clone the [***ediscovery***](https://github.com/clintpgeorge/ediscovery) repository use the following command
 
     git clone https://github.com/clintpgeorge/ediscovery
 
-See [crash course on Git SVN](http://git.or.cz/course/svn.html) for more details 
+See [crash course on Git SVN](http://git.or.cz/course/svn.html) for more details. 
+The following are some useful ***git*** commands 
 
+    git pull # to update the local from the remote 
+    git status # to see the local repository status 
+    git add file_name # to add a new file file_name 
+    git commit -a -m'[commit message]' # for commit all files in your local 
+    git push # to update your commits to the master 
 
 **Python**
 
 - do not check in *.pyc files 
 - follow [coding standards](http://www.python.org/dev/peps/pep-0008)
-- use argparse for input formatting [Help](http://docs.python.org/2/howto/argparse.html)
+- use [argparse](http://docs.python.org/2/howto/argparse.html) for handling arguments 
 - use no hard coding in functions except for the test scripts, try to pass all constants as function parameters
 
 --------------------------------------
