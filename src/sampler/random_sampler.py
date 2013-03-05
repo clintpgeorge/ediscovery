@@ -138,7 +138,6 @@ def random_sampler(message_id_list, confidence, precision, SEEDCONSTANT):
 		corrected_sample_size = sample_size/(1 + (sample_size-1)/len(message_id_list))
 		corrected_sample_size = int(math.ceil(corrected_sample_size))
 		logger.info("Sample size is " + str(corrected_sample_size))
-		print "Sample size is " + str(corrected_sample_size)
 		random_sample = random.sample(message_id_list,corrected_sample_size)
 		return random_sample
 	else:

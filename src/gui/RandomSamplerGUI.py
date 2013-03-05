@@ -17,7 +17,7 @@ import wx.xrc
 class RandomSamplerGUI ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Random Sampler", pos = wx.DefaultPosition, size = wx.Size( 1024,800 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.FRAME_FLOAT_ON_PARENT|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.STAY_ON_TOP|wx.SYSTEM_MENU|wx.HSCROLL|wx.TAB_TRAVERSAL )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Random Sampler", pos = wx.DefaultPosition, size = wx.Size( 1024,800 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.STAY_ON_TOP|wx.SYSTEM_MENU|wx.HSCROLL|wx.TAB_TRAVERSAL )
 		
 		self.SetSizeHintsSz( wx.Size( 1024,800 ), wx.DefaultSize )
 		self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
@@ -95,7 +95,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_sampler.Add( self._st_confidence_level, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		_cbx_confidence_levelsChoices = []
-		self._cbx_confidence_levels = wx.ComboBox( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_confidence_levelsChoices, wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT )
+		self._cbx_confidence_levels = wx.ComboBox( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_confidence_levelsChoices, wx.CB_DROPDOWN|wx.CB_READONLY )
 		self._cbx_confidence_levels.SetSelection( 0 )
 		self._cbx_confidence_levels.SetFont( wx.Font( 9, 70, 90, 90, False, wx.EmptyString ) )
 		
@@ -132,9 +132,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		_bsizer_sampler_buttons = wx.BoxSizer( wx.HORIZONTAL )
 		
-		self._btn_run_sampler = wx.Button( self, wx.ID_ANY, u"Run sampler", wx.DefaultPosition, wx.DefaultSize, 0 )
-		_bsizer_sampler_buttons.Add( self._btn_run_sampler, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
-		
 		self._btn_copy_files = wx.Button( self, wx.ID_ANY, u"Copy files", wx.DefaultPosition, wx.DefaultSize, 0 )
 		_bsizer_sampler_buttons.Add( self._btn_copy_files, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
@@ -164,16 +161,16 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_sampler.SetFlexibleDirection( wx.BOTH )
 		gbsizer_sampler.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._gdc_results = wx.GenericDirCtrl( self._panel_samples, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 400,250 ), wx.DIRCTRL_3D_INTERNAL|wx.SUNKEN_BORDER, wx.EmptyString, 0 )
-		
-		self._gdc_results.ShowHidden( False )
-		gbsizer_sampler.Add( self._gdc_results, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.BOTTOM|wx.EXPAND|wx.LEFT|wx.RIGHT, 5 )
-		
 		self._st_docs_to_be_reviewed = wx.StaticText( self._panel_samples, wx.ID_ANY, u"Documents to be reviewed", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_docs_to_be_reviewed.Wrap( -1 )
 		self._st_docs_to_be_reviewed.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
 		gbsizer_sampler.Add( self._st_docs_to_be_reviewed, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		
+		self._gdc_results = wx.GenericDirCtrl( self._panel_samples, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 400,250 ), wx.DIRCTRL_3D_INTERNAL|wx.DIRCTRL_EDIT_LABELS|wx.SUNKEN_BORDER, wx.EmptyString, 0 )
+		
+		self._gdc_results.ShowHidden( False )
+		gbsizer_sampler.Add( self._gdc_results, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.BOTTOM|wx.EXPAND|wx.LEFT|wx.RIGHT, 5 )
 		
 		self.m_staticText9 = wx.StaticText( self._panel_samples, wx.ID_ANY, u"Marked files", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText9.Wrap( -1 )
@@ -228,7 +225,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_sel_output_dir.Bind( wx.EVT_BUTTON, self._on_click_sel_output_dir )
 		self._cbx_confidence_levels.Bind( wx.EVT_COMBOBOX, self._on_confidence_changed )
 		self._tc_confidence_interval.Bind( wx.EVT_TEXT, self._on_precision_changed )
-		self._btn_run_sampler.Bind( wx.EVT_BUTTON, self._on_click_run_sampler )
 		self._btn_copy_files.Bind( wx.EVT_BUTTON, self._on_click_copy_files )
 		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_exit )
 		self._lb_marked_files.Bind( wx.EVT_LISTBOX_DCLICK, self._on_dclick_lb_marked_files )
@@ -263,9 +259,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_precision_changed( self, event ):
-		event.Skip()
-	
-	def _on_click_run_sampler( self, event ):
 		event.Skip()
 	
 	def _on_click_copy_files( self, event ):

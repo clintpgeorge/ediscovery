@@ -195,50 +195,7 @@ class RandomSampler(RandomSamplerGUI):
         self._tc_output_dir.SetValue(self.output_dir_path)
         self.SetStatusText("The selected output folder is %s" % self.output_dir_path)
         
-    
-    def _on_click_run_sampler( self, event ):
-        '''
-        Handles the run sampler button click event 
 
-        '''        
-        super(RandomSampler, self)._on_click_run_sampler(event) 
-        
-        try:
-            
-            self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()
-                                          )/ Decimal('100')
-            self.get_precision_as_float()
-            if (not os.path.exists(self.dir_path) or
-                not os.path.exists(self.output_dir_path)):
-                dlg = wx.MessageDialog(self, "Please enter a valid \
-                input/output directory", "Error", wx.ICON_ERROR)
-                dlg.ShowModal()
-                return 
-            
-            
-            self.sampled_files = random_sampler(self.file_list,
-                                                self.confidence_val,
-                                                self.precision_val, self.SEED)
-            self.SetStatusText('%d files are sampled out of %d files.'
-                               % (len(self.sampled_files), len(self.file_list)))
-            self._st_num_samples.Show()
-            self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-            
-                        
-            # shows the tree list control 
-            self._gdc_results.SetPath(self.output_dir_path)
-            self._gdc_results.SetDefaultPath(self.output_dir_path)
-            
-            self._panel_samples.Show(True)
-            self._panel_samples.GetSizer().Layout()
-            self.GetSizer().Layout()
-
-        
-        except Exception as anyException:
-            dlg = wx.MessageDialog(self, str(anyException), "Error",
-                                   wx.ICON_ERROR)
-            dlg.ShowModal()
-    
     def _on_update_mark(self, e):
         '''
         Handles status update to upper control on new file marked/unmarked
@@ -268,8 +225,18 @@ class RandomSampler(RandomSamplerGUI):
         Handles event of copy files button pressed
         '''
         super(RandomSampler, self)._on_click_copy_files(event)
+        
+        # Check if path exists
+        if (not os.path.exists(self.dir_path) or
+        not os.path.exists(self.output_dir_path)):
+            dlg = wx.MessageDialog(self, "Please enter a valid \
+            input/output directory", "Error", wx.ICON_ERROR)
+            dlg.ShowModal()
+            return 
+        
         total_file_size = 0
         try:
+            # Get total file size
             for x in map(os.path.getsize, self.sampled_files):
                 total_file_size += long(x)
         except OSError:
@@ -281,17 +248,29 @@ class RandomSampler(RandomSamplerGUI):
                                "Confirm Copy", wx.YES|wx.NO|wx.ICON_QUESTION)
         result = dlg.ShowModal()
         
-        if result == wx.ID_YES:
+        #Show status of copy
+        if result == wx.ID_YES and total_file_size > 0:
             progress_dialog = wx.ProgressDialog('Copying', 'Please wait...', parent = self, style = wx.PD_CAN_ABORT
                                 | wx.PD_APP_MODAL
                                 | wx.PD_ELAPSED_TIME
                                 | wx.PD_ESTIMATED_TIME
                                 | wx.PD_REMAINING_TIME)
+            
+            # Runs copy on a different thread
             start_thread(self.do_copy, total_file_size, progress_dialog)
             progress_dialog.ShowModal()
             self.SetStatusText('%d randomly sampled files (from %d files) are copied \
             to the output folder.' % (len(self.sampled_files), len(self.file_list)))
-         
+            
+            # shows the tree list control 
+            self._gdc_results.SetPath(self.output_dir_path)
+            #self._gdc_results.SetDefaultPath(self.output_dir_path)
+            self._panel_samples.Show(True)
+            self._panel_samples.GetSizer().Layout()
+            self.GetSizer().Layout()
+            
+        else :
+            self.SetStatusText('Copy cancelled.')
     
     def _on_click_exit( self, event ):
         super(RandomSampler, self)._on_click_exit(event) 
@@ -415,4 +394,3 @@ if __name__ == '__main__':
     
     main()
     
-
