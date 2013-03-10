@@ -33,44 +33,72 @@ class RandomSampler(RandomSamplerGUI):
         # Calls the parent class's method 
         super(RandomSampler, self).__init__(parent) 
         
+        # stack to store files and tags
+        self.file_tag_dict = {}
+        
+        # initialize the default list of tags and the current tag
+        self.DEFAULT_TAGS_NUMBER = 2
+        self.REVIEWED_TAG_INDEX = 0
+        self.RESPONSIVE_TAG_INDEX = 1
+        self.current_file_selected = None
+        self.default_tag = ('Default' , 'True')
+        self.current_tag_list = self.make_default_tag_list()
+        self._tag_list.InsertColumn(0,'Property')
+        self._tag_list.InsertColumn(1,'Status')
+        self._tag_list.InsertStringItem(self.REVIEWED_TAG_INDEX, 'Reviewed')
+        self._tag_list.SetStringItem(self.RESPONSIVE_TAG_INDEX, 1, 'False')
+        self._tag_list.InsertStringItem(self.RESPONSIVE_TAG_INDEX, 'Responsive')
+        self._tag_list.SetStringItem(self.RESPONSIVE_TAG_INDEX, 1, 'False')
         
         self._st_num_samples.Hide()
         self.dir_path = tempfile.gettempdir() # a cross-platform way of getting the path to the temp directory
         self.output_dir_path = tempfile.gettempdir()
+        self.from_copy_files_dir = self.dir_path 
+        self.to_copy_files_dir = self.output_dir_path
         self._tc_data_dir.SetValue(self.dir_path)
         self._tc_output_dir.SetValue(self.output_dir_path)
         
         self.file_list = find_files_in_folder(self.dir_path)
         self._st_num_data_dir_files.SetLabel('%d files found' % len(self.file_list))
         
+        # Defaults for random sample calcluation
         self.SEED = 2013
 
         self._set_confidence_level_and_interval()
         self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()
                                           )/ Decimal('100')
         self.get_precision_as_float()
-
-        self._gdc_tree = self._gdc_results.GetTreeCtrl()
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self._on_item_double_click,
-                  self._gdc_tree, id=1)
-        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self._on_add_list,
-                  self._gdc_tree, id =1)
+        self.Bind(wx.EVT_COMMAND_FIND_REPLACE_ALL, self._on_load_tag_list)
+        self._panel_samples.Show(False) # make the tree list control invisible
         
-        self._panel_samples.Show(False) # make the tree list control invisible  
+        # icon defaults
+        self.icon_size = (16,16)
+        self.image_list = wx.ImageList(self.icon_size[0], self.icon_size[1])
+        self._tc_results.SetImageList(self.image_list)
+        self.folder_icon     = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_FOLDER,      wx.ART_OTHER, self.icon_size))
+        self.folder_open_icon = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_FILE_OPEN,   wx.ART_OTHER, self.icon_size))
+        self.file_icon     = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, self.icon_size))  
 
         self.Center()
         self.Show(True)
    
-    def _on_remove_list(self, event):
+    def _on_remove_tag(self, event):
         '''
-        Action on double click on display panel:
-        Delete a file from the selected list(display)
+        Action on click on remove tag
+        removes a tag from list
         '''
-        self._lb_marked_files.Delete(self._lb_marked_files.GetSelection())
         
-        fire_unmark  = wx.PyCommandEvent(wx.EVT_FILEPICKER_CHANGED.typeId)
-        fire_unmark.SetClientData(self._lb_marked_files.GetCount())
-        self.GetEventHandler().ProcessEvent(fire_unmark)
+        super(RandomSampler, self)._on_add_tag(event)
+        
+        item_index = self._tag_list.GetFirstSelected()
+        
+        if item_index is not self.RESPONSIVE_TAG_INDEX or item_index is not  self.REVIEWED_TAG_INDEX:
+            self.current_tag_list.pop(item_index)
+            self._tag_list.DeleteItem(item_index)
+        
+        # Refresh tags
+        #reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
+        #self.GetEventHandler().ProcessEvent(reload_tag)
 
     def _on_appln_close( self, event ):
         super(RandomSampler, self)._on_appln_close(event) 
@@ -195,13 +223,6 @@ class RandomSampler(RandomSamplerGUI):
         self._tc_output_dir.SetValue(self.output_dir_path)
         self.SetStatusText("The selected output folder is %s" % self.output_dir_path)
         
-
-    def _on_update_mark(self, e):
-        '''
-        Handles status update to upper control on new file marked/unmarked
-        '''
-        file_count = e.GetClientData()
-        self.SetStatusText("Number of files selected %s." %file_count)
         
     def _on_save_mark_file_status(self, e):
         '''
@@ -216,7 +237,6 @@ class RandomSampler(RandomSamplerGUI):
         '''
         copy_with_dialog(self.dir_path, self.sampled_files,
                                      self.output_dir_path, total_size, dialog)
-        wx.CallAfter(dialog.Destroy)
 
         
     
@@ -251,7 +271,6 @@ class RandomSampler(RandomSamplerGUI):
         #Show status of copy
         if result == wx.ID_YES and total_file_size > 0:
             progress_dialog = wx.ProgressDialog('Copying', 'Please wait...', parent = self, style = wx.PD_CAN_ABORT
-                                | wx.PD_APP_MODAL
                                 | wx.PD_ELAPSED_TIME
                                 | wx.PD_ESTIMATED_TIME
                                 | wx.PD_REMAINING_TIME)
@@ -262,50 +281,185 @@ class RandomSampler(RandomSamplerGUI):
             self.SetStatusText('%d randomly sampled files (from %d files) are copied \
             to the output folder.' % (len(self.sampled_files), len(self.file_list)))
             
-            # shows the tree list control 
-            self._gdc_results.SetPath(self.output_dir_path)
-            #self._gdc_results.SetDefaultPath(self.output_dir_path)
+            # shows the tree list control ans sets defaults 
+            self.from_copy_files_dir = self.dir_path
+            self.to_copy_files_dir = self.output_dir_path
+            self._tc_results.DeleteAllItems()
+            root = self._tc_results.AddRoot(self.to_copy_files_dir)
+            self._tc_results.SetPyData(root, os.path.abspath(self.to_copy_files_dir))
+            self._tc_results.SetItemImage(root,self.folder_icon, wx.TreeItemIcon_Normal)
+            self._tc_results.SetItemImage(root,self.folder_open_icon, wx.TreeItemIcon_Expanded)
+            self.get_dirs(root,0)
+            
+            
             self._panel_samples.Show(True)
             self._panel_samples.GetSizer().Layout()
             self.GetSizer().Layout()
-            
+        
         else :
             self.SetStatusText('Copy cancelled.')
     
+    def _on_activated_file(self, event):
+        '''
+        Marks a file as reviewed on double click
+        Returns: None
+        Arguments: File to set status
+        '''
+        super(RandomSampler, self)._on_activated_file(event)
+        
+        
+        if self.current_tag_list is not None:
+            self.file_tag_dict[self.current_file_selected] = self.current_tag_list
+        treeitem = event.GetItem()
+        filename  = self.get_filename_from_treenode(treeitem)
+        self.current_file_selected = filename
+        tag = self.file_tag_dict.get(filename)
+        if tag is None:
+            self.current_tag_list = self.make_default_tag_list()
+        self.set_tag_status(self.REVIEWED_TAG_INDEX, 'True')
+        self.file_tag_dict[filename] = self.current_tag_list  
+                
+        try:
+            webbrowser.open(filename)
+        except Exception as anyException:
+            dlg = wx.MessageDialog(self, str(anyException), "Cannot open this file",
+                                    wx.ICON_ERROR)
+            dlg.ShowModal()
+        # Fire an event to reload the tag listbox
+        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
+        self.GetEventHandler().ProcessEvent(reload_tag)
+    
+    def make_default_tag_list(self):
+        '''
+        Makes a default tag to add
+        '''
+        
+        tag_label = 'DEFAULT LABEL'
+        new_tag = []
+        for i in xrange(self.DEFAULT_TAGS_NUMBER): 
+            new_tag.append((tag_label, 'False'))
+        tag_0 = new_tag.pop(self.REVIEWED_TAG_INDEX)
+        tag_0 = ('Reviewed', 'False')
+        new_tag.insert(self.REVIEWED_TAG_INDEX, tag_0)
+        tag_1 = new_tag.pop(self.RESPONSIVE_TAG_INDEX)
+        tag_1 = ('Responsive', 'False')
+        new_tag.insert(self.RESPONSIVE_TAG_INDEX, tag_1)
+        
+        return new_tag
+    
+    def set_tag_status(self, index, value):
+        '''
+        Sets tag indexed by index to value
+        '''
+        tag_name, tag_value = self.current_tag_list.pop(index)
+        tag_dirty = (tag_name, value)
+        self.current_tag_list.insert(index, tag_dirty)
+    
+    def _on_select_file(self, event):
+        '''
+        Gets tag on file select and fires an event to show status of file
+        Returns: None
+        Arguments: File to display status for 
+        '''
+        
+        super(RandomSampler, self)._on_select_file(event)
+        treeitem = event.GetItem()
+        filename = self.get_filename_from_treenode(treeitem)
+        # If no current tag, load a default tag
+        if (self.current_file_selected is None or self.current_tag_list is None):
+            self.current_tag_list  = self.make_default_tag_list()
+            self.current_file_selected = filename
+        
+        # Else save the current tag and load from the tag dictionary for next file
+        else:
+            self.file_tag_dict[self.current_file_selected] = self.current_tag_list
+            tag = self.file_tag_dict.get(filename)
+            if tag is None:
+                tag = self.make_default_tag_list()
+            self.current_file_selected = filename
+            self.current_tag_list = tag
+        
+        # Fire an event to reload the tag listbox
+        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
+        self.GetEventHandler().ProcessEvent(reload_tag)
+             
+    
+    def _on_load_tag_list( self , evt):
+        '''
+        Reloads the tag list from 'dirty' tag in the tag dictionary
+        Take note to save the last dirty tag before closing
+        Returns: None
+        Arguments: None
+        '''
+        # Format the current 'dirty' tag and add to control
+        self._tag_list.ClearAll()
+        self._tag_list.InsertColumn(0,'Property')
+        self._tag_list.InsertColumn(1,'Status')
+        row_num = 0
+        for  tag_name, tag_value in self.current_tag_list:
+            self._tag_list.InsertStringItem(row_num, tag_name)
+            if tag_value is None: 
+                self._tag_list.SetStringItem(row_num, 1, 'False')
+                self._tag_list.SetItemData(row_num, 0)
+            else:
+                self._tag_list.SetStringItem(row_num, 1, str(tag_value))
+                if str(tag_value) is 'False':
+                    self._tag_list.SetItemData(row_num, 0)
+                if str(tag_value) is 'True':
+                    self._tag_list.SetItemData(row_num, 1)
+            row_num = row_num + 1
+        #self._tag_list.RefreshItems()
+
     def _on_click_exit( self, event ):
+        '''
+        Exits
+        '''
         super(RandomSampler, self)._on_click_exit(event) 
         self._on_close()
  
- 
-    def _on_dclick_lb_marked_files( self, event ):
-        super(RandomSampler, self)._on_dclick_lb_marked_files(event) 
-        self._on_remove_list(event)
-   
-    def _on_click_add_list_item( self, event ):
-        super(RandomSampler, self)._on_click_add_list_item(event) 
-        self._on_add_list(event)
-        
-    
-    def _on_click_remove_list_item( self, event ):
-        super(RandomSampler, self)._on_click_remove_list_item(event) 
-        self._on_remove_list(event)
     
     def _on_click_log_details( self, event ):
         '''
         Saves the marked history to a file in a specified folder
         '''
         super(RandomSampler, self)._on_click_log_details(event) 
-
-        save_files = self._lb_marked_files.GetStrings()
+        
+        self.file_tag_dict[self.current_file_selected] = self.current_tag_list
+        save_files = self.file_tag_dict.keys()
+        tag_selected_type = self._cbx_tag_type.GetValue()
+        if tag_selected_type == 'Reviewed':
+            tag_selected_index = self.REVIEWED_TAG_INDEX
+        elif tag_selected_type == 'Responsive':
+            tag_selected_index = self.RESPONSIVE_TAG_INDEX
+        else:
+            tag_selected_index = -1
         
         save_filename = 'Log_history_' + time.strftime("%b%d%Y%H%M%S", time.localtime())
         fire_mark_saved  = wx.PyCommandEvent(wx.EVT_ACTIVATE.typeId)
-        
         try:
-            with open(os.path.join(self.target_dir,save_filename), 'w') as file_handle:
+            with open(os.path.join(self.to_copy_files_dir,save_filename), 'w') as file_handle:
+                file_handle.write('Data Folder:' + self.from_copy_files_dir + '\n')
+                file_handle.write('Sampled Output:' + self.to_copy_files_dir + '\n')
+                file_handle.write('Confidence Level: +/-'+str(self.confidence_val) + '\n')
+                file_handle.write('Confidence Interval: +/-'+str(self.precision_val) + '\n')
                 for save_file in save_files:
-                    file_handle.write(save_file + '\n')
-            fire_mark_saved.SetClientData(self._lb_marked_files.GetCount())
+                    
+                    # Lookahead for the required tag status
+                    is_write = True 
+                    index = 0
+                    if (tag_selected_index >= 0):
+                        for item, status in self.file_tag_dict.get(save_file):
+                            if (index == tag_selected_index and status == 'False'):
+                                is_write = False
+                                break
+                            index = index +1     
+                        
+                    # Start writing the selected file tags
+                    if is_write is True:
+                        file_handle.write(save_file)
+                        for item, status in self.file_tag_dict.get(save_file):
+                            file_handle.write('\n' + '\t'+ item + '\t' + str(status))
+                        file_handle.write('\n')
             self.GetEventHandler().ProcessEvent(fire_mark_saved)
         
         except Exception as anyException:
@@ -323,7 +477,6 @@ class RandomSampler(RandomSamplerGUI):
                                "Do you really want to close this application?",
                                "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
         result = dlg.ShowModal()
-        dlg.Destroy()
         if result == wx.ID_OK:
             self.Destroy() 
 
@@ -347,38 +500,108 @@ class RandomSampler(RandomSamplerGUI):
             
         self._tc_confidence_interval.SetValue(str(int(DEFAULT_CONFIDENCE_INTERVAL)))
         
+            
+    def _on_edit_status(self, event):
+        '''
+        Edits Label for Responsive
+        '''
+        super(RandomSampler, self)._on_edit_status(event)
+        row_num = event.GetIndex()
+        if (row_num is self.REVIEWED_TAG_INDEX):
+            event.Veto()
+            return
+        status =  self._tag_list.GetItemData(row_num)
+        if status is 0: 
+            self._tag_list.SetStringItem(row_num , 1, 'True')
+            self.set_tag_status(row_num, 'True')
+            self._tag_list.SetItemData(row_num , 1)
+        if status is 1: 
+            self._tag_list.SetStringItem(row_num , 1, 'False')
+            self.set_tag_status(row_num, 'False')
+            self._tag_list.SetItemData(row_num , 0)
+            
+    def _on_clear_tags(self, event):
         
-    def _on_item_double_click (self, event):
-        '''
-        Open a file
-        '''
-        try:
-            webbrowser.open(self._gdc_results.GetFilePath())
-        except Exception as anyException:
-            dlg = wx.MessageDialog(self, str(anyException), "Cannot open this file",
-                                    wx.ICON_ERROR)
-            dlg.ShowModal()   
-
-
-    def _on_add_list(self, event):
-        '''
-        Gets the file path marked in the file tree by a right click
-        and adds it to display control which shows selected files 
-        '''
-        try:
-
-            file_path = self._gdc_results.GetFilePath()
-            if not file_path in self._lb_marked_files.GetItems():
-                self._lb_marked_files.Append(file_path)
-                
-            fire_mark  = wx.PyCommandEvent(wx.EVT_FILEPICKER_CHANGED.typeId)
-            fire_mark.SetClientData(self._lb_marked_files.GetCount())
-            self.GetEventHandler().ProcessEvent(fire_mark)
+        super(RandomSampler, self)._on_clear_tags(event)
+        self.file_tag_dict.clear()
+        self.current_tag_list = self.make_default_tag_list()
+        self.current_file_selected = self.to_copy_files_dir
+        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
+        self.GetEventHandler().ProcessEvent(reload_tag)
         
-        except Exception as anyException:
-            dlg = wx.MessageDialog(self, str(anyException), "Cannot mark files",
-                                    wx.ICON_ERROR)
-            dlg.ShowModal() 
+    def _on_add_tag(self, event):
+        
+        super(RandomSampler, self)._on_add_tag(event)
+        self.current_tag_list.append(self.default_tag)
+        
+        # Refresh tags
+        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
+        self.GetEventHandler().ProcessEvent(reload_tag)
+        
+    def _on_edit_property(self, event):
+        
+        super(RandomSampler, self)._on_edit_property(event)
+        row_num = event.GetIndex()
+        if row_num is self.REVIEWED_TAG_INDEX or row_num is self.RESPONSIVE_TAG_INDEX:
+            event.Veto()
+            
+    def _on_set_property(self, event):
+        '''
+        '''
+        super(RandomSampler, self)._on_set_property(event)
+        
+        row_num = event.GetIndex()
+        new_tag_property_name = event.GetLabel()
+        print new_tag_property_name
+        if new_tag_property_name is None:
+            return 
+        tag_name, tag_value = self.current_tag_list.pop(row_num)
+        tag_dirty = (new_tag_property_name, tag_value)
+        self.current_tag_list.insert(row_num, tag_dirty)
+        
+    
+    def on_sel_changed(self, event):
+        '''
+        Action on opening a directory in the file tree
+        '''
+        item =  event.GetItem()
+        self.get_dirs(item,0)
+        self._tc_results.Refresh()
+        
+    def get_dirs(self, item, level):
+        '''
+        Fetches the contents of a directory 
+        '''
+        if level == 2:
+            return  
+        dirname = self._tc_results.GetPyData(item)
+        dir_list = []
+        if os.path.isdir(dirname) is  True and self._tc_results.GetChildrenCount(item, False) == 0:
+            try:
+                dir_list += os.listdir(dirname)
+                dir_list.sort()
+                for pathname in dir_list:
+                    new_item = self._tc_results.AppendItem(item,pathname)
+                    self._tc_results.SetPyData(new_item,os.path.join(dirname, pathname))
+                    self.get_dirs(new_item, level +1)
+                    if self._tc_results.GetChildrenCount(new_item, False) is 0:
+                        self._tc_results.SetItemImage(new_item,self.file_icon, wx.TreeItemIcon_Normal)
+                    else:
+                        self._tc_results.SetItemImage(new_item,self.folder_icon, wx.TreeItemIcon_Normal)
+                        self._tc_results.SetItemImage(new_item,self.folder_open_icon, wx.TreeItemIcon_Expanded)
+                    
+            except OSError:
+                None
+            
+    def get_filename_from_treenode(self, treeitem):
+        '''
+        Returns filename for given node
+        Arguments: treeitem to get filename for
+        Returns: filename
+        '''
+        
+        return self._tc_results.GetPyData(treeitem)
+                                     
 
 def main():
     '''
