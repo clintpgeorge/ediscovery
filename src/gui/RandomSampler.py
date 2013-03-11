@@ -364,6 +364,8 @@ class RandomSampler(RandomSamplerGUI):
         
         super(RandomSampler, self)._on_select_file(event)
         treeitem = event.GetItem()
+        self.get_dirs(treeitem,0)
+        self._tc_results.Refresh()
         filename = self.get_filename_from_treenode(treeitem)
         # If no current tag, load a default tag
         if (self.current_file_selected is None or self.current_tag_list is None):
@@ -393,7 +395,7 @@ class RandomSampler(RandomSamplerGUI):
         '''
         # Format the current 'dirty' tag and add to control
         self._tag_list.ClearAll()
-        self._tag_list.InsertColumn(0,'Property')
+        self._tag_list.InsertColumn(0,'Tag')
         self._tag_list.InsertColumn(1,'Status')
         row_num = 0
         for  tag_name, tag_value in self.current_tag_list:
@@ -506,6 +508,7 @@ class RandomSampler(RandomSamplerGUI):
         Edits Label for Responsive
         '''
         super(RandomSampler, self)._on_edit_status(event)
+        
         row_num = event.GetIndex()
         if (row_num is self.REVIEWED_TAG_INDEX):
             event.Veto()
@@ -552,21 +555,13 @@ class RandomSampler(RandomSamplerGUI):
         
         row_num = event.GetIndex()
         new_tag_property_name = event.GetLabel()
-        print new_tag_property_name
         if new_tag_property_name is None:
             return 
         tag_name, tag_value = self.current_tag_list.pop(row_num)
         tag_dirty = (new_tag_property_name, tag_value)
         self.current_tag_list.insert(row_num, tag_dirty)
         
-    
-    def on_sel_changed(self, event):
-        '''
-        Action on opening a directory in the file tree
-        '''
-        item =  event.GetItem()
-        self.get_dirs(item,0)
-        self._tc_results.Refresh()
+        
         
     def get_dirs(self, item, level):
         '''
@@ -576,19 +571,20 @@ class RandomSampler(RandomSamplerGUI):
             return  
         dirname = self._tc_results.GetPyData(item)
         dir_list = []
-        if os.path.isdir(dirname) is  True and self._tc_results.GetChildrenCount(item, False) == 0:
+        if os.path.isdir(dirname) is  True:
             try:
-                dir_list += os.listdir(dirname)
-                dir_list.sort()
-                for pathname in dir_list:
-                    new_item = self._tc_results.AppendItem(item,pathname)
-                    self._tc_results.SetPyData(new_item,os.path.join(dirname, pathname))
-                    self.get_dirs(new_item, level +1)
-                    if self._tc_results.GetChildrenCount(new_item, False) is 0:
-                        self._tc_results.SetItemImage(new_item,self.file_icon, wx.TreeItemIcon_Normal)
-                    else:
-                        self._tc_results.SetItemImage(new_item,self.folder_icon, wx.TreeItemIcon_Normal)
-                        self._tc_results.SetItemImage(new_item,self.folder_open_icon, wx.TreeItemIcon_Expanded)
+                if self._tc_results.GetChildrenCount(item, False) == 0:
+                    dir_list += os.listdir(dirname)
+                    dir_list.sort()
+                    for pathname in dir_list:
+                        new_item = self._tc_results.AppendItem(item,pathname)
+                        self._tc_results.SetPyData(new_item,os.path.join(dirname, pathname))
+                        self.get_dirs(new_item, level +1)
+                        if os.path.isdir(os.path.join(dirname,pathname)):
+                            self._tc_results.SetItemImage(new_item,self.folder_icon, wx.TreeItemIcon_Normal)
+                            self._tc_results.SetItemImage(new_item,self.folder_open_icon, wx.TreeItemIcon_Expanded)
+                        else:
+                            self._tc_results.SetItemImage(new_item,self.file_icon, wx.TreeItemIcon_Normal)
                     
             except OSError:
                 None

@@ -2070,7 +2070,7 @@
                                                     <event name="OnTreeItemCollapsed"></event>
                                                     <event name="OnTreeItemCollapsing"></event>
                                                     <event name="OnTreeItemExpanded"></event>
-                                                    <event name="OnTreeItemExpanding">on_sel_changed</event>
+                                                    <event name="OnTreeItemExpanding"></event>
                                                     <event name="OnTreeItemGetTooltip"></event>
                                                     <event name="OnTreeItemMenu"></event>
                                                     <event name="OnTreeItemMiddleClick"></event>
