@@ -25,7 +25,7 @@ if __name__=="__main__":
 
     Examples: 
         python index_dir.py -h # for help 
-        python index_dir.py -l -d /media/Store/Research/datasets/es/maildir/ -o /media/Store/Research/datasets/es/lucene -p /media/Store/Research/datasets/es/enron.path.index    
+        python index_dir.py -l -d /home/cgeorge/ediscovey/enron/maildir/ -o /home/cgeorge/ediscovey/enron/lucene -p /home/cgeorge/ediscovey/enron/enron.path.index    
 
     ''')
     arg_parser.add_argument("-d", dest="data_folder", type=str, help="the data folder", required=True)

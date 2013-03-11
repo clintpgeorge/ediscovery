@@ -6,6 +6,7 @@ utility functions
 Created by: Abhiram J.  
 Created On: Jan 28, 2013   
 
+@deprecated: this is deprecated as of March 08, 2013. Please use the utils.utils_file.py instead 
 '''
 
 import os
