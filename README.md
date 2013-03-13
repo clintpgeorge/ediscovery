@@ -59,15 +59,15 @@ The following are some useful ***git*** commands
 - Install g++
 - Install python-dev
 - Execute the following command in JCC installation directory
-    python setup.py build 
-    sudo python setup.py install 
+    -python setup.py build 
+    -sudo python setup.py install 
 - Uncomment properties applicable to relevant platform(Linux,Mac,Windows) etc. from pylucene makefile
 - install ant
 - install setuptools
 - Execute following commands from pylucene directory
-      make
-      sudo make install
-      make test
+      -make
+      -sudo make install
+      -make test
 
 
 --------------------------------------
