@@ -478,7 +478,7 @@ class RandomSampler(RandomSamplerGUI):
         dlg = wx.MessageDialog(self,
                                "Do you really want to close this application?",
                                "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
-        result = dlg.Show()
+        result = dlg.ShowModal()
         if result == wx.ID_OK:
             self.Destroy() 
 
@@ -525,22 +525,12 @@ class RandomSampler(RandomSamplerGUI):
             
     def _on_clear_tags(self, event):
         
-        confirm = wx.MessageDialog(self,
-                               "Do you really want to clear tags of all files? \
-                               \n You can save the tags before clearing them.",
-                               "Confirm clear tags", wx.OK| wx.SAVE| wx.CANCEL|wx.ICON_WARNING)
-        result  = confirm.ShowModal()
-        if result is wx.ID_OK: 
-            super(RandomSampler, self)._on_clear_tags(event)
-            self.file_tag_dict.clear()
-            self.current_tag_list = self.make_default_tag_list()
-            self.current_file_selected = self.to_copy_files_dir
-            reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
-            self.GetEventHandler().ProcessEvent(reload_tag)
-        
-        if result is wx.ID_SAVE:
-            self._on_click_copy_files(event)
-            
+        super(RandomSampler, self)._on_clear_tags(event)
+        self.file_tag_dict.clear()
+        self.current_tag_list = self.make_default_tag_list()
+        self.current_file_selected = self.to_copy_files_dir
+        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
+        self.GetEventHandler().ProcessEvent(reload_tag)
         
     def _on_add_tag(self, event):
         
