@@ -172,6 +172,11 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_sampler.Add( self._tc_results, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.EXPAND|wx.LEFT|wx.RIGHT, 5 )
 		
+		self._tag_list = wx.ListCtrl( self._panel_samples, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.LC_EDIT_LABELS|wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER )
+		self._tag_list.SetMinSize( wx.Size( 220,150 ) )
+		
+		gbsizer_sampler.Add( self._tag_list, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
 		_csizer_tags = wx.BoxSizer( wx.HORIZONTAL )
 		
 		self._lbl_tag = wx.StaticText( self._panel_samples, wx.ID_ANY, u"File Tags", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -248,7 +253,11 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_copy_files.Bind( wx.EVT_BUTTON, self._on_click_copy_files )
 		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_exit )
 		self._tc_results.Bind( wx.EVT_TREE_ITEM_ACTIVATED, self._on_activated_file )
+		self._tc_results.Bind( wx.EVT_TREE_ITEM_EXPANDING, self.on_sel_changed )
 		self._tc_results.Bind( wx.EVT_TREE_SEL_CHANGED, self._on_select_file )
+		self._tag_list.Bind( wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_edit_property )
+		self._tag_list.Bind( wx.EVT_LIST_END_LABEL_EDIT, self._on_set_property )
+		self._tag_list.Bind( wx.EVT_LIST_ITEM_SELECTED, self._on_edit_status )
 		self._btn_add_tag.Bind( wx.EVT_BUTTON, self._on_add_tag )
 		self._btn_remove_tag.Bind( wx.EVT_BUTTON, self._on_remove_tag )
 		self._btn_log_files.Bind( wx.EVT_BUTTON, self._on_click_log_details )
@@ -292,7 +301,19 @@ class RandomSamplerGUI ( wx.Frame ):
 	def _on_activated_file( self, event ):
 		event.Skip()
 	
+	def on_sel_changed( self, event ):
+		event.Skip()
+	
 	def _on_select_file( self, event ):
+		event.Skip()
+	
+	def _on_edit_property( self, event ):
+		event.Skip()
+	
+	def _on_set_property( self, event ):
+		event.Skip()
+	
+	def _on_edit_status( self, event ):
 		event.Skip()
 	
 	def _on_add_tag( self, event ):

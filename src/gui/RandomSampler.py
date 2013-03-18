@@ -35,6 +35,11 @@ class RandomSampler(RandomSamplerGUI):
         
         # stack to store files and tags
         self.file_tag_dict = {}
+        '''
+        This is the tag format
+        
+        self.file_tag_dict(filename) = [('Reviewed','True'),('Responsive', 'False'),('A1','False'),('A2','True')]
+        '''
         
         # initialize the default list of tags and the current tag
         self.DEFAULT_TAGS_NUMBER = 2
@@ -49,6 +54,12 @@ class RandomSampler(RandomSamplerGUI):
         self._tag_list.SetStringItem(self.RESPONSIVE_TAG_INDEX, 1, 'False')
         self._tag_list.InsertStringItem(self.RESPONSIVE_TAG_INDEX, 'Responsive')
         self._tag_list.SetStringItem(self.RESPONSIVE_TAG_INDEX, 1, 'False')
+        
+        # Separator for splitting tags
+        self.TAG_NAME_SEPARATOR = " || "
+        
+        # Maximum depth of folders expanded for display
+        self.MAX_FOLDER_DEPTH = 2
         
         self._st_num_samples.Hide()
         self.dir_path = tempfile.gettempdir() # a cross-platform way of getting the path to the temp directory
@@ -71,7 +82,7 @@ class RandomSampler(RandomSamplerGUI):
         self.Bind(wx.EVT_COMMAND_FIND_REPLACE_ALL, self._on_load_tag_list)
         self._panel_samples.Show(False) # make the tree list control invisible
         
-        # icon defaults
+        # Icon defaults
         self.icon_size = (16,16)
         self.image_list = wx.ImageList(self.icon_size[0], self.icon_size[1])
         self._tc_results.SetImageList(self.image_list)
@@ -86,9 +97,11 @@ class RandomSampler(RandomSamplerGUI):
         '''
         Action on click on remove tag
         removes a tag from list
+        Arguments: Event of remove tag button pressed
+        Returns: Nothing
         '''
         
-        super(RandomSampler, self)._on_add_tag(event)
+        super(RandomSampler, self)._on_remove_tag(event)
         
         item_index = self._tag_list.GetFirstSelected()
         
@@ -101,6 +114,11 @@ class RandomSampler(RandomSamplerGUI):
         #self.GetEventHandler().ProcessEvent(reload_tag)
 
     def _on_appln_close( self, event ):
+        '''
+        Action on closing the window
+        Arguments: Nothing
+        Returns: Nothing
+        '''
         super(RandomSampler, self)._on_appln_close(event) 
         self._on_close()
     
@@ -117,16 +135,27 @@ class RandomSampler(RandomSamplerGUI):
         dlg.Destroy() # finally destroy it when finished.
     
     def _on_mitem_help( self, event ):
+        '''
+        Action on pressing help button
+        Arguments: Nothing
+        Returns: Nothing
+        '''
         super(RandomSampler, self)._on_mitem_help(event) 
     
     def _on_mitem_exit( self, event ):
+        '''
+        Action on closing the window
+        Arguments: Nothing
+        Returns: Nothing
+        '''
         super(RandomSampler, self)._on_mitem_exit(event) 
         self._on_close()
     
     def _on_click_sel_data_dir( self, event ):
         """
         Select the data folder
-        
+        Arguments: Event of item selected
+        Returns: Nothing
         """
         super(RandomSampler, self)._on_click_sel_data_dir(event) 
         
@@ -158,6 +187,8 @@ class RandomSampler(RandomSamplerGUI):
         '''
         Triggers an event and updates the sample list on precision - aka 
         confidence interval change.
+        Arguments: Event of new precision value
+        Returns: Nothing
         '''
         super(RandomSampler, self)._on_precision_changed(event)
         # Maybe intermittently null string, escaping 
@@ -175,7 +206,6 @@ class RandomSampler(RandomSamplerGUI):
     def get_precision_as_float(self):
         '''
         Converts precision to float
-        
         Returns: Nothing
         Arguments: Nothing
         '''
@@ -191,6 +221,8 @@ class RandomSampler(RandomSamplerGUI):
         '''
         Triggers an event and updates the sample list on confidence - aka 
         confidence level change
+        Arguments: Event of new confidence
+        Returns: Nothing
         '''
         
         
@@ -210,7 +242,8 @@ class RandomSampler(RandomSamplerGUI):
     def _on_click_sel_output_dir( self, event ):
         """ 
         Selects the output folder 
-        
+        Arguments: Nothing
+        Returns: Nothing
         """
         super(RandomSampler, self)._on_click_sel_output_dir(event) 
         
@@ -227,6 +260,8 @@ class RandomSampler(RandomSamplerGUI):
     def _on_save_mark_file_status(self, e):
         '''
         Handles status update to upper control on saving marked file
+        Arguments: New status message
+        Returns: Nothing
         '''
         update_message = e.GetClientData()
         self.SetStatusText("Saved " + str(update_message) + " files at " 
@@ -234,6 +269,7 @@ class RandomSampler(RandomSamplerGUI):
     def do_copy(self, total_size, dialog):
         '''
         Thread to handle copy
+        Arguments: Total size of copy, Handle to dialog
         '''
         copy_with_dialog(self.dir_path, self.sampled_files,
                                      self.output_dir_path, total_size, dialog)
@@ -243,6 +279,8 @@ class RandomSampler(RandomSamplerGUI):
     def _on_click_copy_files( self, event ):
         '''
         Handles event of copy files button pressed
+        Arguments: Nothing
+        Returns: Nothing
         '''
         super(RandomSampler, self)._on_click_copy_files(event)
         
@@ -307,18 +345,22 @@ class RandomSampler(RandomSamplerGUI):
         '''
         super(RandomSampler, self)._on_activated_file(event)
         
-        
+        #Get filename
         if self.current_tag_list is not None:
             self.file_tag_dict[self.current_file_selected] = self.current_tag_list
         treeitem = event.GetItem()
         filename  = self.get_filename_from_treenode(treeitem)
         self.current_file_selected = filename
+        
+        
+        #Get tag for filename
         tag = self.file_tag_dict.get(filename)
         if tag is None:
             self.current_tag_list = self.make_default_tag_list()
         self.set_tag_status(self.REVIEWED_TAG_INDEX, 'True')
         self.file_tag_dict[filename] = self.current_tag_list  
-                
+        
+        #Open file        
         try:
             webbrowser.open(filename)
         except Exception as anyException:
@@ -328,10 +370,14 @@ class RandomSampler(RandomSamplerGUI):
         # Fire an event to reload the tag listbox
         reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
         self.GetEventHandler().ProcessEvent(reload_tag)
+        
+        self.update_tag_in_results_tree()
     
     def make_default_tag_list(self):
         '''
         Makes a default tag to add
+        Arguments: Nothing
+        Returns: Nothing
         '''
         
         tag_label = 'DEFAULT LABEL'
@@ -350,6 +396,9 @@ class RandomSampler(RandomSamplerGUI):
     def set_tag_status(self, index, value):
         '''
         Sets tag indexed by index to value
+        Arguments: 
+        index: Index of tag to set
+        value: value to set, for now only use True/False 
         '''
         tag_name, tag_value = self.current_tag_list.pop(index)
         tag_dirty = (tag_name, value)
@@ -415,6 +464,8 @@ class RandomSampler(RandomSamplerGUI):
     def _on_click_exit( self, event ):
         '''
         Exits
+        Arguments: Nothing
+        Returns: Nothing
         '''
         super(RandomSampler, self)._on_click_exit(event) 
         self._on_close()
@@ -423,9 +474,11 @@ class RandomSampler(RandomSamplerGUI):
     def _on_click_log_details( self, event ):
         '''
         Saves the marked history to a file in a specified folder
+        Arguments: Nothing
+        Returns: Nothing
         '''
         super(RandomSampler, self)._on_click_log_details(event) 
-        
+        # Save the tag_list and Get type of selected tag to be saved
         self.file_tag_dict[self.current_file_selected] = self.current_tag_list
         save_files = self.file_tag_dict.keys()
         tag_selected_type = self._cbx_tag_type.GetValue()
@@ -463,7 +516,7 @@ class RandomSampler(RandomSamplerGUI):
                             file_handle.write('\n' + '\t'+ item + '\t' + str(status))
                         file_handle.write('\n')
             self.GetEventHandler().ProcessEvent(fire_mark_saved)
-        
+        # Fire an event warning of the exception
         except Exception as anyException:
             print str(anyException)
             fire_mark_saved.SetClientData(str(anyException))
@@ -474,6 +527,11 @@ class RandomSampler(RandomSamplerGUI):
    
    
     def _on_close(self):
+        '''
+        Closes the Application after confirming with user
+        Arguments: Nothing
+        Returns: Nothing
+        '''
         
         dlg = wx.MessageDialog(self,
                                "Do you really want to close this application?",
@@ -484,6 +542,11 @@ class RandomSampler(RandomSamplerGUI):
 
 
     def _set_confidence_level_and_interval(self):
+        '''
+        Sets default confidence level and interval in Top Level interface
+        Arguments: None
+        Returns: None
+        '''
         
         confidence_levels = ['%.3f' % (w * Decimal('100')) 
                              for w in  SUPPORTED_CONFIDENCES.keys()]
@@ -506,14 +569,18 @@ class RandomSampler(RandomSamplerGUI):
     def _on_edit_status(self, event):
         '''
         Edits Label for Responsive
+        Arguments: event identifying the row to edit
+        Returns: Nothing
         '''
         super(RandomSampler, self)._on_edit_status(event)
-        
+        # Do not let user edit if it is the Reviewed Tag
         row_num = event.GetIndex()
         if (row_num is self.REVIEWED_TAG_INDEX):
             event.Veto()
             return
         status =  self._tag_list.GetItemData(row_num)
+        # This is a circuitous way as you can't directly read the tag_list tag status
+        # So we save a 0/1 for the status. Supports only boolean 
         if status is 0: 
             self._tag_list.SetStringItem(row_num , 1, 'True')
             self.set_tag_status(row_num, 'True')
@@ -522,9 +589,16 @@ class RandomSampler(RandomSamplerGUI):
             self._tag_list.SetStringItem(row_num , 1, 'False')
             self.set_tag_status(row_num, 'False')
             self._tag_list.SetItemData(row_num , 0)
+        
+        self.update_tag_in_results_tree()
+        
             
     def _on_clear_tags(self, event):
-        
+        '''
+        Removes tags for all files
+        Arguments: Nothing
+        Returns: Nothing
+        '''
         super(RandomSampler, self)._on_clear_tags(event)
         self.file_tag_dict.clear()
         self.current_tag_list = self.make_default_tag_list()
@@ -532,47 +606,72 @@ class RandomSampler(RandomSamplerGUI):
         reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
         self.GetEventHandler().ProcessEvent(reload_tag)
         
-    def _on_add_tag(self, event):
+        self.update_tag_in_results_tree()
         
+    def _on_add_tag(self, event):
+        '''
+        Adds a new default tag to end of file list
+        Arguments: Nothing
+        Returns: Nothing
+        '''
         super(RandomSampler, self)._on_add_tag(event)
         self.current_tag_list.append(self.default_tag)
         
         # Refresh tags
         reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
         self.GetEventHandler().ProcessEvent(reload_tag)
+        # Reload the tag in tree
+        self.update_tag_in_results_tree()
         
     def _on_edit_property(self, event):
-        
+        '''
+        Edits tag for file
+        Arguments: Nothing
+        Returns: Nothing
+        '''
         super(RandomSampler, self)._on_edit_property(event)
         row_num = event.GetIndex()
+        # Do not let default tag_names to be edited
         if row_num is self.REVIEWED_TAG_INDEX or row_num is self.RESPONSIVE_TAG_INDEX:
             event.Veto()
+        
+        self.update_tag_in_results_tree()
             
     def _on_set_property(self, event):
         '''
+        Sets tag name  for file
+        Arguments: Nothing
+        Returns: Nothing
         '''
         super(RandomSampler, self)._on_set_property(event)
-        
+        # If no name set the name back to previous
         row_num = event.GetIndex()
         new_tag_property_name = event.GetLabel()
-        if new_tag_property_name is None:
+        if new_tag_property_name is '':
             return 
+        # Pop the appropriate tag and then update it
         tag_name, tag_value = self.current_tag_list.pop(row_num)
         tag_dirty = (new_tag_property_name, tag_value)
         self.current_tag_list.insert(row_num, tag_dirty)
         
+        self.update_tag_in_results_tree()
         
         
     def get_dirs(self, item, level):
         '''
         Fetches the contents of a directory 
+        Arguments: 
+        item: Item to be expanded
+        level: Level of expansion from initial click
+        Returns: Nothing
         '''
-        if level == 2:
+        if level == self.MAX_FOLDER_DEPTH:
             return  
         dirname = self._tc_results.GetPyData(item)
         dir_list = []
         if os.path.isdir(dirname) is  True:
             try:
+                # Dont append to list if files added previously
                 if self._tc_results.GetChildrenCount(item, False) == 0:
                     dir_list += os.listdir(dirname)
                     dir_list.sort()
@@ -597,7 +696,46 @@ class RandomSampler(RandomSamplerGUI):
         '''
         
         return self._tc_results.GetPyData(treeitem)
-                                     
+    
+    def get_positive_tag_string(self, filename):
+        '''
+        Gets the string containing the positive tags concatenated with a tag name separator
+        Arguments: Nothing
+        Returns: Nothing
+        '''
+        # First write current dirty tag to file_tag_dict to process it
+        
+        self.file_tag_dict[self.current_file_selected] = self.current_tag_list 
+        
+        # No tag present case
+        tag_list = self.file_tag_dict.get(filename)
+        if tag_list is None:
+            return ""
+        else:
+            tag_string = ''
+            for tag in tag_list:
+                tag_name, tag_status = tag
+                if tag_status is 'True':
+                    tag_string = tag_string+self.TAG_NAME_SEPARATOR+tag_name
+            
+            # Remove the separator at the list
+            if tag_string.endswith(self.TAG_NAME_SEPARATOR):
+                tag_string = tag_string[0:(0-len(self.TAG_NAME_SEPARATOR))]
+            return tag_string
+    
+    def update_tag_in_results_tree(self):
+        '''
+        Fires an update to load new tag in tree
+        Arguments: Nothing
+        Returns: Nothing
+        '''
+        # Get TreeItem and filename
+        tree_item = self._tc_results.GetSelection()
+        filename = self.get_filename_from_treenode(tree_item)
+        
+        # Get the displayname and positive tag and join them 
+        display_name = self._tc_results.GetItemText(tree_item).split(self.TAG_NAME_SEPARATOR)[0]
+        self._tc_results.SetItemText(tree_item,display_name + "  " + self.get_positive_tag_string(filename))
 
 def main():
     '''
