@@ -55,8 +55,20 @@ The following are some useful ***git*** commands
 - use [argparse](http://docs.python.org/2/howto/argparse.html) for handling arguments 
 - use no hard coding in functions except for the test scripts, try to pass all constants as function parameters
 
-**pyLucene**
-
+**pyLucene Installation help**
+- Install g++
+- Install python-dev
+- Download pylucene3.6 from http://mirror.sdunix.com/apache/lucene/pylucene/
+- Execute the following command in JCC installation directory
+    - python setup.py build 
+    - sudo python setup.py install
+- Uncomment properties applicable to relevant platform(Linux,Mac,Windows) etc. from pylucene makefile
+- install ant
+- install setuptools
+- Execute following commands from pylucene directory
+      - make
+      - sudo make install
+      - make test
 
 
 --------------------------------------
