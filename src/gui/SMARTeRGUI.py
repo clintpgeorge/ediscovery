@@ -86,7 +86,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_available_mdl.Wrap( -1 )
 		_gbsizer_mdl.Add( self._st_available_mdl, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_available_mdl = wx.TextCtrl( self._panel_query, wx.ID_ANY, _(u"NA"), wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY|wx.STATIC_BORDER|wx.SUNKEN_BORDER )
+		self._tc_available_mdl = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY|wx.STATIC_BORDER|wx.SUNKEN_BORDER )
 		self._tc_available_mdl.SetMinSize( wx.Size( 300,-1 ) )
 		
 		_gbsizer_mdl.Add( self._tc_available_mdl, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -113,15 +113,15 @@ class SMARTeRGUI ( wx.Frame ):
 		self._tc_query_input = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )
 		_gbsizer_query.Add( self._tc_query_input, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_compose = wx.Button( self._panel_query, wx.ID_ANY, _(u"Compose"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_query.Add( self._btn_compose, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_add_to_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Add To Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_query.Add( self._btn_add_to_query, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		_rbtn_conjunctionChoices = [ _(u"AND"), _(u"OR"), _(u"NOT") ]
-		self._rbtn_conjunction = wx.RadioBox( self._panel_query, wx.ID_ANY, _(u"Conjunction"), wx.DefaultPosition, wx.DefaultSize, _rbtn_conjunctionChoices, 1, 0 )
-		self._rbtn_conjunction.SetSelection( 0 )
-		_gbsizer_query.Add( self._rbtn_conjunction, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_rbtn_compulsion_levelChoices = [ _(u"MUST"), _(u"MAY"), _(u"MUST_NOT") ]
+		self._rbtn_compulsion_level = wx.RadioBox( self._panel_query, wx.ID_ANY, _(u"Compulsion Level"), wx.DefaultPosition, wx.DefaultSize, _rbtn_compulsion_levelChoices, 1, 0 )
+		self._rbtn_compulsion_level.SetSelection( 0 )
+		_gbsizer_query.Add( self._rbtn_compulsion_level, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		_cbx_meta_typeChoices = [ _(u"content"), _(u"message_from"), _(u"message_to"), _(u"message_subject"), _(u"file_name") ]
+		_cbx_meta_typeChoices = []
 		self._cbx_meta_type = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"Select Type"), wx.DefaultPosition, wx.DefaultSize, _cbx_meta_typeChoices, wx.CB_SORT )
 		_gbsizer_query.Add( self._cbx_meta_type, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -150,14 +150,6 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_bsizer_query.Add( _sbsizer_query_model, 0, wx.ALL|wx.EXPAND, 10 )
 		
-		_sbsizer_results = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Results") ), wx.VERTICAL )
-		
-		self._panel_query_results = wx.Panel( self._panel_query, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		_sbsizer_results.Add( self._panel_query_results, 1, wx.EXPAND |wx.ALL, 5 )
-		
-		
-		_bsizer_query.Add( _sbsizer_results, 1, wx.ALL|wx.EXPAND, 10 )
-		
 		
 		self._panel_query.SetSizer( _bsizer_query )
 		self._panel_query.Layout()
@@ -171,6 +163,8 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_index.Layout()
 		_bsizer_index.Fit( self._panel_index )
 		self._notebook.AddPage( self._panel_index, _(u"Index files"), False )
+		self._panel_query_results = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self._notebook.AddPage( self._panel_query_results, _(u"Results"), False )
 		
 		_bsizer_main.Add( self._notebook, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -186,7 +180,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self._on_menu_sel_about, id = self._mitem_about.GetId() )
 		self.Bind( wx.EVT_MENU, self._on_men_sel_help, id = self._mitem_help.GetId() )
 		self._file_picker_mdl.Bind( wx.EVT_FILEPICKER_CHANGED, self._on_file_change_mdl )
-		self._btn_compose.Bind( wx.EVT_BUTTON, self._on_click_compose )
+		self._btn_add_to_query.Bind( wx.EVT_BUTTON, self._on_click_add_to_query )
 		self._btn_run_query.Bind( wx.EVT_BUTTON, self._on_click_run_query )
 		self._chbx_topic_mdl.Bind( wx.EVT_CHECKBOX, self._on_sel_topic_mdl )
 		self._chbx_meta_data.Bind( wx.EVT_CHECKBOX, self._on_sel_metadata )
@@ -211,7 +205,7 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_file_change_mdl( self, event ):
 		event.Skip()
 	
-	def _on_click_compose( self, event ):
+	def _on_click_add_to_query( self, event ):
 		event.Skip()
 	
 	def _on_click_run_query( self, event ):

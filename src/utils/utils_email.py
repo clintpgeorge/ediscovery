@@ -108,6 +108,7 @@ def parse_plain_text_email(file_path):
     receiver = ''
     sender = ''
     cc = ''
+    bcc = ''
     subject = ''
     body_text = ''
 
@@ -127,10 +128,12 @@ def parse_plain_text_email(file_path):
         receiver = xstr(msg['to'])
         sender = xstr(msg['from'])
         cc = xstr(msg['cc'])
+        #Subodh - Rahul - Get BCC attribute from the email 
+        bcc = xstr(msg['bcc'])
         subject = xstr(msg['subject'])
         body_text = msg.get_payload()
         body_text = ' '.join(punkt_word_tokenizer(body_text.lower()))
     
-    return (receiver, sender, cc, subject, body_text)
+    return (receiver, sender, cc, subject, body_text,bcc)
     
 
