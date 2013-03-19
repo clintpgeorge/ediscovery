@@ -184,12 +184,9 @@ class RandomSampler(RandomSamplerGUI):
                                             self.precision_val, self.SEED)
         self.SetStatusText('%d files are sampled out of %d files.'
                                % (len(self.sampled_files), len(self.file_list)))
-        self._st_num_samples.Show()
-        self.sampled_files = random_sampler(self.file_list,
-                                                self.confidence_val,
-                                                self.precision_val, self.SEED)
-        self._st_num_samples.Show()
+
         self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        self._st_num_samples.Show()
         
     def _on_precision_changed(self, event):
         '''
@@ -329,8 +326,7 @@ class RandomSampler(RandomSamplerGUI):
             # Runs copy on a different thread
             start_thread(self.do_copy, total_file_size, progress_dialog)
             #progress_dialog.ShowModal()
-            self.SetStatusText('%d randomly sampled files (from %d files) are copied \
-            to the output folder.' % (len(self.sampled_files), len(self.file_list)))
+            self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(self.sampled_files), len(self.file_list)))
             
             # shows the tree list control ans sets defaults 
             self.from_copy_files_dir = self.dir_path
