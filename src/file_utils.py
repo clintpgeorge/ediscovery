@@ -14,6 +14,7 @@ import shutil
 import ConfigParser
 import threading
 import wx
+import subprocess
 
 def copy_files_with_dir_tree(lcp, file_paths, output_dir_path, in_file_prefix=''):
     '''Copies the files given in path list into 
@@ -98,8 +99,6 @@ def find_files_in_folder(input_dir):
             file_list.append(os.path.join(root, file_name))
     return file_list
 
-
-
 def read_config(file_name):
     
     config = ConfigParser.ConfigParser()
@@ -157,6 +156,7 @@ def start_thread(func, *args):
     thread = threading.Thread(target=func, args=args)
     thread.setDaemon(True)
     thread.start()
+    thread.join(None)
 
 '''
 Obsolete methods 
@@ -186,3 +186,46 @@ def copy_random_files(dir_path, random_list):
     except OSError:
             print str(OSError)
             print "Cannot copy the required files. Check that destination directory is empty"
+
+class FileLoadDialog(wx.Dialog):
+    def __init__(self, gui, title, to_add=1, cancellable=False):
+        wx.Dialog.__init__(self, gui, title=title,
+                          style=wx.CAPTION)
+        
+        self.gui = gui
+        self.count = 0
+        self.to_add = to_add
+        self.timer = wx.Timer(self)
+        self.gauge = wx.Gauge(self, range=100, size=(180, 30))
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.gauge, 0, wx.ALL, 10)
+
+        if cancellable:
+            cancel = wx.Button(self, wx.ID_CANCEL, "&Cancel")
+            cancel.SetDefault()
+            cancel.Bind(wx.EVT_BUTTON, self.on_cancel)
+            btnSizer = wx.StdDialogButtonSizer()
+            btnSizer.AddButton(cancel)
+            btnSizer.Realize()
+            sizer.Add(btnSizer, 0, wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM, 10)
+
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+        self.SetFocus()
+
+        self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
+        self.timer.Start(30)
+
+
+    def on_timer(self, event):
+        """Increases the gauge's progress."""
+        self.count += self.to_add
+        self.gauge.SetValue(self.count)
+        if self.count > 100:
+            self.count = 0
+
+
+    def on_cancel(self, event):
+        """Cancels the conversion process"""
+        # do whatever
+        self.Close()

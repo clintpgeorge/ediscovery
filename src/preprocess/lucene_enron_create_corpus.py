@@ -10,7 +10,7 @@ Created by: Clint P. George
 Created On: Feb 28, 2013   
 
 '''
-
+import os 
 import logging
 from gensim import corpora
 from lucene import SimpleFSDirectory, File, initVM, Version, IndexReader
@@ -39,7 +39,13 @@ def process_index_doc(doc):
     tokens = []
     if doc is not None:
         body_text = doc.get(MetadataType.EMAIL_BODY)
-        tokens = body_text.split()
+        if body_text is None:
+            file_path = doc.get(MetadataType.FILE_PATH)
+            file_name = doc.get(MetadataType.FILE_NAME)
+            logging.error('%s does not have any contents.', os.path.join(file_path, file_name))
+            tokens = []
+        else:
+            tokens = body_text.split()
     return tokens
 
 def create_dictionary(en_sw_file, index_reader, dictionary_file, MIN_FREQUENCY, MIN_WORD_LENGTH):

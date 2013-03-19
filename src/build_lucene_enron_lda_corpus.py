@@ -25,7 +25,7 @@ if __name__=="__main__":
 
     Examples: 
         python build_lucene_enron_lda_corpus.py -h # for help 
-        python build_lucene_enron_lda_corpus.py -l -d /media/Store/Research/datasets/es/lucene -o /media/Store/Research/datasets/es/tm 
+        python build_lucene_enron_lda_corpus.py -l -d /home/cgeorge/ediscovey/enron/lucene -o /home/cgeorge/ediscovey/enron/tm 
 
     ''')
     arg_parser.add_argument("-d", dest="index_folder", type=str, help="data folder", required=True)
