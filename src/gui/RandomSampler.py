@@ -328,7 +328,7 @@ class RandomSampler(RandomSamplerGUI):
             
             # Runs copy on a different thread
             start_thread(self.do_copy, total_file_size, progress_dialog)
-            progress_dialog.ShowModal()
+            #progress_dialog.ShowModal()
             self.SetStatusText('%d randomly sampled files (from %d files) are copied \
             to the output folder.' % (len(self.sampled_files), len(self.file_list)))
             
