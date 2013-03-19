@@ -43,7 +43,7 @@
             <property name="name">RandomSamplerGUI</property>
             <property name="pos"></property>
             <property name="size">1024,800</property>
-            <property name="style">wxCAPTION|wxCLOSE_BOX|wxDEFAULT_FRAME_STYLE|wxMINIMIZE_BOX|wxRESIZE_BORDER|wxSTAY_ON_TOP|wxSYSTEM_MENU</property>
+            <property name="style">wxCAPTION|wxCLOSE_BOX|wxDEFAULT_FRAME_STYLE|wxMAXIMIZE_BOX|wxMINIMIZE_BOX|wxRESIZE_BORDER|wxSTAY_ON_TOP|wxSYSTEM_MENU</property>
             <property name="subclass"></property>
             <property name="title">Random Sampler</property>
             <property name="tooltip"></property>

@@ -12,7 +12,7 @@ import time
 from decimal import Decimal 
 from gui.RandomSamplerGUI import RandomSamplerGUI
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
-from file_utils import find_files_in_folder, copy_files_with_dir_tree, convert_size, start_thread, copy_with_dialog
+from file_utils import find_files_in_folder, copy_files_with_dir_tree, convert_size, start_thread, copy_with_dialog, FileLoadDialog
 
 
 
@@ -51,7 +51,7 @@ class RandomSampler(RandomSamplerGUI):
         self._tag_list.InsertColumn(0,'Property')
         self._tag_list.InsertColumn(1,'Status')
         self._tag_list.InsertStringItem(self.REVIEWED_TAG_INDEX, 'Reviewed')
-        self._tag_list.SetStringItem(self.RESPONSIVE_TAG_INDEX, 1, 'False')
+        self._tag_list.SetStringItem(self.REVIEWED_TAG_INDEX, 1, 'False')
         self._tag_list.InsertStringItem(self.RESPONSIVE_TAG_INDEX, 'Responsive')
         self._tag_list.SetStringItem(self.RESPONSIVE_TAG_INDEX, 1, 'False')
         
@@ -163,11 +163,19 @@ class RandomSampler(RandomSamplerGUI):
                            self.dir_path, wx.DD_DIR_MUST_EXIST)
         if dlg.ShowModal() == wx.ID_OK:
             self.dir_path = dlg.GetPath()
+            message_dialog = FileLoadDialog(gui = self, title = "Files loading", cancellable = True )
+            message_dialog.Show()
+            start_thread(self.do_load, message_dialog)
         dlg.Destroy()
         self._tc_data_dir.SetValue(self.dir_path)
         self.SetStatusText("The selected input folder is %s" % self.dir_path)
         
-        self.file_list = find_files_in_folder(self.dir_path)
+        #progress_dialog = wx.ProgressDialog('Loading', 'Please wait...', parent = self, style = 
+        #                                    wx.PD_SMOOTH | wx.PD_ELAPSED_TIME)
+            
+        # Runs load on a different thread
+        
+        #self.file_list = find_files_in_folder(self.dir_path)
         self._st_num_data_dir_files.SetLabel('%d files found' % len(self.file_list))
         
         
@@ -275,6 +283,11 @@ class RandomSampler(RandomSamplerGUI):
                                      self.output_dir_path, total_size, dialog)
 
         
+    def do_load(self, dialog):
+        
+        self.file_list = find_files_in_folder(self.dir_path)
+        self.Refresh()
+        dialog.Close()
     
     def _on_click_copy_files( self, event ):
         '''
@@ -606,7 +619,13 @@ class RandomSampler(RandomSamplerGUI):
         reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
         self.GetEventHandler().ProcessEvent(reload_tag)
         
-        self.update_tag_in_results_tree()
+        self.to_copy_files_dir = self.output_dir_path
+        self._tc_results.DeleteAllItems()
+        root = self._tc_results.AddRoot(self.to_copy_files_dir)
+        self._tc_results.SetPyData(root, os.path.abspath(self.to_copy_files_dir))
+        self._tc_results.SetItemImage(root,self.folder_icon, wx.TreeItemIcon_Normal)
+        self._tc_results.SetItemImage(root,self.folder_open_icon, wx.TreeItemIcon_Expanded)
+        self.get_dirs(root,0)
         
     def _on_add_tag(self, event):
         '''
@@ -736,6 +755,7 @@ class RandomSampler(RandomSamplerGUI):
         # Get the displayname and positive tag and join them 
         display_name = self._tc_results.GetItemText(tree_item).split(self.TAG_NAME_SEPARATOR)[0]
         self._tc_results.SetItemText(tree_item,display_name + "  " + self.get_positive_tag_string(filename))
+        
 
 def main():
     '''
