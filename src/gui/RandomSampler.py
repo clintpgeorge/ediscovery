@@ -56,7 +56,8 @@ class RandomSampler(RandomSamplerGUI):
         self._tag_list.SetStringItem(self.RESPONSIVE_TAG_INDEX, 1, 'False')
         
         # Separator for splitting tags
-        self.TAG_NAME_SEPARATOR = " || "
+        self.TAG_NAME_SEPARATOR = " , "
+        self.TAG_PREFIX = 'tag :'
         
         # Maximum depth of folders expanded for display
         self.MAX_FOLDER_DEPTH = 2
@@ -338,7 +339,10 @@ class RandomSampler(RandomSamplerGUI):
             self._tc_results.SetItemImage(root,self.folder_open_icon, wx.TreeItemIcon_Expanded)
             self.get_dirs(root,0)
             
-            
+            # Set defaults for all tagging panel
+            self.disable_tag_interface()
+            self.current_file_selected = ''
+            self.current_tag_list = []
             self._panel_samples.Show(True)
             self._panel_samples.GetSizer().Layout()
             self.GetSizer().Layout()
@@ -359,6 +363,11 @@ class RandomSampler(RandomSamplerGUI):
             self.file_tag_dict[self.current_file_selected] = self.current_tag_list
         treeitem = event.GetItem()
         filename  = self.get_filename_from_treenode(treeitem)
+        
+        #Nothing if directory
+        if os.path.isdir(filename):
+            return
+        
         self.current_file_selected = filename
         
         
@@ -425,6 +434,11 @@ class RandomSampler(RandomSamplerGUI):
         self.get_dirs(treeitem,0)
         self._tc_results.Refresh()
         filename = self.get_filename_from_treenode(treeitem)
+        # Do not tag directories
+        if os.path.isdir(filename):
+            self.disable_tag_interface()
+            return
+        self.enable_tag_inteface()
         # If no current tag, load a default tag
         if (self.current_file_selected is None or self.current_tag_list is None):
             self.current_tag_list  = self.make_default_tag_list()
@@ -727,11 +741,20 @@ class RandomSampler(RandomSamplerGUI):
         if tag_list is None:
             return ""
         else:
-            tag_string = ''
+            tag_string = 'tag :'
+            index = 0
             for tag in tag_list:
                 tag_name, tag_status = tag
-                if tag_status is 'True':
-                    tag_string = tag_string+self.TAG_NAME_SEPARATOR+tag_name
+                if index is not 0:
+                    if tag_status is 'True':
+                        tag_string = tag_string+self.TAG_NAME_SEPARATOR+tag_name
+                        index = index+1
+                else:
+                    if tag_status is 'True':
+                        tag_string = tag_string+tag_name
+                        index = index+1
+                
+                    
             
             # Remove the separator at the list
             if tag_string.endswith(self.TAG_NAME_SEPARATOR):
@@ -749,8 +772,29 @@ class RandomSampler(RandomSamplerGUI):
         filename = self.get_filename_from_treenode(tree_item)
         
         # Get the displayname and positive tag and join them 
-        display_name = self._tc_results.GetItemText(tree_item).split(self.TAG_NAME_SEPARATOR)[0]
+        display_name = self._tc_results.GetItemText(tree_item).split(self.TAG_PREFIX)[0]
         self._tc_results.SetItemText(tree_item,display_name + "  " + self.get_positive_tag_string(filename))
+    
+    def disable_tag_interface(self):
+        '''
+        Disables all events on tagging inteface:
+        Arguments: Nothing
+        Returns: Nothing
+        '''
+        self._btn_add_tag.Disable()
+        self._btn_remove_tag.Disable()
+        self._tag_list.Disable()
+        
+    
+    def enable_tag_inteface(self):
+        '''
+        Disables all events on tagging inteface:
+        Arguments: Nothing
+        Returns: Nothing
+        '''
+        self._btn_add_tag.Enable()
+        self._btn_remove_tag.Enable()
+        self._tag_list.Enable()
         
 
 def main():
