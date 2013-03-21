@@ -12,7 +12,7 @@ import time
 from decimal import Decimal 
 from gui.RandomSamplerGUI import RandomSamplerGUI
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
-from file_utils import find_files_in_folder, copy_files_with_dir_tree, convert_size, start_thread, copy_with_dialog, FileLoadDialog
+from file_utils import find_files_in_folder, convert_size, start_thread, copy_with_dialog
 
 
 
@@ -68,18 +68,22 @@ class RandomSampler(RandomSamplerGUI):
         self.output_dir_path = tempfile.gettempdir()
         self.from_copy_files_dir = self.dir_path 
         self.to_copy_files_dir = self.output_dir_path
+
+        # for the I/O tab 
         self._tc_data_dir.SetValue(self.dir_path)
         self._tc_output_dir.SetValue(self.output_dir_path)
-        
+        self._tc_out_data_dir.SetValue(self.dir_path)
+        self._tc_out_output_dir.SetValue(self.output_dir_path)
         self.file_list = find_files_in_folder(self.dir_path)
         self._st_num_data_dir_files.SetLabel('%d files found' % len(self.file_list))
+        self._st_out_num_data_dir_files.SetLabel('%d files found' % len(self.file_list))
+
         
         # Defaults for random sample calcluation
         self.SEED = 2013
 
         self._set_confidence_level_and_interval()
-        self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()
-                                          )/ Decimal('100')
+        self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()) / Decimal('100')
         self.get_precision_as_float()
         self.Bind(wx.EVT_COMMAND_FIND_REPLACE_ALL, self._on_load_tag_list)
         self._panel_samples.Show(False) # make the tree list control invisible
@@ -91,6 +95,9 @@ class RandomSampler(RandomSamplerGUI):
         self.folder_icon     = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_FOLDER,      wx.ART_OTHER, self.icon_size))
         self.folder_open_icon = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_FILE_OPEN,   wx.ART_OTHER, self.icon_size))
         self.file_icon     = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, self.icon_size))  
+
+        self._current_page = 0
+        self.nb_config_sampler.SetSelection(self._current_page)
 
         self.Center()
         self.Show(True)
@@ -153,36 +160,60 @@ class RandomSampler(RandomSamplerGUI):
         super(RandomSampler, self)._on_mitem_exit(event) 
         self._on_close()
     
-    def _on_click_sel_data_dir( self, event ):
+    def _on_nb_page_changed( self, event ):
+        self.nb_config_sampler.SetSelection(self._current_page)
+        None 
+    
+    
+    def _on_click_io_next( self, event ):
+        # TODO: 
+        # need to do the validations 
+        # create the output directory if that not exists 
+        self._current_page = 1
+        self.nb_config_sampler.SetSelection(self._current_page)
+
+    def _on_click_cl_goback( self, event ):
+        self._current_page = 0
+        self.nb_config_sampler.SetSelection(self._current_page)
+    
+    def _on_click_cl_next( self, event ):
+        self._current_page = 2
+        # TODO: need to do the validations 
+        self.nb_config_sampler.SetSelection(self._current_page)
+    
+    
+    def _on_click_out_goback( self, event ):
+        self._current_page = 1
+        self.nb_config_sampler.SetSelection(self._current_page)
+    
+    
+    def _on_click_io_sel_data_dir( self, event ):
         """
         Select the data folder
         Arguments: Event of item selected
         Returns: Nothing
         """
-        super(RandomSampler, self)._on_click_sel_data_dir(event) 
+        super(RandomSampler, self)._on_click_io_sel_data_dir(event) 
         
         dlg = wx.DirDialog(self, "Choose the input folder to sample",
                            self.dir_path, wx.DD_DIR_MUST_EXIST)
         if dlg.ShowModal() == wx.ID_OK:
             self.dir_path = dlg.GetPath()
-            #message_dialog = FileLoadDialog(gui = self, title = "Files loading", cancellable = True )
             message_dialog =  wx.MessageDialog(parent = self, message = "Loading files. This may take a few minutes. Press OK to continue ... ",caption = "Loading",
                                     style = wx.ICON_INFORMATION)
-            result = message_dialog.ShowModal()
-            #start_thread(self.do_load, message_dialog)
+            message_dialog.ShowModal()
             self.do_load(message_dialog)
             #self.file_list = find_files_in_folder(self.dir_path)
-        #dlg.Destroy()
+        dlg.Destroy()
         self._tc_data_dir.SetValue(self.dir_path)
+        self._tc_out_data_dir.SetValue(self.dir_path)
         self.SetStatusText("The selected input folder is %s" % self.dir_path)
         
-        #progress_dialog = wx.ProgressDialog('Loading', 'Please wait...', parent = self, style = 
-        #                                    wx.PD_SMOOTH | wx.PD_ELAPSED_TIME)
-            
         # Runs load on a different thread
         
         #self.file_list = find_files_in_folder(self.dir_path)
         self._st_num_data_dir_files.SetLabel('%d files found' % len(self.file_list))
+        self._st_out_num_data_dir_files.SetLabel('%d files found' % len(self.file_list))
         
         
         self.sampled_files = random_sampler(self.file_list,
@@ -192,6 +223,7 @@ class RandomSampler(RandomSamplerGUI):
                                % (len(self.sampled_files), len(self.file_list)))
 
         self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
         self._st_num_samples.Show()
         
     def _on_precision_changed(self, event):
@@ -202,6 +234,9 @@ class RandomSampler(RandomSamplerGUI):
         Returns: Nothing
         '''
         super(RandomSampler, self)._on_precision_changed(event)
+        
+        self._tc_out_confidence_interval.SetValue(self._tc_confidence_interval.GetValue())
+        
         # Maybe intermittently null string, escaping 
         try:
             self.get_precision_as_float()
@@ -212,6 +247,7 @@ class RandomSampler(RandomSamplerGUI):
         self.SetStatusText('%d files are sampled out of %d files.'
                                % (len(self.sampled_files), len(self.file_list)))
         self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
         self._st_num_samples.Show()
     
     def get_precision_as_float(self):
@@ -238,25 +274,27 @@ class RandomSampler(RandomSamplerGUI):
         
         
         super(RandomSampler, self)._on_confidence_changed(event)
+        
+        self._tc_out_confidence_levels.SetValue(self._cbx_confidence_levels.GetValue())
+        
         self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()
                                           )/ Decimal('100')
         self.sampled_files = random_sampler(self.file_list, self.confidence_val,
                                             self.precision_val, self.SEED)
         self.SetStatusText('%d files are sampled out of %d files.'
                                % (len(self.sampled_files), len(self.file_list)))
-        self._st_num_samples.Show()
-        self._st_num_samples.SetLabel('%d files found' % len(self.sampled_files))
+        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
         self.GetSizer().Layout()
 
-        
-        
-    def _on_click_sel_output_dir( self, event ):
+   
+    def _on_click_io_sel_output_dir( self, event ):
         """ 
         Selects the output folder 
         Arguments: Nothing
         Returns: Nothing
         """
-        super(RandomSampler, self)._on_click_sel_output_dir(event) 
+        super(RandomSampler, self)._on_click_io_sel_output_dir(event) 
         
         dlg = wx.DirDialog(self, "Choose the output folder to save",
                            self.output_dir_path, wx.DD_DIR_MUST_EXIST)
@@ -265,6 +303,7 @@ class RandomSampler(RandomSamplerGUI):
         dlg.Destroy()
         
         self._tc_output_dir.SetValue(self.output_dir_path)
+        self._tc_out_output_dir.SetValue(self.output_dir_path)
         self.SetStatusText("The selected output folder is %s" % self.output_dir_path)
         
         
@@ -590,7 +629,7 @@ class RandomSampler(RandomSamplerGUI):
             self._cbx_confidence_levels.SetSelection(index)
         except ValueError:
             self._cbx_confidence_levels.SetValue(str(DEFAULT_CONFIDENCE_LEVEL))
-            
+        self._tc_out_confidence_levels.SetValue(str(DEFAULT_CONFIDENCE_LEVEL))
         self._tc_confidence_interval.SetValue(str(int(DEFAULT_CONFIDENCE_INTERVAL)))
         
             
