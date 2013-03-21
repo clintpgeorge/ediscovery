@@ -48,7 +48,8 @@ class RandomSampler(RandomSamplerGUI):
         self.current_file_selected = None
         self.default_tag = ('Default' , 'True')
         self.current_tag_list = self.make_default_tag_list()
-        self._tag_list.InsertColumn(0,'Property')
+        self._tag_list.ClearAll()
+        self._tag_list.InsertColumn(0,'Tag')
         self._tag_list.InsertColumn(1,'Status')
         self._tag_list.InsertStringItem(self.REVIEWED_TAG_INDEX, 'Reviewed')
         self._tag_list.SetStringItem(self.REVIEWED_TAG_INDEX, 1, 'False')
@@ -164,10 +165,14 @@ class RandomSampler(RandomSamplerGUI):
                            self.dir_path, wx.DD_DIR_MUST_EXIST)
         if dlg.ShowModal() == wx.ID_OK:
             self.dir_path = dlg.GetPath()
-            message_dialog = FileLoadDialog(gui = self, title = "Files loading", cancellable = True )
-            message_dialog.Show()
-            start_thread(self.do_load, message_dialog)
-        dlg.Destroy()
+            #message_dialog = FileLoadDialog(gui = self, title = "Files loading", cancellable = True )
+            message_dialog =  wx.MessageDialog(parent = self, message = "Loading files. This may take a few minutes. Press OK to continue ... ",caption = "Loading",
+                                    style = wx.ICON_INFORMATION)
+            result = message_dialog.ShowModal()
+            #start_thread(self.do_load, message_dialog)
+            self.do_load(message_dialog)
+            #self.file_list = find_files_in_folder(self.dir_path)
+        #dlg.Destroy()
         self._tc_data_dir.SetValue(self.dir_path)
         self.SetStatusText("The selected input folder is %s" % self.dir_path)
         
@@ -329,7 +334,7 @@ class RandomSampler(RandomSamplerGUI):
             #progress_dialog.ShowModal()
             self.SetStatusText('%d randomly sampled files (from %d files) are copied to the output folder.' % (len(self.sampled_files), len(self.file_list)))
             
-            # shows the tree list control ans sets defaults 
+            # shows the tree list control and sets defaults 
             self.from_copy_files_dir = self.dir_path
             self.to_copy_files_dir = self.output_dir_path
             self._tc_results.DeleteAllItems()
@@ -561,7 +566,7 @@ class RandomSampler(RandomSamplerGUI):
                                "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
         result = dlg.ShowModal()
         if result == wx.ID_OK:
-            self.Destroy() 
+            self.Destroy()
 
 
     def _set_confidence_level_and_interval(self):
@@ -645,7 +650,7 @@ class RandomSampler(RandomSamplerGUI):
         '''
         super(RandomSampler, self)._on_add_tag(event)
         self.current_tag_list.append(self.default_tag)
-        
+        self.file_tag_dict[self.current_file_selected] = self.current_tag_list
         # Refresh tags
         reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
         self.GetEventHandler().ProcessEvent(reload_tag)
@@ -675,6 +680,8 @@ class RandomSampler(RandomSamplerGUI):
         super(RandomSampler, self)._on_set_property(event)
         # If no name set the name back to previous
         row_num = event.GetIndex()
+        if row_num is self.REVIEWED_TAG_INDEX or row_num is self.RESPONSIVE_TAG_INDEX:
+            event.Veto()
         new_tag_property_name = event.GetLabel()
         if new_tag_property_name is '':
             return 
@@ -741,7 +748,8 @@ class RandomSampler(RandomSamplerGUI):
         if tag_list is None:
             return ""
         else:
-            tag_string = 'tag :'
+            tag_prefix = 'tag :'
+            tag_string = ''
             index = 0
             for tag in tag_list:
                 tag_name, tag_status = tag
@@ -759,7 +767,9 @@ class RandomSampler(RandomSamplerGUI):
             # Remove the separator at the list
             if tag_string.endswith(self.TAG_NAME_SEPARATOR):
                 tag_string = tag_string[0:(0-len(self.TAG_NAME_SEPARATOR))]
-            return tag_string
+            if tag_string <> '':
+                return tag_prefix+tag_string
+            return ''
     
     def update_tag_in_results_tree(self):
         '''
