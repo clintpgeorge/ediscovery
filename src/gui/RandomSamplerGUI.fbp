@@ -39,10 +39,10 @@
             <property name="hidden">0</property>
             <property name="id">wxID_ANY</property>
             <property name="maximum_size"></property>
-            <property name="minimum_size">900,420</property>
+            <property name="minimum_size">900,450</property>
             <property name="name">RandomSamplerGUI</property>
             <property name="pos"></property>
-            <property name="size">900,430</property>
+            <property name="size">900,450</property>
             <property name="style">wxCAPTION|wxCLOSE_BOX|wxDEFAULT_FRAME_STYLE|wxMAXIMIZE_BOX|wxMINIMIZE_BOX|wxRESIZE_BORDER|wxSYSTEM_MENU</property>
             <property name="subclass"></property>
             <property name="title">Random Sampler</property>

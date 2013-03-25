@@ -3,7 +3,7 @@ Created on Feb 26, 2013
 
 @author: abhiramj  & cgeorge
 '''
-import os 
+import os
 import wx 
 import tempfile
 import webbrowser
@@ -129,7 +129,6 @@ class RandomSampler(RandomSamplerGUI):
         Arguments: Nothing
         Returns: Nothing
         '''
-        super(RandomSampler, self)._on_appln_close(event) 
         self._on_close()
     
     def _on_mitem_about( self, event ):
