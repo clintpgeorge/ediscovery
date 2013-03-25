@@ -77,11 +77,21 @@ def copy_with_dialog(lcp, file_paths, output_dir_path, size, dialog, in_file_pre
         
         if in_file_prefix <> '':            
             src_file_path = os.path.join(in_file_prefix, src_file_path)
-        
-        shutil.copy2(src_file_path, dest_dir_path)
+        try:
+            shutil.copy2(src_file_path, dest_dir_path)
+        except OSError:
+            print src_file_path + " could not be copied. Check permissions."
+        except IOError:
+            print src_file_path + " could not be copied. Check permissions."
+        except Exception:
+            print src_file_path + " could not be copied."
         current_copy += os.path.getsize(src_file_path)
         wx.CallAfter(dialog.Update, int(100*current_copy/size))
         wx.MilliSleep(8)
+        if (src_file_path == file_paths[len(file_paths) -1]):
+            wx.CallAfter(dialog.Update, 100)
+            return
+            
 
 def find_files_in_folder(input_dir):
     '''Recursive descent to find files in folder.

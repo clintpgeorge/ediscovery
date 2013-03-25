@@ -17,7 +17,7 @@ import wx.xrc
 class RandomSamplerGUI ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Random Sampler", pos = wx.DefaultPosition, size = wx.Size( 900,430 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.STAY_ON_TOP|wx.SYSTEM_MENU|wx.HSCROLL|wx.TAB_TRAVERSAL )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Random Sampler", pos = wx.DefaultPosition, size = wx.Size( 900,430 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.SYSTEM_MENU|wx.HSCROLL|wx.TAB_TRAVERSAL )
 		
 		self.SetSizeHintsSz( wx.Size( 900,420 ), wx.DefaultSize )
 		self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
@@ -70,6 +70,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		self._tc_data_dir = wx.TextCtrl( self.panel_io, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._tc_data_dir.SetFont( wx.Font( 9, 70, 90, 90, False, wx.EmptyString ) )
+		self._tc_data_dir.Enable( False )
 		self._tc_data_dir.SetMinSize( wx.Size( 300,30 ) )
 		
 		gbsizer_io.Add( self._tc_data_dir, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -86,6 +87,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		self._tc_output_dir = wx.TextCtrl( self.panel_io, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,30 ), 0 )
 		self._tc_output_dir.SetFont( wx.Font( 9, 70, 90, 90, False, wx.EmptyString ) )
+		self._tc_output_dir.Enable( False )
 		
 		gbsizer_io.Add( self._tc_output_dir, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -111,16 +113,13 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_io.Add( _bsizer_io_buttons, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
 		
 		
-		gbsizer_io.AddGrowableCol( 3 )
-		gbsizer_io.AddGrowableRow( 7 )
-		
 		sbsizer_io.Add( gbsizer_io, 0, wx.ALL|wx.EXPAND, 10 )
 		
 		
 		self.panel_io.SetSizer( sbsizer_io )
 		self.panel_io.Layout()
 		sbsizer_io.Fit( self.panel_io )
-		self.nb_config_sampler.AddPage( self.panel_io, u"Data and Ouput", True )
+		self.nb_config_sampler.AddPage( self.panel_io, u"Data and Ouput", False )
 		self.panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -187,9 +186,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_confidence.Add( _bsizer_cl_buttons, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
 		
-		
-		gbsizer_confidence.AddGrowableCol( 3 )
-		gbsizer_confidence.AddGrowableRow( 7 )
 		
 		sbsizer_confidence.Add( gbsizer_confidence, 0, wx.ALL|wx.EXPAND, 10 )
 		
@@ -299,9 +295,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_sampler1.Add( _bsizer_sampler_buttons, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
 		
 		
-		gbsizer_sampler1.AddGrowableCol( 3 )
-		gbsizer_sampler1.AddGrowableRow( 7 )
-		
 		sbsizer_sampler.Add( gbsizer_sampler1, 0, wx.ALL|wx.EXPAND, 10 )
 		
 		
@@ -329,7 +322,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_sampler.Add( self._tc_results, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 1 ), wx.ALL|wx.EXPAND|wx.LEFT|wx.RIGHT, 5 )
 		
-		self._tag_list = wx.ListCtrl( self._panel_samples, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.LC_EDIT_LABELS|wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER )
+		self._tag_list = wx.ListCtrl( self._panel_samples, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER )
 		self._tag_list.SetMinSize( wx.Size( 220,150 ) )
 		
 		gbsizer_sampler.Add( self._tag_list, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -373,14 +366,8 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_logger.Add( self._btn_clear_tags, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_TOP|wx.ALL, 5 )
 		
 		
-		gbsizer_logger.AddGrowableCol( 2 )
-		gbsizer_logger.AddGrowableRow( 3 )
-		
 		gbsizer_sampler.Add( gbsizer_logger, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 0 )
 		
-		
-		gbsizer_sampler.AddGrowableCol( 2 )
-		gbsizer_sampler.AddGrowableRow( 2 )
 		
 		sbsizer_samples.Add( gbsizer_sampler, 0, wx.EXPAND, 5 )
 		
@@ -396,7 +383,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self.sw_sampling.SetSizer( bsizer_sampling )
 		self.sw_sampling.Layout()
 		bsizer_sampling.Fit( self.sw_sampling )
-		self.nb_config_sampler.AddPage( self.sw_sampling, u"Sampled Output", False )
+		self.nb_config_sampler.AddPage( self.sw_sampling, u"Sampled Output", True )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -424,9 +411,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_exit )
 		self._tc_results.Bind( wx.EVT_TREE_ITEM_ACTIVATED, self._on_activated_file )
 		self._tc_results.Bind( wx.EVT_TREE_SEL_CHANGED, self._on_select_file )
-		self._tag_list.Bind( wx.EVT_LIST_BEGIN_LABEL_EDIT, self._on_edit_property )
-		self._tag_list.Bind( wx.EVT_LIST_END_LABEL_EDIT, self._on_set_property )
-		self._tag_list.Bind( wx.EVT_LIST_ITEM_SELECTED, self._on_edit_status )
+		self._tag_list.Bind( wx.EVT_LIST_ITEM_RIGHT_CLICK, self._on_edit_status )
 		self._btn_add_tag.Bind( wx.EVT_BUTTON, self._on_add_tag )
 		self._btn_remove_tag.Bind( wx.EVT_BUTTON, self._on_remove_tag )
 		self._btn_log_files.Bind( wx.EVT_BUTTON, self._on_click_log_details )
@@ -486,12 +471,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_select_file( self, event ):
-		event.Skip()
-	
-	def _on_edit_property( self, event ):
-		event.Skip()
-	
-	def _on_set_property( self, event ):
 		event.Skip()
 	
 	def _on_edit_status( self, event ):
