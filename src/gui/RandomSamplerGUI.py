@@ -41,6 +41,12 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_main = wx.BoxSizer( wx.VERTICAL )
 		
+		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"uflogo.png", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 400,110 ), 0 )
+		self._bitmap_uf_logo.SetMinSize( wx.Size( 400,110 ) )
+		self._bitmap_uf_logo.SetMaxSize( wx.Size( 400,110 ) )
+		
+		bsizer_main.Add( self._bitmap_uf_logo, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5 )
+		
 		self.nb_config_sampler = wx.Notebook( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.nb_config_sampler.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		
@@ -357,7 +363,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_log_files = wx.Button( self._panel_samples, wx.ID_ANY, u"Save Files", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbsizer_logger.Add( self._btn_log_files, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		_cbx_tag_typeChoices = [ u"Reviewed", u"Responsive", u"All" ]
+		_cbx_tag_typeChoices = [ u"Reviewed", u"Accept", u"All" ]
 		self._cbx_tag_type = wx.ComboBox( self._panel_samples, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_tag_typeChoices, wx.CB_READONLY|wx.CB_SORT )
 		self._cbx_tag_type.SetSelection( 0 )
 		gbsizer_logger.Add( self._cbx_tag_type, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )

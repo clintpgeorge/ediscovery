@@ -200,7 +200,7 @@ class RandomSampler(RandomSamplerGUI):
         if dlg.ShowModal() == wx.ID_OK:
             self.dir_path = dlg.GetPath()
             message_dialog =  wx.MessageDialog(parent = self, message = "Loading files. This may take a few minutes. Press OK to continue ... ",caption = "Loading",
-                                    style = wx.ICON_INFORMATION)
+                                    style = wx.ICON_INFORMATION | wx.OK)
             message_dialog.ShowModal()
             self.do_load(message_dialog)
             #self.file_list = find_files_in_folder(self.dir_path)
@@ -222,8 +222,8 @@ class RandomSampler(RandomSamplerGUI):
         self.SetStatusText('%d files are sampled out of %d files.'
                                % (len(self.sampled_files), len(self.file_list)))
 
-        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        self._st_num_samples.SetLabel('%d samples required' % len(self.sampled_files))
+        self._st_out_num_samples.SetLabel('%d samples required' % len(self.sampled_files))
         self._st_num_samples.Show()
         
     def _on_precision_changed(self, event):
@@ -246,8 +246,8 @@ class RandomSampler(RandomSamplerGUI):
                                             self.precision_val, self.SEED)
         self.SetStatusText('%d files are sampled out of %d files.'
                                % (len(self.sampled_files), len(self.file_list)))
-        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        self._st_num_samples.SetLabel('%d samples required' % len(self.sampled_files))
+        self._st_out_num_samples.SetLabel('%d samples required' % len(self.sampled_files))
         self._st_num_samples.Show()
     
     def get_precision_as_float(self):
@@ -283,8 +283,8 @@ class RandomSampler(RandomSamplerGUI):
                                             self.precision_val, self.SEED)
         self.SetStatusText('%d files are sampled out of %d files.'
                                % (len(self.sampled_files), len(self.file_list)))
-        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
+        self._st_num_samples.SetLabel('%d samples required' % len(self.sampled_files))
+        self._st_out_num_samples.SetLabel('%d samples required' % len(self.sampled_files))
         self.GetSizer().Layout()
 
    
