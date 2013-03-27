@@ -7,14 +7,14 @@ import os
 import wx 
 import tempfile
 import webbrowser
-import time
+# import time
 import shelve
 
 from datetime import datetime 
 from decimal import Decimal 
 from gui.RandomSamplerGUI import RandomSamplerGUI, TagDocumentDialog
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
-from file_utils import find_files_in_folder, convert_size, start_thread, copy_with_dialog, get_destination_file_path
+from file_utils import find_files_in_folder, convert_size, start_thread, copy_with_dialog, get_destination_file_path, free_space
 
 SHELVE_FILE_NAME = 'random_sampler.shelve'
 
@@ -29,9 +29,12 @@ class RandomSampler(RandomSamplerGUI):
         '''
         Constructor
         '''
-        # Some value needs to initialized for this to run without exception
-        self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
-        self.precision_val = DEFAULT_CONFIDENCE_INTERVAL
+        # Defaults for random sample calculation
+        self.SEED = 2013      
+        
+#        # Some value needs to initialized for this to run without exception
+#        self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
+#        self.precision_val = DEFAULT_CONFIDENCE_INTERVAL
                 
         # Calls the parent class's method 
         super(RandomSampler, self).__init__(parent) 
@@ -71,15 +74,15 @@ class RandomSampler(RandomSamplerGUI):
 #        # Maximum depth of folders expanded for display
 #        self.MAX_FOLDER_DEPTH = 2
         
-        self._st_num_samples.Show(False)
-        self._st_out_num_samples.Show(False)    
+
         
-        self.dir_path = tempfile.gettempdir() # a cross-platform way of getting the path to the temp directory
-        self.output_dir_path = tempfile.gettempdir()
-        self.from_copy_files_dir = self.dir_path 
-        self.to_copy_files_dir = self.output_dir_path
+
+#        self.from_copy_files_dir = self.dir_path 
+#        self.to_copy_files_dir = self.output_dir_path
 
         # for the I/O tab 
+        self.dir_path = tempfile.gettempdir() # a cross-platform way of getting the path to the temp directory
+        self.output_dir_path = tempfile.gettempdir()
         self._tc_data_dir.SetValue(self.dir_path)
         self._tc_output_dir.SetValue(self.output_dir_path)
         self._tc_out_data_dir.SetValue(self.dir_path)
@@ -88,13 +91,10 @@ class RandomSampler(RandomSamplerGUI):
         self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
         self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
 
-        
-        # Defaults for random sample calcluation
-        self.SEED = 2013
-
-        self._set_confidence_level_and_interval()
-        self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()) / Decimal('100')
-        self.get_precision_as_float()
+        # for the confidence tab 
+        self._set_default_confidence_level_and_interval()
+        self._st_num_samples.Show(False)
+        self._st_out_num_samples.Show(False)    
 #        self.Bind(wx.EVT_COMMAND_FIND_REPLACE_ALL, self._on_load_tag_list)
 #        self._panel_samples.Show(False) # make the tree list control invisible
         
@@ -106,12 +106,15 @@ class RandomSampler(RandomSamplerGUI):
 #        self.folder_open_icon = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_FILE_OPEN,   wx.ART_OTHER, self.icon_size))
 #        self.file_icon     = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, self.icon_size))  
 
+        self._is_io_updated = False # for the i/o tab updates  
+        self._is_ct_updated = False # for the confidence tab updates         
+        self._lc_review_loaded = False # for the review tab table 
+        self._is_samples_created = False # for the samples tab  
         self._current_page = 0
-        self._lc_review_loaded = False
-        self._is_samples_created = False  
         self.nb_config_sampler.ChangeSelection(self._current_page)
         
-        self.shelf = None 
+        # Sets up the application state
+        # self._shelf_setup()
         
         self.Center()
         self.Show(True)
@@ -195,6 +198,9 @@ class RandomSampler(RandomSamplerGUI):
         # TODO: 
         # need to do the validations 
         # create the output directory if that not exists 
+#        if self._is_io_updated:
+#            self._shelf_update_io_tab_state()
+#            self._is_io_updated = False
         
         # Generates samples based on initial configurations         
         self._generate_file_samples()
@@ -208,32 +214,158 @@ class RandomSampler(RandomSamplerGUI):
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
-    def _save_configurations(self):
+    
+    def _shelf_setup(self):
+        '''
+        Loads an existing shelf stored in the application 
+        state file located in the application directory  
+        '''
+
+        # Creates the data shelf if not exists 
+        self.shelf = shelve.open(SHELVE_FILE_NAME) # open -- file may get suffix added by low-level
+
+        exists_shelf_cfg = False 
+        exists_shelf_samples = False
+        if self.shelf['config'] is not None:
+            exists_shelf_cfg = True 
+            if self.shelf['samples'] is not None:
+                exists_shelf_samples = True
         
-        # Creates the data shelf 
-        file_name = os.path.join(self.output_dir_path, SHELVE_FILE_NAME)        
-        self.shelf = shelve.open(file_name) # open -- file may get suffix added by low-level
+        # Loads the the application state from the shelf 
+        if exists_shelf_cfg:
+            
+            self.dir_path = self.shelf['config']['data_folder'] 
+            self.file_list = self.shelf['config']['file_list'] 
+            self.output_dir_path = self.shelf['config']['output_folder'] 
+            self.precision_val = self.shelf['config']['confidence_interval'] 
+            self.confidence_val = self.shelf['config']['confidence_level'] 
+            
+            # for the I/O tab 
+            self._tc_data_dir.SetValue(self.dir_path)
+            self._tc_output_dir.SetValue(self.output_dir_path)
+            self._tc_out_data_dir.SetValue(self.dir_path)
+            self._tc_out_output_dir.SetValue(self.output_dir_path)
+            self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
+            self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
+            
+            # for confidence interval 
+            str_confidence_level = str(self.confidence_val * Decimal('100'))
+            str_precision = str(self.precision_val * 100)
+            self._cbx_confidence_levels.ChangeValue(str_confidence_level)
+            self._tc_out_confidence_levels.ChangeValue(str_confidence_level)
+            self._tc_confidence_interval.ChangeValue(str_precision)
+            self._tc_out_confidence_interval.ChangeValue(str_precision) 
+            
+        # Creates the data shelf for the first time 
+        else:
+            
+            sc_dict = {} 
+            sc_dict['data_folder'] = self.dir_path
+            sc_dict['file_list'] = self.file_list
+            sc_dict['output_folder'] = self.output_dir_path
+            sc_dict['confidence_level'] = self.confidence_val
+            sc_dict['confidence_interval'] = self.precision_val
+            sc_dict['created_date'] = datetime.now()
+            sc_dict['modified_date'] = datetime.now()
+            self.shelf['config'] = sc_dict
+            self.shelf.sync()
         
-        # Saves the application configurations 
-        sc_dict = {} 
-        sc_dict['data_folder'] = self.dir_path
-        sc_dict['output_folder'] = self.output_dir_path
-        sc_dict['confidence_level'] = self.confidence_val
-        sc_dict['confidence_interval'] = self.precision_val
-        sc_dict['created_date'] = datetime.now()
-        sc_dict['modified_date'] = datetime.now()
-        self.shelf['config'] = sc_dict
+        if exists_shelf_samples:
+            # TODO: Need to handle this case 
+            None 
+        
+    
+    def _shelf_update_io_tab_state(self):
+        '''
+        Updates the data folder and output folder 
+        into the shelf
+        '''    
+        self.shelf['config']['data_folder'] = self.dir_path
+        self.shelf['config']['output_folder'] = self.output_dir_path
+        self.shelf['config']['modified_date'] = datetime.now()
+        self.shelf.sync()
+     
+    
+    def _shelf_update_confidence_tab_state(self):
+        '''
+        Updates the confidence level and interval  
+        into the shelf
+        '''    
+        self.shelf['config']['confidence_level'] = self.confidence_val
+        self.shelf['config']['confidence_interval'] = self.precision_val  
+        self.shelf['config']['modified_date'] = datetime.now()
         self.shelf.sync()
         
-        # Saves the sample configurations 
-
+    
+    def _shelf_update_samples_state(self):
+        '''
+        Updates the sampled documents details into 
+        the shelf from the scratch  
+        '''
+        file_id = 0 
+        samples_dict = {}        
         
+        if self.sampled_files is not None:
+        
+            for src_file_path in self.sampled_files:
+            
+                src_dir, file_name = os.path.split(src_file_path)
+                dest_file_path = get_destination_file_path(self.dir_path, src_file_path, self.output_dir_path)
+                dest_dir, _ = os.path.split(dest_file_path)
+                
+                fs_dict = {}
+                fs_dict['file_id'] = file_id
+                fs_dict['file_name'] = file_name
+                fs_dict['src_dir'] = src_dir
+                fs_dict['dest_dir'] = dest_dir
+                fs_dict['relevant'] = False 
+                fs_dict['privileged'] = False   
+                              
+                samples_dict[file_id] = fs_dict # adds every file into the samples dictionary 
+                file_id += 1
+        
+        self.shelf['samples'] = samples_dict 
+        self.shelf['num_samples'] = file_id 
+        self.shelf['config']['modified_date'] = datetime.now()
+        self.shelf.sync()
+        
+    
+    def _shelf_update_doc_tags_state(self, file_id, is_relevant, is_privileged):
+        '''
+        Updates the given document sample' tags 
+        '''
+        
+        # Gets the file dictionary 
+        if file_id in self.shelf['samples']:
+            self.shelf['samples'][file_id]['relevant'] = is_relevant
+            self.shelf['samples'][file_id]['privileged'] = is_privileged
+            self.shelf['config']['modified_date'] = datetime.now()
+            self.shelf.sync()
+            return True 
+        else: 
+            return False  
+
+    
+    def _shelf_get_doc_state(self, file_id):
+        '''
+        Gets the file sample dictionary from 
+        the application state 
+        '''
+        
+        fs_dict = {}
+        if file_id in self.shelf['samples']:
+            fs_dict = self.shelf['samples'][file_id]
+        return fs_dict
+    
     
     def _on_click_cl_next( self, event ):
         # TODO: need to do the validations 
 
         # Stores the configurations into a file 
-        self._save_configurations()
+        if self._is_ct_updated:
+            self._shelf_update_confidence_tab_state()        
+            self._shelf_update_samples_state()
+            self._is_ct_updated = False 
         
         
         self._current_page = 2
@@ -311,6 +443,7 @@ class RandomSampler(RandomSamplerGUI):
         '''
         
         # Generate samples 
+        
         self.sampled_files = random_sampler(self.file_list, self.confidence_val, self.precision_val, self.SEED)
 
         # Set status text 
@@ -649,7 +782,10 @@ class RandomSampler(RandomSamplerGUI):
         
         for i in range(0, len(self.sampled_files)):
             self._lc_review.SetStringItem(i, 2, 'No')
-            self._lc_review.SetStringItem(i, 3, 'No')           
+            self._lc_review.SetStringItem(i, 3, 'No')       
+            
+        self._chbx_doc_relevant.SetValue(False)  
+        self._chbx_doc_privileged.SetValue(False)    
 
         
 
@@ -957,20 +1093,21 @@ class RandomSampler(RandomSamplerGUI):
                                "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
         result = dlg.ShowModal()
         if result == wx.ID_OK:
-            if self.shelf is not None:
-                self.shelf.close()
+#            if self.shelf is not None:
+#                self.shelf.close()
             self.Destroy()
 
 
-    def _set_confidence_level_and_interval(self):
+    def _set_default_confidence_level_and_interval(self):
         '''
         Sets default confidence level and interval in Top Level interface
         Arguments: None
         Returns: None
         '''
         
-        confidence_levels = ['%.3f' % (w * Decimal('100')) 
-                             for w in  SUPPORTED_CONFIDENCES.keys()]
+        # Set default confidence levels 
+        self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
+        confidence_levels = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
         confidence_levels.sort()
         self._cbx_confidence_levels.Clear()
         for cl in confidence_levels:
@@ -983,9 +1120,15 @@ class RandomSampler(RandomSamplerGUI):
             self._cbx_confidence_levels.SetSelection(index)
         except ValueError:
             self._cbx_confidence_levels.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
+        
         self._tc_out_confidence_levels.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
         
-        self._tc_confidence_interval.ChangeValue(str(int(DEFAULT_CONFIDENCE_INTERVAL)))
+        # Set default confidence interval 
+        self.precision_val = DEFAULT_CONFIDENCE_INTERVAL / 100
+        str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
+        self._tc_confidence_interval.ChangeValue(str_precision)
+        self._tc_out_confidence_interval.ChangeValue(str_precision)
+        
         
             
 #    def _on_edit_status(self, event):
