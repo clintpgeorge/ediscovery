@@ -41,7 +41,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_main = wx.BoxSizer( wx.VERTICAL )
 		
-		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"uflogo.png", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 400,110 ), 0 )
+		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"res/uflaw-edisc11.jpg", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 400,110 ), 0 )
 		self._bitmap_uf_logo.SetMinSize( wx.Size( 400,110 ) )
 		self._bitmap_uf_logo.SetMaxSize( wx.Size( 400,110 ) )
 		

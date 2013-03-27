@@ -36,6 +36,11 @@ class RandomSampler(RandomSamplerGUI):
         # Calls the parent class's method 
         super(RandomSampler, self).__init__(parent) 
         
+        
+        # Setting the icon
+        app_icon = wx.Icon(os.path.join('res','uflaw-edisc1-icon.ico'), wx.BITMAP_TYPE_ICO, 32, 32)
+        self.SetIcon(app_icon)
+        
 #        # stack to store files and tags
 #        self.file_tag_dict = {}
 #        '''
@@ -465,6 +470,15 @@ class RandomSampler(RandomSamplerGUI):
             
             for x in map(os.path.getsize, self.sampled_files):
                 total_file_size += long(x)
+            
+            total_diskspace = free_space(self.output_dir_path)
+            if (total_diskspace < total_file_size):
+                error_dlg = wx.MessageDialog(self,
+                                   "Producing the sample will take {} space. Space on your drive ({}) is insufficient.".format( print_total_file_size, convert_size(total_diskspace)),
+                                   "Error - Not Enough Space", wx.OK | wx.ICON_ERROR)
+                error_dlg.ShowModal()
+                return 
+        
         except OSError:
             dlg = wx.MessageDialog(self, 
                                    "Files read errors! Please check access permissions.", 

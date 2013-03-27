@@ -17,7 +17,7 @@
         <property name="internationalize">0</property>
         <property name="name">RandomSamplerGUI</property>
         <property name="namespace"></property>
-        <property name="path">C:\Users\Clint\Documents\GitHub\ediscovery\src\gui</property>
+        <property name="path">C:\Users\abhiramj\Documents\GitHub\ediscovery\src\gui</property>
         <property name="precompiled_header"></property>
         <property name="relative_path">1</property>
         <property name="skip_php_events">1</property>
@@ -248,7 +248,7 @@
                         <property name="aui_row"></property>
                         <property name="best_size"></property>
                         <property name="bg"></property>
-                        <property name="bitmap">Load From File; uflogo.png</property>
+                        <property name="bitmap">Load From File; C:\Users\abhiramj\Documents\GitHub\ediscovery\src\gui\res\uflaw-edisc11.jpg</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>

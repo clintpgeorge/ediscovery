@@ -15,6 +15,7 @@ import ConfigParser
 import threading
 import wx
 import subprocess
+import win32file
 
 def copy_files_with_dir_tree(lcp, file_paths, output_dir_path, in_file_prefix=''):
     '''Copies the files given in path list into 
@@ -67,6 +68,7 @@ def copy_with_dialog(lcp, file_paths, output_dir_path, size, dialog, in_file_pre
     # find the longest common prefix (LCP)
     # lcp = os.path.commonprefix(file_paths) 
     current_copy = 0
+    status = ''
     for src_file_path in file_paths:
         s_fp = os.path.relpath(src_file_path, lcp)#src_file_path[len(lcp):] # ignores LCP from path   
         dest_dp, _ = os.path.split(s_fp) # to preserve source files directory structure 
@@ -80,17 +82,17 @@ def copy_with_dialog(lcp, file_paths, output_dir_path, size, dialog, in_file_pre
         try:
             shutil.copy2(src_file_path, dest_dir_path)
         except OSError:
-            print src_file_path + " could not be copied. Check permissions."
+            status += src_file_path + " could not be copied. Check permissions.\n"
         except IOError:
-            print src_file_path + " could not be copied. Check permissions."
+            status += src_file_path + " could not be copied. Check permissions.\n"
         except Exception:
-            print src_file_path + " could not be copied."
+            status +=  src_file_path + " could not be copied.\n"
         current_copy += os.path.getsize(src_file_path)
         wx.CallAfter(dialog.Update, int(100*current_copy/size))
         wx.MilliSleep(8)
         if (src_file_path == file_paths[len(file_paths) -1]):
             wx.CallAfter(dialog.Update, 100)
-            return
+            return status
             
 
 def get_destination_file_path(input_dir_path, src_file_path, output_dir_path):
@@ -179,6 +181,14 @@ def start_thread(func, *args):
     thread.setDaemon(True)
     thread.start()
     return thread
+
+def free_space(input_file_path):
+    """
+    Returns the number of free bytes on the drive that input_file_path is on
+    """
+    secsPerClus, bytesPerSec, nFreeClus, totClus = win32file.GetDiskFreeSpace(input_file_path)
+    return secsPerClus * bytesPerSec * nFreeClus
+
 
 '''
 Obsolete methods 
