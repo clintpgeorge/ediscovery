@@ -93,6 +93,18 @@ def copy_with_dialog(lcp, file_paths, output_dir_path, size, dialog, in_file_pre
             return
             
 
+def get_destination_file_path(input_dir_path, src_file_path, output_dir_path):
+    '''
+    Gets the copied file's path based on the same logic 
+    we used to copy files into the destination folder 
+    '''
+    
+    s_fp = os.path.relpath(src_file_path, input_dir_path) # ignores LCP from path   
+    dest_file_path = os.path.join(output_dir_path, s_fp)
+    
+    return dest_file_path
+
+
 def find_files_in_folder(input_dir):
     '''Recursive descent to find files in folder.
     
@@ -166,7 +178,7 @@ def start_thread(func, *args):
     thread = threading.Thread(target=func, args=args)
     thread.setDaemon(True)
     thread.start()
-    #thread.join(None)
+    return thread
 
 '''
 Obsolete methods 
