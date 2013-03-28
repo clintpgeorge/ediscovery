@@ -117,7 +117,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_io.SetSizer( sbsizer_io )
 		self._panel_io.Layout()
 		sbsizer_io.Fit( self._panel_io )
-		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", True )
+		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", False )
 		self._panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -408,95 +408,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", False )
-		self.sw_sampling = wx.ScrolledWindow( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
-		self.sw_sampling.SetScrollRate( 5, 5 )
-		bsizer_sampling = wx.BoxSizer( wx.VERTICAL )
-		
-		bsizer_samples = wx.BoxSizer( wx.VERTICAL )
-		
-		self._panel_samples = wx.Panel( self.sw_sampling, wx.ID_ANY, wx.DefaultPosition, wx.Size( 950,300 ), wx.TAB_TRAVERSAL )
-		self._panel_samples.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
-		
-		sbsizer_samples = wx.StaticBoxSizer( wx.StaticBox( self._panel_samples, wx.ID_ANY, u"Samples" ), wx.VERTICAL )
-		
-		gbsizer_sampler = wx.GridBagSizer( 0, 10 )
-		gbsizer_sampler.SetFlexibleDirection( wx.BOTH )
-		gbsizer_sampler.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self._st_docs_to_be_reviewed = wx.StaticText( self._panel_samples, wx.ID_ANY, u"Documents to be Reviewed", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_docs_to_be_reviewed.Wrap( -1 )
-		self._st_docs_to_be_reviewed.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
-		
-		gbsizer_sampler.Add( self._st_docs_to_be_reviewed, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALL, 5 )
-		
-		self._tc_results = wx.TreeCtrl( self._panel_samples, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TR_DEFAULT_STYLE|wx.TR_FULL_ROW_HIGHLIGHT|wx.TR_HAS_BUTTONS|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.TR_LINES_AT_ROOT|wx.TR_SINGLE|wx.HSCROLL|wx.SUNKEN_BORDER )
-		self._tc_results.SetMinSize( wx.Size( 500,250 ) )
-		
-		gbsizer_sampler.Add( self._tc_results, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 1 ), wx.ALL|wx.EXPAND|wx.LEFT|wx.RIGHT, 5 )
-		
-		self._tag_list = wx.ListCtrl( self._panel_samples, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER )
-		self._tag_list.SetMinSize( wx.Size( 220,150 ) )
-		
-		gbsizer_sampler.Add( self._tag_list, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		_csizer_tags = wx.BoxSizer( wx.HORIZONTAL )
-		
-		self._lbl_tag = wx.StaticText( self._panel_samples, wx.ID_ANY, u"File Tags", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._lbl_tag.Wrap( -1 )
-		self._lbl_tag.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
-		
-		_csizer_tags.Add( self._lbl_tag, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5 )
-		
-		self._btn_add_tag = wx.Button( self._panel_samples, wx.ID_ANY, u"+", wx.DefaultPosition, wx.Size( 20,20 ), 0|wx.SUNKEN_BORDER )
-		_csizer_tags.Add( self._btn_add_tag, 0, wx.ALL, 5 )
-		
-		self._btn_remove_tag = wx.Button( self._panel_samples, wx.ID_ANY, u"-", wx.DefaultPosition, wx.Size( 20,20 ), 0|wx.SUNKEN_BORDER )
-		_csizer_tags.Add( self._btn_remove_tag, 0, wx.ALL, 5 )
-		
-		
-		gbsizer_sampler.Add( _csizer_tags, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.LEFT, 0 )
-		
-		gbsizer_logger = wx.GridBagSizer( 0, 0 )
-		gbsizer_logger.SetFlexibleDirection( wx.BOTH )
-		gbsizer_logger.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self.m_staticText11 = wx.StaticText( self._panel_samples, wx.ID_ANY, u"Tags", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText11.Wrap( -1 )
-		self.m_staticText11.SetFont( wx.Font( 9, 72, 93, 90, False, wx.EmptyString ) )
-		
-		gbsizer_logger.Add( self.m_staticText11, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 0 )
-		
-		self._btn_log_files = wx.Button( self._panel_samples, wx.ID_ANY, u"Save Files", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_logger.Add( self._btn_log_files, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		_cbx_tag_typeChoices = [ u"Reviewed", u"Responsive", u"All" ]
-		self._cbx_tag_type = wx.ComboBox( self._panel_samples, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_tag_typeChoices, wx.CB_READONLY|wx.CB_SORT )
-		self._cbx_tag_type.SetSelection( 0 )
-		gbsizer_logger.Add( self._cbx_tag_type, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_clear_tags = wx.Button( self._panel_samples, wx.ID_ANY, u"Clear All Tags", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_logger.Add( self._btn_clear_tags, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_TOP|wx.ALL, 5 )
-		
-		
-		gbsizer_sampler.Add( gbsizer_logger, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 0 )
-		
-		
-		sbsizer_samples.Add( gbsizer_sampler, 0, wx.EXPAND, 5 )
-		
-		
-		self._panel_samples.SetSizer( sbsizer_samples )
-		self._panel_samples.Layout()
-		bsizer_samples.Add( self._panel_samples, 0, wx.EXPAND |wx.ALL, 10 )
-		
-		
-		bsizer_sampling.Add( bsizer_samples, 0, wx.EXPAND, 5 )
-		
-		
-		self.sw_sampling.SetSizer( bsizer_sampling )
-		self.sw_sampling.Layout()
-		bsizer_sampling.Fit( self.sw_sampling )
-		self.nb_config_sampler.AddPage( self.sw_sampling, u"Sampled Output", False )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", True )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -530,13 +442,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_review_gen_report.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report )
 		self._btn_review_goback.Bind( wx.EVT_BUTTON, self._on_click_review_goback )
 		self._btn_review_exit.Bind( wx.EVT_BUTTON, self._on_click_review_exit )
-		self._tc_results.Bind( wx.EVT_TREE_ITEM_ACTIVATED, self._on_activated_file )
-		self._tc_results.Bind( wx.EVT_TREE_SEL_CHANGED, self._on_select_file )
-		self._tag_list.Bind( wx.EVT_LIST_ITEM_RIGHT_CLICK, self._on_edit_status )
-		self._btn_add_tag.Bind( wx.EVT_BUTTON, self._on_add_tag )
-		self._btn_remove_tag.Bind( wx.EVT_BUTTON, self._on_remove_tag )
-		self._btn_log_files.Bind( wx.EVT_BUTTON, self._on_click_log_details )
-		self._btn_clear_tags.Bind( wx.EVT_BUTTON, self._on_clear_tags )
 	
 	def __del__( self ):
 		pass
@@ -610,27 +515,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_click_review_exit( self, event ):
-		event.Skip()
-	
-	def _on_activated_file( self, event ):
-		event.Skip()
-	
-	def _on_select_file( self, event ):
-		event.Skip()
-	
-	def _on_edit_status( self, event ):
-		event.Skip()
-	
-	def _on_add_tag( self, event ):
-		event.Skip()
-	
-	def _on_remove_tag( self, event ):
-		event.Skip()
-	
-	def _on_click_log_details( self, event ):
-		event.Skip()
-	
-	def _on_clear_tags( self, event ):
 		event.Skip()
 	
 

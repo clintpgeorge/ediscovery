@@ -9,6 +9,7 @@ import wx
 import webbrowser
 # import time
 import shelve
+import HTML  
 
 from datetime import datetime 
 from decimal import Decimal 
@@ -17,8 +18,44 @@ from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAUL
 from file_utils import find_files_in_folder, convert_size, start_thread, copy_with_dialog, get_destination_file_path, free_space
 
 SHELVE_FILE_NAME = 'random_sampler.shelve'
+REPORT_COMPLETE = 'complete_report.html'
+REPORT_RESPONSIVE = 'responsive_docs_report.html' 
+REPORT_PRIVILEGED = 'privileged_docs_report.html'
+'''
+To generate HTML reports 
+'''
+def rstatus(val):
+    if val.strip() == '':
+        return 'NA'
+    else:
+        return val.strip() 
+    
+def row_status(resp, priv):            
+    if resp.strip() == '' and priv.strip() == '':
+        return 'NA'
+    else: 
+        return 'R'
+
+resp_colors = {}
+resp_colors['Yes'] = 'Green'
+resp_colors['No'] = 'Silver'
+resp_colors['NA'] = 'White'
+
+priv_colors = {}
+priv_colors['Yes'] = 'Red'
+priv_colors['No'] = 'Yellow'
+priv_colors['NA'] = 'White'
+
+row_colors = {}
+row_colors['R'] = 'A9F1FC' 
+row_colors['NA'] = 'White'
+
+
 
 class RSConfig: 
+    '''
+    Application State  
+    '''
     def __init__(self, data_folder, output_folder, confidence_interval, confidence_level):
         self._data_folder = data_folder
         self._output_folder = output_folder
@@ -248,13 +285,16 @@ class RandomSampler(RandomSamplerGUI):
         self.SetStatusText('')
     
     def _on_click_out_go_to_review( self, event ):
+        '''
+        TODO: need to fix an error in application state update 
+        '''
         
         if not self._is_samples_created:
             self._show_error_message("Review Error!", "Please create the sample before review.")
             return 
         
         # Sets up the review tab 
-        
+
         self._shelf_update_sample_tab_state()
         self._setup_review_tab(self.sampled_files)
         
@@ -753,12 +793,171 @@ class RandomSampler(RandomSamplerGUI):
         Arguments: Nothing
         Returns: Nothing
         '''
-        if self._is_rt_updated:
-            self._shelf_update_review_tab_state()
-            
         self._on_close()
         
+
+    def _on_click_review_gen_report( self, event ):
         
+        if self._is_rt_updated:
+            self._shelf_update_review_tab_state()
+        
+        # Separate report types
+        report_type = self._cbx_report_types.GetValue()
+        try:
+            samples_lst = self.shelf['samples']
+            if report_type == 'Responsive':
+                file_name = os.path.join(self.output_dir_path, REPORT_RESPONSIVE)   
+                responsive = []
+                for fs in samples_lst: 
+                    if fs[4] == 'Yes': 
+                        responsive.append(fs)
+                if len(responsive) == 0:
+                    self._show_error_message('Report Generation', 'There are no responsive documents available.')
+                    return 
+                html_body = self._gen_responsive_html_report(responsive)
+            elif report_type == 'Privileged':
+                file_name = os.path.join(self.output_dir_path, REPORT_PRIVILEGED)   
+                privileged = []
+                for fs in samples_lst: 
+                    if fs[5] == 'Yes': 
+                        privileged.append(fs)
+                if len(privileged) == 0:
+                    self._show_error_message('Report Generation', 'There are no privileged documents available.')
+                    return 
+                html_body = self._gen_privileged_html_report(privileged)
+            elif report_type == 'All':
+                file_name = os.path.join(self.output_dir_path, REPORT_COMPLETE)   
+                responsive = []
+                privileged = []
+                for fs in samples_lst: 
+                    if fs[4] == 'Yes': 
+                        responsive.append(fs)
+                    if fs[5] == 'Yes': 
+                        privileged.append(fs)
+                html_body = self._gen_complete_html_report(samples_lst, responsive, privileged)
+
+            # Saves into a file path 
+            self._save_html_report(html_body, file_name)
+            
+            # Open the HTML report in the default web browser 
+            webbrowser.open(file_name)
+        except:
+            # Report generation failed 
+            None 
+            
+        
+    def _save_html_report(self, html_body, file_name):
+        '''
+        Stores into a file 
+        '''
+        
+        with open(file_name, "w") as hw: 
+            hw.write(
+            """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+            <html>
+            <head>
+                <title>Document Sample Review Report</title>
+            </head>
+            <body>
+            <h2>Document Sample Review Report</h2>
+            
+            Report overview..... 
+            
+            <br/><br/>
+            """)
+
+            hw.write(html_body)
+
+            hw.write(
+            """
+            <hr/>
+            <p>Report is generated on: %s</p>
+            </body>
+            </html>""" % datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
+
+        
+    def _gen_complete_html_report(self, samples, responsive, privileged):
+        
+        # Generate HTML tags for all documents 
+        
+        all_table = HTML.Table(header_row=['#', 'File Name', 'Responsive', 'Privileged'])
+        for fs in samples:
+            
+            rc_colr = resp_colors[rstatus(fs[4])]
+            pc_colr = priv_colors[rstatus(fs[5])]
+            r_colr = row_colors[row_status(fs[4], fs[5])]
+            num_cell = HTML.TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+            file_name = HTML.link(fs[1], os.path.join(fs[3], fs[1]))
+            fn_cell = HTML.TableCell(file_name, bgcolor=r_colr)
+            resp_cell = HTML.TableCell(fs[4], bgcolor=rc_colr, align='center')
+            priv_cell = HTML.TableCell(fs[5], bgcolor=pc_colr, align='center')
+            
+            all_table.rows.append([num_cell, fn_cell, resp_cell, priv_cell])
+        
+        html_body = """
+        %s 
+
+        %s 
+
+        <hr/>
+        <h3>Complete Sample</h3>
+        %s 
+        <br/>
+        """ % (self._gen_responsive_html_report(responsive), self._gen_privileged_html_report(privileged), str(all_table))
+        
+        return html_body
+       
+       
+    def _gen_responsive_html_report(self, responsive):
+        '''
+        Generate HTML tags for responsive documents 
+        '''
+        
+        if len(responsive) == 0: return ''
+                
+        resp_table = HTML.Table(header_row=['#', 'File Name'])
+        for fs in responsive:
+            r_colr = resp_colors['Yes']
+            num_cell = HTML.TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+            file_name = HTML.link(fs[1], os.path.join(fs[3], fs[1]))
+            fn_cell = HTML.TableCell(file_name, bgcolor=r_colr)
+            resp_table.rows.append([num_cell, fn_cell])
+            
+        html_body = """
+        <hr/>
+        <h3>Responsive Documents</h3>
+        %s 
+        <br/>
+        """ % str(resp_table)
+        
+        return html_body
+    
+    
+    def _gen_privileged_html_report(self, privileged):
+        '''
+        Generate HTML tags for privileged documents 
+        '''
+        
+        if len(privileged) == 0: return ''
+        
+        
+        priv_table = HTML.Table(header_row=['#', 'File Name'])
+        for fs in privileged:
+            r_colr = priv_colors['Yes']
+            num_cell = HTML.TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+            file_name = HTML.link(fs[1], os.path.join(fs[3], fs[1]))
+            fn_cell = HTML.TableCell(file_name, bgcolor=r_colr)
+            priv_table.rows.append([num_cell, fn_cell])
+            
+        html_body = """
+        <hr/>
+        <h3>Privileged Documents</h3>
+        %s 
+        <br/>
+        """ % str(priv_table)
+        
+        return html_body
+       
         
     #********************************************* END Review Tab Handling *******************************************************  
 
@@ -971,10 +1170,14 @@ class RandomSampler(RandomSamplerGUI):
         dlg = wx.MessageDialog(self,
                                "Do you really want to close this application?",
                                "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
-        result = dlg.ShowModal()
-        if result == wx.ID_OK:
+        if dlg.ShowModal() == wx.ID_OK:
+            
+            # Handles the shelf 
             if self.shelf is not None:
+                if self._is_rt_updated:
+                    self._shelf_update_review_tab_state()
                 self.shelf.close()
+            
             self.Destroy()
 
     def _show_error_message(self, _header, _message):
@@ -1075,7 +1278,7 @@ class RandomSampler(RandomSamplerGUI):
             self.confidence_val = cfg._confidence_level
             self.file_list = self.shelf['file_list'] 
             
-            # already reached review page 
+            # if already reached review page 
             if cfg._current_page == 3: 
                 self._is_samples_created = True 
             
