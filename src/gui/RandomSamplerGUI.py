@@ -38,7 +38,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_main = wx.BoxSizer( wx.VERTICAL )
 		
-		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"uflaw-edisc13.jpg", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 160,50 ), 0 )
+		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"res/uflaw-edisc11.jpg", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 160,50 ), 0 )
 		bsizer_main.Add( self._bitmap_uf_logo, 0, wx.ALIGN_RIGHT|wx.ALIGN_TOP|wx.ALL, 5 )
 		
 		self.nb_config_sampler = wx.Notebook( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -51,7 +51,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_io.SetFlexibleDirection( wx.BOTH )
 		gbsizer_io.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._st_header1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Select the Data Folder and desired Sampled Output folder. \n\nData Folder is the folder you want to sample. Sampled Output contains the produced sample. You may need to create this folder. ", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
+		self._st_header1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Select Source Document Folder and desired Sampled Output Folder. \n\nSource Document Folder is the folder you want to sample. Sampled Output Folder contains the produced sample. You may need to create this folder. ", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
 		self._st_header1.Wrap( -1 )
 		self._st_header1.SetFont( wx.Font( 8, 70, 90, 91, False, wx.EmptyString ) )
 		self._st_header1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
@@ -62,7 +62,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._sl_header1 = wx.StaticLine( self._panel_io, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_io.Add( self._sl_header1, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 6 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self._st_data_folder1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Data Folder", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self._st_data_folder1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Source Document Folder", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self._st_data_folder1.Wrap( -1 )
 		self._st_data_folder1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		
@@ -77,7 +77,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_io_sel_data_dir = wx.Button( self._panel_io, wx.ID_ANY, u"Select", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbsizer_io.Add( self._btn_io_sel_data_dir, wx.GBPosition( 2, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._st_output_dir1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Sampled Output", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_output_dir1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Sampled Output Folder", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_output_dir1.Wrap( -1 )
 		self._st_output_dir1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		self._st_output_dir1.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
@@ -117,7 +117,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_io.SetSizer( sbsizer_io )
 		self._panel_io.Layout()
 		sbsizer_io.Fit( self._panel_io )
-		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", False )
+		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", True )
 		self._panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -408,7 +408,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", True )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", False )
 		self.sw_sampling = wx.ScrolledWindow( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
 		self.sw_sampling.SetScrollRate( 5, 5 )
 		bsizer_sampling = wx.BoxSizer( wx.VERTICAL )
