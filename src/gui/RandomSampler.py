@@ -144,6 +144,7 @@ class RandomSampler(RandomSamplerGUI):
         self._is_samples_created = False # for the samples tab  
         self._current_page = 0
         self.nb_config_sampler.ChangeSelection(self._current_page)
+        self.Bind(wx.EVT_COMMAND_SET_FOCUS, self._on_copy_enable_review)
 
         # Loads confidence levels 
         self._load_cbx_confidence_levels()
@@ -481,6 +482,8 @@ class RandomSampler(RandomSamplerGUI):
         '''
         copy_with_dialog(self.dir_path, self.sampled_files,
                                      self.output_dir_path, total_size, dialog)
+        finish_copy_event  = wx.PyCommandEvent(wx.EVT_COMMAND_SET_FOCUS.typeId)
+        self.GetEventHandler().ProcessEvent(finish_copy_event)
 
         
     def do_load(self, dialog):
@@ -496,9 +499,7 @@ class RandomSampler(RandomSamplerGUI):
         Returns: Nothing
         '''
         super(RandomSampler, self)._on_click_copy_files(event)
-        
-        self._is_samples_created = True  
-        
+          
         # Check if path exists
         if (not os.path.exists(self.dir_path) or
         not os.path.exists(self.output_dir_path)):
@@ -1431,6 +1432,9 @@ class RandomSampler(RandomSamplerGUI):
         '''
         fs = self.shelf['samples'][file_id]
         return fs 
+    
+    def _on_copy_enable_review(self, event):
+        self._is_samples_created = True
     
     
 
