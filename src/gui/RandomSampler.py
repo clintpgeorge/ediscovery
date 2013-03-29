@@ -526,20 +526,14 @@ class RandomSampler(RandomSamplerGUI):
             
         print_total_file_size = convert_size(total_file_size)
         
-        dlg = wx.MessageDialog(self,
-                               "Do you really want to copy {} files to {}? This will take {} space".format(len(self.sampled_files),
-                                self.output_dir_path, print_total_file_size),
-                               "Confirm Copy", wx.YES|wx.NO|wx.ICON_QUESTION)
-        result = dlg.ShowModal()
-        
         #Show status of copy
-        if result == wx.ID_YES and total_file_size > 0:
+        if total_file_size > 0:
             
             progress_dialog = wx.ProgressDialog(
                                                 'Creating samples', 
                                                 'Please wait for a few minutes...', 
                                                 parent = self, 
-                                                style = wx.PD_CAN_ABORT | wx.PD_ELAPSED_TIME | wx.PD_ESTIMATED_TIME | wx.PD_REMAINING_TIME)
+                                                style = wx.PD_ELAPSED_TIME | wx.PD_ESTIMATED_TIME | wx.PD_REMAINING_TIME)
             
             # Runs copy on a different thread
             thread = start_thread(self.do_copy, total_file_size, progress_dialog)
