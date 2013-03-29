@@ -213,7 +213,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._sl_header = wx.StaticLine( self._panel_create_sample, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_sampler1.Add( self._sl_header, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 6 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self._st_data_folder = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"Data Folder", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self._st_data_folder = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"Source Document Folder", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self._st_data_folder.Wrap( -1 )
 		self._st_data_folder.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		
@@ -225,7 +225,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_sampler1.Add( self._tc_out_data_dir, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._st_output_dir = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"Sampled Output", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_output_dir = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"Sampled Output Folder", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_output_dir.Wrap( -1 )
 		self._st_output_dir.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		self._st_output_dir.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
@@ -335,8 +335,8 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		sbsizer_doc_tags = wx.StaticBoxSizer( wx.StaticBox( self._panel_doc_tags, wx.ID_ANY, u"Select document tags" ), wx.VERTICAL )
 		
-		self._chbx_doc_relevant = wx.CheckBox( self._panel_doc_tags, wx.ID_ANY, u"Responsive", wx.DefaultPosition, wx.DefaultSize, 0 )
-		sbsizer_doc_tags.Add( self._chbx_doc_relevant, 0, wx.ALL, 5 )
+		self._chbx_doc_responsive = wx.CheckBox( self._panel_doc_tags, wx.ID_ANY, u"Responsive", wx.DefaultPosition, wx.DefaultSize, 0 )
+		sbsizer_doc_tags.Add( self._chbx_doc_responsive, 0, wx.ALL, 5 )
 		
 		self._chbx_doc_privileged = wx.CheckBox( self._panel_doc_tags, wx.ID_ANY, u"Privileged", wx.DefaultPosition, wx.DefaultSize, 0 )
 		sbsizer_doc_tags.Add( self._chbx_doc_privileged, 0, wx.ALL, 5 )
@@ -437,7 +437,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_review_clear_all_tags.Bind( wx.EVT_BUTTON, self._on_click_clear_all_doc_tags )
 		self._lc_review.Bind( wx.EVT_LIST_ITEM_ACTIVATED, self._on_review_list_item_activated )
 		self._lc_review.Bind( wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected )
-		self._chbx_doc_relevant.Bind( wx.EVT_CHECKBOX, self._on_check_box_doc_relevant )
+		self._chbx_doc_responsive.Bind( wx.EVT_CHECKBOX, self._on_check_box_doc_responsive )
 		self._chbx_doc_privileged.Bind( wx.EVT_CHECKBOX, self._on_check_box_doc_privileged )
 		self._btn_review_gen_report.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report )
 		self._btn_review_goback.Bind( wx.EVT_BUTTON, self._on_click_review_goback )
@@ -502,7 +502,7 @@ class RandomSamplerGUI ( wx.Frame ):
 	def _on_review_list_item_selected( self, event ):
 		event.Skip()
 	
-	def _on_check_box_doc_relevant( self, event ):
+	def _on_check_box_doc_responsive( self, event ):
 		event.Skip()
 	
 	def _on_check_box_doc_privileged( self, event ):
@@ -533,8 +533,8 @@ class TagDocumentDialog ( wx.Dialog ):
 		
 		sbsizer_doc_tags = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"Select document tags" ), wx.VERTICAL )
 		
-		self._chbx_doc_relevant = wx.CheckBox( self, wx.ID_ANY, u"Relevant", wx.DefaultPosition, wx.DefaultSize, 0 )
-		sbsizer_doc_tags.Add( self._chbx_doc_relevant, 0, wx.ALL, 5 )
+		self._chbx_doc_responsive = wx.CheckBox( self, wx.ID_ANY, u"Responsive", wx.DefaultPosition, wx.DefaultSize, 0 )
+		sbsizer_doc_tags.Add( self._chbx_doc_responsive, 0, wx.ALL, 5 )
 		
 		self._chbx_doc_privileged = wx.CheckBox( self, wx.ID_ANY, u"Privileged", wx.DefaultPosition, wx.DefaultSize, 0 )
 		sbsizer_doc_tags.Add( self._chbx_doc_privileged, 0, wx.ALL, 5 )

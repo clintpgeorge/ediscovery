@@ -9,7 +9,7 @@ import wx
 import webbrowser
 # import time
 import shelve
-import HTML  
+from gui.HTML import Table, TableCell, TableRow, link
 
 from datetime import datetime 
 from decimal import Decimal 
@@ -87,7 +87,7 @@ class RandomSampler(RandomSamplerGUI):
         super(RandomSampler, self).__init__(parent) 
         
         # Setting the icon
-        app_icon = wx.Icon(os.path.join('res','uflaw-edisc1-icon.ico'), wx.BITMAP_TYPE_ICO, 32, 32)
+        app_icon = wx.Icon(os.path.join('res','uflaw.ico'), wx.BITMAP_TYPE_ICO, 32, 32)
         self.SetIcon(app_icon)
         
 #        # stack to store files and tags
@@ -521,7 +521,7 @@ class RandomSampler(RandomSamplerGUI):
                 return 
         
         except OSError:
-            self._show_error_message("Sample Creation Error", "File read error! Please check access permissions.")
+            self._show_error_message("Error creating samples", "There was an error reading some files! Please check that you have access to the files.")
 
             
         print_total_file_size = convert_size(total_file_size)
@@ -624,18 +624,18 @@ class RandomSampler(RandomSamplerGUI):
         
         if self.selected_doc_id < 0: return 
         
-        relevant = self._lc_review.GetItem(self.selected_doc_id, 2)
+        responsive = self._lc_review.GetItem(self.selected_doc_id, 2)
         privileged = self._lc_review.GetItem(self.selected_doc_id, 3)
         
         # file_name = self._lc_review.GetItem(self.selected_doc_id, 1)
-        # print 'Selected row id: ', self.selected_doc_id, file_name.Text, relevant.Text, privileged.Text     
+        # print 'Selected row id: ', self.selected_doc_id, file_name.Text, responsive.Text, privileged.Text     
         
         # Handles the document tags check boxes 
         
-        if relevant.Text == 'Yes':
-            self._chbx_doc_relevant.SetValue(True)
+        if responsive.Text == 'Yes':
+            self._chbx_doc_responsive.SetValue(True)
         else:
-            self._chbx_doc_relevant.SetValue(False)
+            self._chbx_doc_responsive.SetValue(False)
             
         if privileged.Text == 'Yes':
             self._chbx_doc_privileged.SetValue(True)
@@ -658,13 +658,13 @@ class RandomSampler(RandomSamplerGUI):
 
         
         
-    def _on_check_box_doc_relevant( self, event ):
+    def _on_check_box_doc_responsive( self, event ):
         '''
-        Handles the selected document relevant check box 
+        Handles the selected document responsive check box 
         check and uncheck events 
          
         '''
-        is_checked = self._chbx_doc_relevant.GetValue()
+        is_checked = self._chbx_doc_responsive.GetValue()
         if is_checked: 
             self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
         else: 
@@ -695,7 +695,7 @@ class RandomSampler(RandomSamplerGUI):
             self._lc_review.SetStringItem(i, 2, 'No')
             self._lc_review.SetStringItem(i, 3, 'No')       
             
-        self._chbx_doc_relevant.SetValue(False)  
+        self._chbx_doc_responsive.SetValue(False)  
         self._chbx_doc_privileged.SetValue(False)    
 
         self._is_rt_updated = True 
@@ -712,14 +712,14 @@ class RandomSampler(RandomSamplerGUI):
         
         if self.selected_doc_id < 0: return 
         
-        relevant = self._lc_review.GetItem(self.selected_doc_id, 2)
+        responsive = self._lc_review.GetItem(self.selected_doc_id, 2)
         privileged = self._lc_review.GetItem(self.selected_doc_id, 3)
         src_file_path = self.sampled_files[self.selected_doc_id]
         dest_file_path = get_destination_file_path(self.dir_path, src_file_path, self.output_dir_path)
         
-        is_relevant = False 
+        is_responsive = False 
         is_privileged = False 
-        if relevant.Text == 'Yes': is_relevant = True 
+        if responsive.Text == 'Yes': is_responsive = True 
         if privileged.Text == 'Yes': is_privileged = True 
         _, file_name = os.path.split(src_file_path)
 
@@ -734,18 +734,18 @@ class RandomSampler(RandomSamplerGUI):
 
                 # Creates a document tagging dialog 
                 
-                dlg = TagDocument(self, file_name, is_relevant, is_privileged)
+                dlg = TagDocument(self, file_name, is_responsive, is_privileged)
                 
                 # Gets the tag selections from the dialog
                 
                 if dlg.ShowModal() == wx.ID_OK:
-                    is_relevant = dlg._chbx_doc_relevant.GetValue()  
+                    is_responsive = dlg._chbx_doc_responsive.GetValue()  
                     is_privileged = dlg._chbx_doc_privileged.GetValue()
                     
                     # Sets the selections to the parent window 
 
-                    self._chbx_doc_relevant.SetValue(is_relevant)
-                    if is_relevant: 
+                    self._chbx_doc_responsive.SetValue(is_responsive)
+                    if is_responsive: 
                         self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
                     else: 
                         self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
@@ -856,10 +856,49 @@ class RandomSampler(RandomSamplerGUI):
             <body>
             <h2>Document Sample Review Report</h2>
             
-            Report overview..... 
+            Report overview: 
             
             <br/><br/>
             """)
+            setting_table = Table(header_row=['#', 'Setting', 'Value'])
+    
+        
+            num_cell = TableCell(1, bgcolor = row_colors['NA'], align = 'center')
+            config_cell = TableCell("Source Document Folder", bgcolor = row_colors['NA'], align = 'left')
+            setting_cell = TableCell(self.dir_path, bgcolor = row_colors['NA'], align = 'left')
+            setting_table.rows.append([num_cell, config_cell, setting_cell])
+            
+            
+            num_cell = TableCell(2, bgcolor = row_colors['NA'], align = 'center')
+            config_cell = TableCell("Sampled Output Folder", bgcolor = row_colors['NA'], align = 'left')
+            setting_cell = TableCell(self.output_dir_path, bgcolor = row_colors['NA'], align = 'left')
+            setting_table.rows.append([num_cell, config_cell, setting_cell])
+            
+            num_cell = TableCell(3, bgcolor = row_colors['NA'], align = 'center')
+            config_cell = TableCell("Confidence Level (%)", bgcolor = row_colors['NA'], align = 'left')
+            setting_cell = TableCell(self.confidence_val*100, bgcolor = row_colors['NA'], align = 'right')
+            setting_table.rows.append([num_cell, config_cell, setting_cell])
+            
+            num_cell = TableCell(4, bgcolor = row_colors['NA'], align = 'center')
+            config_cell = TableCell("Confidence Interval (%)", bgcolor = row_colors['NA'], align = 'left')
+            setting_cell = TableCell(self.precision_val*100, bgcolor = row_colors['NA'], align = 'right')
+            setting_table.rows.append([num_cell, config_cell, setting_cell])
+            
+            num_cell = TableCell(5, bgcolor = row_colors['NA'], align = 'center')
+            config_cell = TableCell("Total documents in source document folder", bgcolor = row_colors['NA'], align = 'left')
+            setting_cell = TableCell(len(self.file_list), bgcolor = row_colors['NA'], align = 'right')
+            setting_table.rows.append([num_cell, config_cell, setting_cell])
+            
+            num_cell = TableCell(6, bgcolor = row_colors['NA'], align = 'center')
+            config_cell = TableCell("Total documents selected in sample", bgcolor = row_colors['NA'], align = 'left')
+            setting_cell = TableCell(len(self.sampled_files), bgcolor = row_colors['NA'], align = 'right')
+            setting_table.rows.append([num_cell, config_cell, setting_cell])
+            
+            hw.write("""
+            <hr/>
+            <h3>Settings</h3>
+            %s 
+            <br/> """ % ( str(setting_table)))
 
             hw.write(html_body)
 
@@ -875,17 +914,17 @@ class RandomSampler(RandomSamplerGUI):
         
         # Generate HTML tags for all documents 
         
-        all_table = HTML.Table(header_row=['#', 'File Name', 'Responsive', 'Privileged'])
+        all_table = Table(header_row=['#', 'File Name', 'Responsive', 'Privileged'])
         for fs in samples:
             
             rc_colr = resp_colors[rstatus(fs[4])]
             pc_colr = priv_colors[rstatus(fs[5])]
             r_colr = row_colors[row_status(fs[4], fs[5])]
-            num_cell = HTML.TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
-            file_name = HTML.link(fs[1], os.path.join(fs[3], fs[1]))
-            fn_cell = HTML.TableCell(file_name, bgcolor=r_colr)
-            resp_cell = HTML.TableCell(fs[4], bgcolor=rc_colr, align='center')
-            priv_cell = HTML.TableCell(fs[5], bgcolor=pc_colr, align='center')
+            num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+            file_name = link(fs[1], os.path.join(fs[3], fs[1]))
+            fn_cell = TableCell(file_name, bgcolor=r_colr)
+            resp_cell = TableCell(fs[4], bgcolor=rc_colr, align='center')
+            priv_cell = TableCell(fs[5], bgcolor=pc_colr, align='center')
             
             all_table.rows.append([num_cell, fn_cell, resp_cell, priv_cell])
         
@@ -910,12 +949,12 @@ class RandomSampler(RandomSamplerGUI):
         
         if len(responsive) == 0: return ''
                 
-        resp_table = HTML.Table(header_row=['#', 'File Name'])
+        resp_table = Table(header_row=['#', 'File Name'])
         for fs in responsive:
             r_colr = resp_colors['Yes']
-            num_cell = HTML.TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
-            file_name = HTML.link(fs[1], os.path.join(fs[3], fs[1]))
-            fn_cell = HTML.TableCell(file_name, bgcolor=r_colr)
+            num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+            file_name = link(fs[1], os.path.join(fs[3], fs[1]))
+            fn_cell = TableCell(file_name, bgcolor=r_colr)
             resp_table.rows.append([num_cell, fn_cell])
             
         html_body = """
@@ -936,12 +975,12 @@ class RandomSampler(RandomSamplerGUI):
         if len(privileged) == 0: return ''
         
         
-        priv_table = HTML.Table(header_row=['#', 'File Name'])
+        priv_table = Table(header_row=['#', 'File Name'])
         for fs in privileged:
             r_colr = priv_colors['Yes']
-            num_cell = HTML.TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
-            file_name = HTML.link(fs[1], os.path.join(fs[3], fs[1]))
-            fn_cell = HTML.TableCell(file_name, bgcolor=r_colr)
+            num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+            file_name = link(fs[1], os.path.join(fs[3], fs[1]))
+            fn_cell = TableCell(file_name, bgcolor=r_colr)
             priv_table.rows.append([num_cell, fn_cell])
             
         html_body = """
@@ -1371,9 +1410,9 @@ class RandomSampler(RandomSamplerGUI):
         cfg._current_page = 3
 
         for file_id in range(0, len(samples_lst)):
-            relevant = self._lc_review.GetItem(file_id, 2)
+            responsive = self._lc_review.GetItem(file_id, 2)
             privileged = self._lc_review.GetItem(file_id, 3)
-            samples_lst[file_id][4] = relevant.Text
+            samples_lst[file_id][4] = responsive.Text
             samples_lst[file_id][5] = privileged.Text
         
         self.shelf['samples'] = samples_lst
@@ -1406,14 +1445,14 @@ class RandomSampler(RandomSamplerGUI):
         self._st_out_num_samples.Show()
 
     
-    def _shelf_update_doc_tags_state(self, file_id, is_relevant, is_privileged):
+    def _shelf_update_doc_tags_state(self, file_id, is_responsive, is_privileged):
         '''
         Updates the given document sample' tags 
         '''
         
         # Gets the file dictionary 
         fs = self.shelf['samples'][file_id]
-        fs[4] = is_relevant
+        fs[4] = is_responsive
         fs[5] = is_privileged
         self.shelf.sync()
         
@@ -1659,7 +1698,7 @@ class TagDocument(TagDocumentDialog):
     '''
 
 
-    def __init__(self, parent, file_name, relevant, privileged):
+    def __init__(self, parent, file_name, responsive, privileged):
         '''
         Constructor
         '''
@@ -1672,7 +1711,7 @@ class TagDocument(TagDocumentDialog):
         
         self.SetTitle('Tag %s' % file_name)
         self._chbx_doc_privileged.SetValue(privileged)
-        self._chbx_doc_relevant.SetValue(relevant)
+        self._chbx_doc_responsive.SetValue(responsive)
         
         
     def _on_click_add_tags( self, event ):
@@ -1688,7 +1727,7 @@ class TagDocument(TagDocumentDialog):
         '''
         
         self._chbx_doc_privileged.SetValue(False)
-        self._chbx_doc_relevant.SetValue(False)
+        self._chbx_doc_responsive.SetValue(False)
         
 
 #

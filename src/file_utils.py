@@ -14,7 +14,6 @@ import shutil
 import ConfigParser
 import threading
 import wx
-import subprocess
 import win32file
 
 def copy_files_with_dir_tree(lcp, file_paths, output_dir_path, in_file_prefix=''):
