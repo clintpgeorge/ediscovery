@@ -51,7 +51,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_io.SetFlexibleDirection( wx.BOTH )
 		gbsizer_io.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._st_header1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Select Source Document Folder and desired Sampled Output Folder. \n\nSource Document Folder is the folder you want to sample. Sampled Output Folder contains the produced sample. You may need to create this folder. ", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
+		self._st_header1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Select Source Document Folder and desired Sampled Output Folder. \n\nSource Document Folder is the folder which contains the files you want to sample. Sampled Output Folder contains the produced sample. You may need to create this folder. ", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
 		self._st_header1.Wrap( -1 )
 		self._st_header1.SetFont( wx.Font( 8, 70, 90, 91, False, wx.EmptyString ) )
 		self._st_header1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
@@ -117,7 +117,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_io.SetSizer( sbsizer_io )
 		self._panel_io.Layout()
 		sbsizer_io.Fit( self._panel_io )
-		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", False )
+		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", True )
 		self._panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -408,7 +408,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", True )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", False )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -560,6 +560,8 @@ class TagDocumentDialog ( wx.Dialog ):
 		self.Centre( wx.BOTH )
 		
 		# Connect Events
+		self._chbx_doc_responsive.Bind( wx.EVT_CHECKBOX, self.on_check_box_doc_responsive )
+		self._chbx_doc_privileged.Bind( wx.EVT_CHECKBOX, self.on_check_box_doc_privileged )
 		self._btn_add_tags.Bind( wx.EVT_BUTTON, self._on_click_add_tags )
 		self._btn_clear_doc_tags.Bind( wx.EVT_BUTTON, self._on_click_clear_tags )
 	
@@ -568,6 +570,12 @@ class TagDocumentDialog ( wx.Dialog ):
 	
 	
 	# Virtual event handlers, overide them in your derived class
+	def on_check_box_doc_responsive( self, event ):
+		event.Skip()
+	
+	def on_check_box_doc_privileged( self, event ):
+		event.Skip()
+	
 	def _on_click_add_tags( self, event ):
 		event.Skip()
 	

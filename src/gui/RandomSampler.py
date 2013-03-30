@@ -9,7 +9,7 @@ import wx
 import webbrowser
 # import time
 import shelve
-from gui.HTML import Table, TableCell, TableRow, link
+from gui.HTML import Table, TableRow, TableCell, link
 
 from datetime import datetime 
 from decimal import Decimal 
@@ -37,18 +37,18 @@ def row_status(resp, priv):
         return 'R'
 
 resp_colors = {}
-resp_colors['Yes'] = 'Green'
-resp_colors['No'] = 'Silver'
-resp_colors['NA'] = 'White'
+resp_colors['Yes'] = '#2EFE9A'
+resp_colors['No'] = '#58ACFA'
+resp_colors['NA'] = '#D8D8D8'
 
 priv_colors = {}
-priv_colors['Yes'] = 'Red'
-priv_colors['No'] = 'Yellow'
-priv_colors['NA'] = 'White'
+priv_colors['Yes'] = '#F78181'
+priv_colors['No'] = '#F3F781'
+priv_colors['NA'] = '#D8D8D8'
 
 row_colors = {}
-row_colors['R'] = 'A9F1FC' 
-row_colors['NA'] = 'White'
+row_colors['R'] = '#F8E0E6' 
+row_colors['NA'] = '#D8D8D8'
 
 
 
@@ -142,6 +142,7 @@ class RandomSampler(RandomSamplerGUI):
         self._is_rt_updated = False # for the review tab updates      
         self._lc_review_loaded = False # for the review tab table 
         self._is_samples_created = False # for the samples tab  
+        self._prior_page_status = 0 # to keep the prior last page before application exit  
         self._current_page = 0
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.Bind(wx.EVT_COMMAND_SET_FOCUS, self._on_copy_enable_review)
@@ -290,13 +291,17 @@ class RandomSampler(RandomSamplerGUI):
         TODO: need to fix an error in application state update 
         '''
         
-        if not self._is_samples_created:
-            self._show_error_message("Review Error!", "Please create the sample before review.")
+        if not self._is_samples_created and self._prior_page_status < 3:
+            self._show_error_message("Review Error!", "Please create the sample before go to review.")
             return 
         
+        if self._is_samples_created and self._prior_page_status >= 3:
+            self._shelf_update_samples()
+        elif self._is_samples_created:
+            self._shelf_update_sample_tab_state()
+            
         # Sets up the review tab 
-
-        self._shelf_update_sample_tab_state()
+        
         self._setup_review_tab(self.sampled_files)
         
         # changes the tab selection 
@@ -524,7 +529,7 @@ class RandomSampler(RandomSamplerGUI):
             self._show_error_message("Error creating samples", "There was an error reading some files! Please check that you have access to the files.")
 
             
-        print_total_file_size = convert_size(total_file_size)
+        # print_total_file_size = convert_size(total_file_size)
         
         #Show status of copy
         if total_file_size > 0:
@@ -536,7 +541,7 @@ class RandomSampler(RandomSamplerGUI):
                                                 style = wx.PD_ELAPSED_TIME | wx.PD_ESTIMATED_TIME | wx.PD_REMAINING_TIME)
             
             # Runs copy on a different thread
-            thread = start_thread(self.do_copy, total_file_size, progress_dialog)
+            start_thread(self.do_copy, total_file_size, progress_dialog)
             progress_dialog.ShowModal()
             
             # from time import sleep
@@ -587,8 +592,8 @@ class RandomSampler(RandomSamplerGUI):
         
         self._lc_review.InsertColumn(0, '#', wx.LIST_FORMAT_CENTRE, width=30)
         self._lc_review.InsertColumn(1, 'File Name', width=350)
-        self._lc_review.InsertColumn(2, 'Responsive?', wx.LIST_FORMAT_CENTRE)
-        self._lc_review.InsertColumn(3, 'Privileged?', wx.LIST_FORMAT_CENTRE)
+        self._lc_review.InsertColumn(2, 'Responsive', wx.LIST_FORMAT_CENTRE)
+        self._lc_review.InsertColumn(3, 'Privileged', wx.LIST_FORMAT_CENTRE)
         
         
 #        # Initializes the list control 
@@ -692,8 +697,8 @@ class RandomSampler(RandomSamplerGUI):
         '''
         
         for i in range(0, len(self.sampled_files)):
-            self._lc_review.SetStringItem(i, 2, 'No')
-            self._lc_review.SetStringItem(i, 3, 'No')       
+            self._lc_review.SetStringItem(i, 2, '')
+            self._lc_review.SetStringItem(i, 3, '')       
             
         self._chbx_doc_responsive.SetValue(False)  
         self._chbx_doc_privileged.SetValue(False)    
@@ -747,13 +752,13 @@ class RandomSampler(RandomSamplerGUI):
                     self._chbx_doc_responsive.SetValue(is_responsive)
                     if is_responsive: 
                         self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
-                    else: 
+                    elif dlg._is_responsive_updated: 
                         self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
                     
                     self._chbx_doc_privileged.SetValue(is_privileged)
                     if is_privileged: 
                         self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
-                    else: 
+                    elif dlg._is_privileged_updated: 
                         self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
                         
                     self._is_rt_updated = True 
@@ -853,52 +858,14 @@ class RandomSampler(RandomSamplerGUI):
             <head>
                 <title>Document Sample Review Report</title>
             </head>
-            <body>
+            <body style="font-family:verdana,helvetica;font-size:9pt">
             <h2>Document Sample Review Report</h2>
             
             Report overview: 
             
             <br/><br/>
             """)
-            setting_table = Table(header_row=['#', 'Setting', 'Value'])
-    
-        
-            num_cell = TableCell(1, bgcolor = row_colors['NA'], align = 'center')
-            config_cell = TableCell("Source Document Folder", bgcolor = row_colors['NA'], align = 'left')
-            setting_cell = TableCell(self.dir_path, bgcolor = row_colors['NA'], align = 'left')
-            setting_table.rows.append([num_cell, config_cell, setting_cell])
-            
-            
-            num_cell = TableCell(2, bgcolor = row_colors['NA'], align = 'center')
-            config_cell = TableCell("Sampled Output Folder", bgcolor = row_colors['NA'], align = 'left')
-            setting_cell = TableCell(self.output_dir_path, bgcolor = row_colors['NA'], align = 'left')
-            setting_table.rows.append([num_cell, config_cell, setting_cell])
-            
-            num_cell = TableCell(3, bgcolor = row_colors['NA'], align = 'center')
-            config_cell = TableCell("Confidence Level (%)", bgcolor = row_colors['NA'], align = 'left')
-            setting_cell = TableCell(self.confidence_val*100, bgcolor = row_colors['NA'], align = 'right')
-            setting_table.rows.append([num_cell, config_cell, setting_cell])
-            
-            num_cell = TableCell(4, bgcolor = row_colors['NA'], align = 'center')
-            config_cell = TableCell("Confidence Interval (%)", bgcolor = row_colors['NA'], align = 'left')
-            setting_cell = TableCell(self.precision_val*100, bgcolor = row_colors['NA'], align = 'right')
-            setting_table.rows.append([num_cell, config_cell, setting_cell])
-            
-            num_cell = TableCell(5, bgcolor = row_colors['NA'], align = 'center')
-            config_cell = TableCell("Total documents in source document folder", bgcolor = row_colors['NA'], align = 'left')
-            setting_cell = TableCell(len(self.file_list), bgcolor = row_colors['NA'], align = 'right')
-            setting_table.rows.append([num_cell, config_cell, setting_cell])
-            
-            num_cell = TableCell(6, bgcolor = row_colors['NA'], align = 'center')
-            config_cell = TableCell("Total documents selected in sample", bgcolor = row_colors['NA'], align = 'left')
-            setting_cell = TableCell(len(self.sampled_files), bgcolor = row_colors['NA'], align = 'right')
-            setting_table.rows.append([num_cell, config_cell, setting_cell])
-            
-            hw.write("""
-            <hr/>
-            <h3>Settings</h3>
-            %s 
-            <br/> """ % ( str(setting_table)))
+            hw.write(self._gen_specifications_html())
 
             hw.write(html_body)
 
@@ -909,12 +876,42 @@ class RandomSampler(RandomSamplerGUI):
             </body>
             </html>""" % datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
 
+    def _gen_specifications_html(self): 
+        
+        hrow = TableRow(cells=['Sampler Specifications', 'Entries'], bgcolor='#6E6E6E')
+        setting_table = Table(header_row=hrow, border=0)
+
+        config_cell = TableCell("Source document folder", bgcolor = '#CEF6F5', align = 'left')
+        setting_cell = TableCell(self.dir_path, bgcolor = '#CEF6F5', align = 'left')
+        setting_table.rows.append([config_cell, setting_cell])
+        
+        config_cell = TableCell("Sampled output folder", bgcolor = '#CEF6F5', align = 'left')
+        setting_cell = TableCell(self.output_dir_path, bgcolor = '#CEF6F5', align = 'left')
+        setting_table.rows.append([config_cell, setting_cell])
+        
+        config_cell = TableCell("Confidence level (%)", bgcolor = '#CEF6F5', align = 'left')
+        setting_cell = TableCell(self.confidence_val*100, bgcolor = '#CEF6F5', align = 'right')
+        setting_table.rows.append([config_cell, setting_cell])
+        
+        config_cell = TableCell("Confidence interval (%)", bgcolor = '#CEF6F5', align = 'left')
+        setting_cell = TableCell(self.precision_val*100, bgcolor = '#CEF6F5', align = 'right')
+        setting_table.rows.append([config_cell, setting_cell])
+        
+        config_cell = TableCell("Total documents in the source document folder", bgcolor = '#CEF6F5', align = 'left')
+        setting_cell = TableCell(len(self.file_list), bgcolor = '#CEF6F5', align = 'right')
+        setting_table.rows.append([config_cell, setting_cell])
+        
+        config_cell = TableCell("The sample size", bgcolor = '#CEF6F5', align = 'left')
+        setting_cell = TableCell(len(self.sampled_files), bgcolor = '#CEF6F5', align = 'right')
+        setting_table.rows.append([config_cell, setting_cell])
+        
+        return str(setting_table)
         
     def _gen_complete_html_report(self, samples, responsive, privileged):
         
         # Generate HTML tags for all documents 
-        
-        all_table = Table(header_row=['#', 'File Name', 'Responsive', 'Privileged'])
+        hrow = TableRow(cells=['#', 'File Name', 'Responsive', 'Privileged'], bgcolor='#6E6E6E')
+        all_table = Table(header_row=hrow)
         for fs in samples:
             
             rc_colr = resp_colors[rstatus(fs[4])]
@@ -948,8 +945,8 @@ class RandomSampler(RandomSamplerGUI):
         '''
         
         if len(responsive) == 0: return ''
-                
-        resp_table = Table(header_row=['#', 'File Name'])
+        hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
+        resp_table = Table(header_row=hrow)
         for fs in responsive:
             r_colr = resp_colors['Yes']
             num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
@@ -974,8 +971,8 @@ class RandomSampler(RandomSamplerGUI):
         
         if len(privileged) == 0: return ''
         
-        
-        priv_table = Table(header_row=['#', 'File Name'])
+        hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
+        priv_table = Table(header_row=hrow)
         for fs in privileged:
             r_colr = priv_colors['Yes']
             num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
@@ -1310,11 +1307,9 @@ class RandomSampler(RandomSamplerGUI):
             self.output_dir_path = cfg._output_folder 
             self.precision_val = cfg._confidence_interval
             self.confidence_val = cfg._confidence_level
+            self._prior_page_status = cfg._current_page
             self.file_list = self.shelf['file_list'] 
-            
-            # if already reached review page 
-            if cfg._current_page == 3: 
-                self._is_samples_created = True 
+
             
             # for the I/O tab 
             self._tc_data_dir.SetValue(self.dir_path)
@@ -1376,7 +1371,16 @@ class RandomSampler(RandomSamplerGUI):
         cfg._current_page = 1
         self.shelf['config'] = cfg
         self._shelf_has_cfg = True 
+        self.shelf.sync()
 
+        self._shelf_update_samples()
+        
+
+
+    def _shelf_update_samples(self):
+        '''
+        Update the shelf with new samples 
+        '''
         file_id = 0 
         samples_lst = []       
         for src_file_path in self.sampled_files:
@@ -1392,12 +1396,15 @@ class RandomSampler(RandomSamplerGUI):
         self.shelf.sync()
         self._shelf_has_samples = True 
 
+
     def _shelf_update_sample_tab_state(self):
         cfg = self.shelf['config']
         cfg._modified_date = datetime.now()
         cfg._current_page = 2
         self.shelf['config'] = cfg
         self.shelf.sync()
+
+        
 
     def _shelf_update_review_tab_state(self):
         '''
@@ -1713,6 +1720,9 @@ class TagDocument(TagDocumentDialog):
         self._chbx_doc_privileged.SetValue(privileged)
         self._chbx_doc_responsive.SetValue(responsive)
         
+        self._is_responsive_updated = False
+        self._is_privileged_updated = False 
+        
         
     def _on_click_add_tags( self, event ):
         '''
@@ -1729,7 +1739,11 @@ class TagDocument(TagDocumentDialog):
         self._chbx_doc_privileged.SetValue(False)
         self._chbx_doc_responsive.SetValue(False)
         
-
+    def on_check_box_doc_responsive( self, event ):
+        self._is_responsive_updated = True 
+    
+    def on_check_box_doc_privileged( self, event ):
+        self._is_privileged_updated = True  
 #
 #class LabelChoiceDialog(wx.Dialog):
 #    def __init__(self, parent, title, style):

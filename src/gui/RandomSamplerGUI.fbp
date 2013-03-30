@@ -17,7 +17,7 @@
         <property name="internationalize">0</property>
         <property name="name">RandomSamplerGUI</property>
         <property name="namespace"></property>
-        <property name="path">C:\Users\abhiramj\Documents\GitHub\ediscovery\src\gui</property>
+        <property name="path">C:\Users\Clint\Documents\GitHub\ediscovery\src\gui</property>
         <property name="precompiled_header"></property>
         <property name="relative_path">1</property>
         <property name="skip_php_events">1</property>
@@ -384,7 +384,7 @@
                         <object class="notebookpage" expanded="0">
                             <property name="bitmap"></property>
                             <property name="label">Data and Ouput</property>
-                            <property name="select">0</property>
+                            <property name="select">1</property>
                             <object class="wxPanel" expanded="0">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
@@ -517,7 +517,7 @@
                                                     <property name="gripper">0</property>
                                                     <property name="hidden">0</property>
                                                     <property name="id">wxID_ANY</property>
-                                                    <property name="label">Select Source Document Folder and desired Sampled Output Folder. &#x0A;&#x0A;Source Document Folder is the folder you want to sample. Sampled Output Folder contains the produced sample. You may need to create this folder. </property>
+                                                    <property name="label">Select Source Document Folder and desired Sampled Output Folder. &#x0A;&#x0A;Source Document Folder is the folder which contains the files you want to sample. Sampled Output Folder contains the produced sample. You may need to create this folder. </property>
                                                     <property name="max_size"></property>
                                                     <property name="maximize_button">0</property>
                                                     <property name="maximum_size">-1,-1</property>
@@ -4113,7 +4113,7 @@
                         <object class="notebookpage" expanded="0">
                             <property name="bitmap"></property>
                             <property name="label">Document Review</property>
-                            <property name="select">1</property>
+                            <property name="select">0</property>
                             <object class="wxPanel" expanded="0">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
@@ -5540,7 +5540,7 @@
                 </object>
             </object>
         </object>
-        <object class="Dialog" expanded="0">
+        <object class="Dialog" expanded="1">
             <property name="aui_managed">0</property>
             <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
             <property name="bg"></property>
@@ -5602,16 +5602,16 @@
             <event name="OnSetFocus"></event>
             <event name="OnSize"></event>
             <event name="OnUpdateUI"></event>
-            <object class="wxBoxSizer" expanded="0">
+            <object class="wxBoxSizer" expanded="1">
                 <property name="minimum_size"></property>
                 <property name="name">bsizer_doc_tags</property>
                 <property name="orient">wxVERTICAL</property>
                 <property name="permission">none</property>
-                <object class="sizeritem" expanded="0">
+                <object class="sizeritem" expanded="1">
                     <property name="border">10</property>
                     <property name="flag">wxEXPAND</property>
                     <property name="proportion">1</property>
-                    <object class="wxStaticBoxSizer" expanded="0">
+                    <object class="wxStaticBoxSizer" expanded="1">
                         <property name="id">wxID_ANY</property>
                         <property name="label">Select document tags</property>
                         <property name="minimum_size"></property>
@@ -5682,7 +5682,7 @@
                                 <property name="window_name"></property>
                                 <property name="window_style"></property>
                                 <event name="OnChar"></event>
-                                <event name="OnCheckBox"></event>
+                                <event name="OnCheckBox">on_check_box_doc_responsive</event>
                                 <event name="OnEnterWindow"></event>
                                 <event name="OnEraseBackground"></event>
                                 <event name="OnKeyDown"></event>
@@ -5770,7 +5770,7 @@
                                 <property name="window_name"></property>
                                 <property name="window_style"></property>
                                 <event name="OnChar"></event>
-                                <event name="OnCheckBox"></event>
+                                <event name="OnCheckBox">on_check_box_doc_privileged</event>
                                 <event name="OnEnterWindow"></event>
                                 <event name="OnEraseBackground"></event>
                                 <event name="OnKeyDown"></event>
@@ -5797,11 +5797,11 @@
                         </object>
                     </object>
                 </object>
-                <object class="sizeritem" expanded="0">
+                <object class="sizeritem" expanded="1">
                     <property name="border">10</property>
                     <property name="flag">wxALIGN_BOTTOM|wxEXPAND</property>
                     <property name="proportion">1</property>
-                    <object class="wxGridSizer" expanded="0">
+                    <object class="wxGridSizer" expanded="1">
                         <property name="cols">2</property>
                         <property name="hgap">0</property>
                         <property name="minimum_size"></property>
