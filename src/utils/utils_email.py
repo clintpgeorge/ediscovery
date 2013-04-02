@@ -20,6 +20,7 @@ from nltk.tokenize import PunktWordTokenizer
 '''
 Global variables 
 '''
+DATE_FORMAT = "%a,%d %m %y %H:%M:%S -T (Z)"
 STRIP_CHAR_LIST = [u'_', u'-', u',', u'!', u':', u'.', u'?', 
                    u';', u'=', u'…', u'•', u'–', u'¿', u'¡', 
                    u'º', u'ª', u'«', u'»', u'*', u'~', u'`', 
@@ -111,7 +112,7 @@ def parse_plain_text_email(file_path):
     bcc = ''
     subject = ''
     body_text = ''
-
+    date = ''
     
     for body_charset in 'US-ASCII', 'ISO-8859-1', 'UTF-8':
         try:
@@ -131,9 +132,10 @@ def parse_plain_text_email(file_path):
         #Subodh - Rahul - Get BCC attribute from the email 
         bcc = xstr(msg['bcc'])
         subject = xstr(msg['subject'])
+        date = xstr(msg['date'])
         body_text = msg.get_payload()
         body_text = ' '.join(punkt_word_tokenizer(body_text.lower()))
     
-    return (receiver, sender, cc, subject, body_text,bcc)
+    return (receiver, sender, cc, subject, body_text,bcc,date)
     
 

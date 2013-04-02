@@ -218,3 +218,42 @@ class SMARTeRGUI ( wx.Frame ):
 		event.Skip()
 	
 
+###########################################################################
+## Class RatingControl
+###########################################################################
+
+class RatingControl ( wx.Dialog ):
+	
+	def __init__( self, parent ):
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = _(u"Document Relevancy"), pos = wx.DefaultPosition, size = wx.Size( 243,122 ), style = wx.DEFAULT_DIALOG_STYLE )
+		
+		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		
+		_bsizer_rating_control = wx.BoxSizer( wx.VERTICAL )
+		
+		radio_controlChoices = [ _(u"0"), _(u"1"), _(u"2"), _(u"3"), _(u"4"), _(u"5") ]
+		self.radio_control = wx.RadioBox( self, wx.ID_ANY, _(u"Rate the document"), wx.DefaultPosition, wx.DefaultSize, radio_controlChoices, 1, 0 )
+		self.radio_control.SetSelection( 0 )
+		_bsizer_rating_control.Add( self.radio_control, 0, wx.ALL, 5 )
+		
+		self.btn_Submit = wx.Button( self, wx.ID_ANY, _(u"Submit"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_bsizer_rating_control.Add( self.btn_Submit, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
+		
+		
+		self.SetSizer( _bsizer_rating_control )
+		self.Layout()
+		
+		self.Centre( wx.BOTH )
+		
+		# Connect Events
+		self.btn_Submit.Bind( wx.EVT_BUTTON, self._on_btn_click_submit )
+	
+	def __del__( self ):
+		pass
+	
+	
+	# Virtual event handlers, overide them in your derived class
+	def _on_btn_click_submit( self, event ):
+		event.Skip()
+	
+

@@ -17,6 +17,7 @@ from lucene import IndexSearcher, QueryParser, MultiFieldQueryParser, BooleanCla
 from utils.utils_email import parse_plain_text_email 
 from utils.utils_file import get_file_paths_index, load_file_paths_index, store_file_paths_index
 import sys
+from const import SEARCH_RESULTS_LIMIT
 
 '''
 The analyzer used for both indexing and searching  
@@ -50,9 +51,6 @@ class MetadataType:
               'email_from', 'email_subject', 
               'email_body', 'email_cc',
               'email_bcc', 'email_date']
-
-
-
 
 
 def index_plain_text_emails(data_folder, path_index_file, store_dir):
@@ -90,10 +88,7 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
         logging.info('File paths index is stored into %s' % path_index_file)
     
     logging.info('Lucene indexing..')
-    
-    
-    
-    
+        
     store = SimpleFSDirectory(File(store_dir))
     writer = IndexWriter(store, STD_ANALYZER, True, IndexWriter.MaxFieldLength.LIMITED)
     
@@ -104,11 +99,8 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
         file_path = os.path.join(root, file_name)
         
         # parses the emails in plain text format 
-        receiver, sender, cc, subject, message_text, bcc = parse_plain_text_email(file_path)
-        if bcc is not None:
-            print file_path
-            print bcc
-            print "\n"
+        receiver, sender, cc, subject, message_text, bcc,date = parse_plain_text_email(file_path)
+        
         doc = Document()
         doc.add(Field(MetadataType.FILE_ID, str(idx), Field.Store.YES, Field.Index.NOT_ANALYZED))
         doc.add(Field(MetadataType.FILE_NAME, file_name, Field.Store.YES, Field.Index.NOT_ANALYZED, Field.TermVector.YES))
@@ -119,6 +111,9 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
         doc.add(Field(MetadataType.EMAIL_SUBJECT, subject, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
         #Subodh-Rahul - Added BCC field in indexing.
         doc.add(Field(MetadataType.EMAIL_BCC, bcc, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
+        #Subodh-Rahul - Added Email-Date field in indexing
+        doc.add(Field(MetadataType.EMAIL_DATE, date, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.WITH_POSITIONS_OFFSETS))
+        
         if len(message_text) > 0:
             doc.add(Field(MetadataType.EMAIL_BODY, message_text, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES))
         else:
@@ -171,7 +166,7 @@ def search_for_query(index_dir, queryList):
     parser = MultiFieldQueryParser(Version.LUCENE_CURRENT, queryList[1], STD_ANALYZER)
     query = parser.parse(Version.LUCENE_CURRENT, queryList[0], queryList[1], queryList[2], STD_ANALYZER)
     start = datetime.datetime.now()
-    scoreDocs = searcher.search(query, 500).scoreDocs
+    scoreDocs = searcher.search(query, SEARCH_RESULTS_LIMIT).scoreDocs
     duration = datetime.datetime.now() - start
     
     print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
