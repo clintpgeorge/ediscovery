@@ -412,6 +412,10 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		
+		self._lbl_about = wx.StaticText( self, wx.ID_ANY, u" © 2013 University of Florida.  All rights reserved. ", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._lbl_about.Wrap( -1 )
+		bsizer_main.Add( self._lbl_about, 0, wx.ALL, 5 )
+		
 		
 		self.SetSizer( bsizer_main )
 		self.Layout()

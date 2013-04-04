@@ -1,15 +1,19 @@
+# -*- coding: iso-8859-15 -*-
 '''
 Created on Feb 26, 2013
 
 @author: abhiramj  & cgeorge
 '''
+
 import os
 import wx 
+import sys
 # import tempfile
 import webbrowser
 # import time
 import shelve
 from gui.HTML import Table, TableRow, TableCell, link
+
 
 from datetime import datetime 
 from decimal import Decimal 
@@ -193,11 +197,15 @@ class RandomSampler(RandomSamplerGUI):
     def _on_mitem_about( self, event ):
         super(RandomSampler, self)._on_mitem_about(event) 
         
-        about_text = """Random sampler: 
+        about_text = u"""Random sampler: 
         This application randomly samples the files 
         from the given data folder and copies them to the output 
         folder. Sample size is determined by the given 
-        confidence interval."""
+        confidence interval.
+        
+         
+         © 2013 University of Florida.  All rights reserved. 
+         """
         dlg = wx.MessageDialog(self, about_text, "About Random Sampler", wx.OK)
         dlg.ShowModal() # Shows it
         dlg.Destroy() # finally destroy it when finished.
@@ -489,6 +497,7 @@ class RandomSampler(RandomSamplerGUI):
                                      self.output_dir_path, total_size, dialog)
         finish_copy_event  = wx.PyCommandEvent(wx.EVT_COMMAND_SET_FOCUS.typeId)
         self.GetEventHandler().ProcessEvent(finish_copy_event)
+        sys.exit()
 
         
     def do_load(self, dialog):
@@ -532,7 +541,7 @@ class RandomSampler(RandomSamplerGUI):
         # print_total_file_size = convert_size(total_file_size)
         
         #Show status of copy
-        if total_file_size > 0:
+        if total_file_size >= 0:
             
             progress_dialog = wx.ProgressDialog(
                                                 'Creating samples', 
