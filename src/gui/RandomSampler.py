@@ -8,23 +8,47 @@ Created on Feb 26, 2013
 import os
 import wx 
 import sys
-# import tempfile
 import webbrowser
-# import time
 import shelve
+import subprocess
+
 from gui.HTML import Table, TableRow, TableCell, link
-
-
 from datetime import datetime 
 from decimal import Decimal 
 from gui.RandomSamplerGUI import RandomSamplerGUI, TagDocumentDialog
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
 from file_utils import find_files_in_folder, convert_size, start_thread, copy_with_dialog, get_destination_file_path, free_space
+from _winreg import OpenKey, CloseKey, QueryValueEx, HKEY_LOCAL_MACHINE
+
 
 SHELVE_FILE_NAME = 'random_sampler.shelve'
 REPORT_COMPLETE = 'complete_report.html'
 REPORT_RESPONSIVE = 'responsive_docs_report.html' 
 REPORT_PRIVILEGED = 'privileged_docs_report.html'
+DEFAULT_FILE_VIEWER = 'IrfanView'
+
+
+
+def get_IrfanView_path():
+    '''
+    Gets IrfanView path
+    '''
+    # Registry key path where IrfanView is stored 
+    key_paths = [r'SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\IrfanView']
+    subkey = "InstallLocation"
+    for key_path in key_paths:
+        try:
+            key = OpenKey(HKEY_LOCAL_MACHINE,key_path)
+            key_value = QueryValueEx(key,subkey)
+            CloseKey(key)
+            path_value = key_value[0].split("\"")[1]
+            return path_value
+            # Entry is like this - ("C:\Program Files (x86)\IrfanView\i_view32.exe" "%1", 1)
+            # We will decode this
+        except WindowsError:
+            pass
+    return None
+ 
 '''
 To generate HTML reports 
 '''
@@ -94,6 +118,9 @@ class RandomSampler(RandomSamplerGUI):
         app_icon = wx.Icon(os.path.join('res','uflaw.ico'), wx.BITMAP_TYPE_ICO, 32, 32)
         self.SetIcon(app_icon)
         
+        # Getting default viewer path
+        self.DEFAULT_VIEWER_OPTIONS = {'IrfanView': get_IrfanView_path}
+        self.viewer_executable_location = self.get_default_fileviewer_path()
 #        # stack to store files and tags
 #        self.file_tag_dict = {}
 #        '''
@@ -280,11 +307,23 @@ class RandomSampler(RandomSamplerGUI):
     def _on_click_cl_next( self, event ):
 
         # Stores the configurations into a file 
+        self._current_page = 2
+        self.nb_config_sampler.ChangeSelection(self._current_page)
+        
+    def _on_click_tag_goback( self, event ):
+        self._current_page = 1
+        self.nb_config_sampler.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+    
+    
+    def _on_click_tag_next( self, event ):
+
+        # Stores the configurations into a file 
         if self._is_ct_updated:
             self._shelf_update_confidence_tab_state()        
             self._is_ct_updated = False 
         
-        self._current_page = 2
+        self._current_page = 3
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
@@ -299,11 +338,11 @@ class RandomSampler(RandomSamplerGUI):
         TODO: need to fix an error in application state update 
         '''
         
-        if not self._is_samples_created and self._prior_page_status < 3:
+        if not self._is_samples_created and self._prior_page_status < 4:
             self._show_error_message("Review Error!", "Please create the sample before go to review.")
             return 
         
-        if self._is_samples_created and self._prior_page_status >= 3:
+        if self._is_samples_created and self._prior_page_status >= 4:
             self._shelf_update_samples()
         elif self._is_samples_created:
             self._shelf_update_sample_tab_state()
@@ -314,7 +353,7 @@ class RandomSampler(RandomSamplerGUI):
         
         # changes the tab selection 
 
-        self._current_page = 3
+        self._current_page = 4
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -1484,9 +1523,84 @@ class RandomSampler(RandomSamplerGUI):
     
     def _on_copy_enable_review(self, event):
         self._is_samples_created = True
+        
     
+    def on_right_click_menu(self, event):
+        '''
+        Displays context menu on right-click 
+        ''' 
+        self.PopupMenu(self.menu_open)
     
+    def on_popup_open_file_viewer(self, event):
+        '''
+        Opens irfanview with file as argument
+        '''
+        
+        dest_file_path = self.get_selection_file_name()
+        if self.viewer_executable_location is None:
+            self._show_error_message("File Open Error!", "Could not open file with " + DEFAULT_FILE_VIEWER + ". Check if "  + DEFAULT_FILE_VIEWER + " is installed.")
+        try:
+            subprocess.call([self.viewer_executable_location, dest_file_path])
+        except:
+            self._show_error_message("File Open Error!", "Could not open file with " + DEFAULT_FILE_VIEWER + ". Check if "  + DEFAULT_FILE_VIEWER + " can open this file.")
+            
+        
+    def on_popup_open_file_other(self, event):
+        '''
+        Lets user choose application for viewing file
+        '''
+        dest_file_path = self.get_selection_file_name()
+        wildcard = "All executables (*.exe)|*.exe| All files (*.*)|*.*"
+        
+        
+        program_dialog = wx.FileDialog(self,
+                                     message = "Choose an Application to open with",
+                                     wildcard = wildcard,
+                                     style=wx.OPEN | wx.CHANGE_DIR
+                                     )
+        if program_dialog.ShowModal() == wx.ID_OK:
+            executable_path = program_dialog.GetPath()
+            try: 
+                subprocess.call([executable_path, dest_file_path])
+            except:
+                self._show_error_message("File Open Error!", "Could not open the selected file with the Application.")
+            
+    
+    def on_popup_open_folder(self, event):
+        '''
+        Opens folder containing file
+        '''
+        dest_file_path = self.get_selection_file_name()
+        
+        
+        selected_doc_folder = os.path.dirname(dest_file_path)
+        try: 
+            webbrowser.open_new(selected_doc_folder)
+        except:
+            self._show_error_message("Folder Open Error!", "Please check that you have access to this folder")
+            
+    
+    def get_selection_file_name(self):
+        '''
+        Gets selected file path from review list control
+        '''
+        self.selected_doc_id = self._lc_review.GetFocusedItem()
+        selected_doc_name = self._lc_review.GetItem(self.selected_doc_id, 1)
+        src_file_path = self.sampled_files[self.selected_doc_id]
+        dest_file_path = get_destination_file_path(self.dir_path, src_file_path, self.output_dir_path)
+        return dest_file_path
+     
+    
+    def get_default_fileviewer_path(self):
+        '''
+        Gets default fileviewer path. Additional File Viewers can be added
+        to a dictionary here
+        '''
+        return self.DEFAULT_VIEWER_OPTIONS[DEFAULT_FILE_VIEWER]()
+        
 
+            
+        
             
 #    def _on_edit_status(self, event):
 #        '''
@@ -1793,6 +1907,7 @@ class TagDocument(TagDocumentDialog):
 #        self.Destroy()
 #        
 #        self.SetSizer(sizer)
+
 
 def main():
     '''

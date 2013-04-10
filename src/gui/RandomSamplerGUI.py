@@ -117,7 +117,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_io.SetSizer( sbsizer_io )
 		self._panel_io.Layout()
 		sbsizer_io.Fit( self._panel_io )
-		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", True )
+		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", False )
 		self._panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -195,6 +195,64 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_confidence.Layout()
 		bsizer_confidence.Fit( self._panel_confidence )
 		self.nb_config_sampler.AddPage( self._panel_confidence, u"Confidence", False )
+		self._panel_tags = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		bsizer_tags = wx.BoxSizer( wx.VERTICAL )
+		
+		sbsizer_tag = wx.StaticBoxSizer( wx.StaticBox( self._panel_tags, wx.ID_ANY, u"Tags" ), wx.VERTICAL )
+		
+		gbsizer_tag = wx.GridBagSizer( 2, 5 )
+		gbsizer_tag.SetFlexibleDirection( wx.BOTH )
+		gbsizer_tag.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._st_header21 = wx.StaticText( self._panel_tags, wx.ID_ANY, u"Choose the tags to be used for this project.", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
+		self._st_header21.Wrap( -1 )
+		self._st_header21.SetFont( wx.Font( 8, 70, 90, 91, False, wx.EmptyString ) )
+		self._st_header21.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
+		self._st_header21.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
+		
+		gbsizer_tag.Add( self._st_header21, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 3 ), wx.ALL, 5 )
+		
+		self._sl_header21 = wx.StaticLine( self._panel_tags, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbsizer_tag.Add( self._sl_header21, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self._list_tag = wx.ListCtrl( self._panel_tags, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LC_REPORT|wx.LC_VIRTUAL )
+		gbsizer_tag.Add( self._list_tag, wx.GBPosition( 3, 0 ), wx.GBSpan( 3, 2 ), wx.ALL|wx.TOP, 5 )
+		
+		self._st_tag_text = wx.StaticText( self._panel_tags, wx.ID_ANY, u"Document Tags", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_tag_text.Wrap( -1 )
+		gbsizer_tag.Add( self._st_tag_text, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_tag_add = wx.Button( self._panel_tags, wx.ID_ANY, u"+", wx.DefaultPosition, wx.DefaultSize, wx.BU_EXACTFIT )
+		gbsizer_tag.Add( self._btn_tag_add, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_tag_remove = wx.Button( self._panel_tags, wx.ID_ANY, u"-", wx.DefaultPosition, wx.DefaultSize, wx.BU_EXACTFIT )
+		gbsizer_tag.Add( self._btn_tag_remove, wx.GBPosition( 2, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._sl_tailer21 = wx.StaticLine( self._panel_tags, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbsizer_tag.Add( self._sl_tailer21, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 3 ), wx.ALL|wx.EXPAND, 5 )
+		
+		_bsizer_tag_buttons1 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self._btn_tag_goback = wx.Button( self._panel_tags, wx.ID_ANY, u"Go Back", wx.DefaultPosition, wx.DefaultSize, 0 )
+		_bsizer_tag_buttons1.Add( self._btn_tag_goback, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		
+		self._btn_tag_next = wx.Button( self._panel_tags, wx.ID_ANY, u"Next", wx.DefaultPosition, wx.DefaultSize, 0 )
+		_bsizer_tag_buttons1.Add( self._btn_tag_next, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		
+		
+		gbsizer_tag.Add( _bsizer_tag_buttons1, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
+		
+		
+		sbsizer_tag.Add( gbsizer_tag, 0, wx.ALL|wx.EXPAND, 10 )
+		
+		
+		bsizer_tags.Add( sbsizer_tag, 1, wx.EXPAND, 5 )
+		
+		
+		self._panel_tags.SetSizer( bsizer_tags )
+		self._panel_tags.Layout()
+		bsizer_tags.Fit( self._panel_tags )
+		self.nb_config_sampler.AddPage( self._panel_tags, u"Tags", True )
 		self._panel_create_sample = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		sbsizer_sampler = wx.StaticBoxSizer( wx.StaticBox( self._panel_create_sample, wx.ID_ANY, u"Sampler" ), wx.VERTICAL )
 		
@@ -419,6 +477,21 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		self.SetSizer( bsizer_main )
 		self.Layout()
+		self.menu_open = wx.Menu()
+		self.menu_open_file = wx.Menu()
+		self.menu_open_file_irfanview = wx.MenuItem( self.menu_open_file, wx.ID_ANY, u"Open with Irfanview", wx.EmptyString, wx.ITEM_NORMAL )
+		self.menu_open_file.AppendItem( self.menu_open_file_irfanview )
+		
+		self.menu_open_file_other = wx.MenuItem( self.menu_open_file, wx.ID_ANY, u"Open file with other Application", wx.EmptyString, wx.ITEM_NORMAL )
+		self.menu_open_file.AppendItem( self.menu_open_file_other )
+		
+		self.menu_open.AppendSubMenu( self.menu_open_file, u"Open File" )
+		
+		self.menu_open_folder = wx.MenuItem( self.menu_open, wx.ID_ANY, u"Open Containing Folder", wx.EmptyString, wx.ITEM_NORMAL )
+		self.menu_open.AppendItem( self.menu_open_folder )
+		
+		self.Bind( wx.EVT_RIGHT_DOWN, self.RandomSamplerGUIOnContextMenu ) 
+		
 		
 		self.Centre( wx.BOTH )
 		
@@ -434,18 +507,24 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._tc_confidence_interval.Bind( wx.EVT_KEY_UP, self._on_precision_changed )
 		self._btn_cl_goback.Bind( wx.EVT_BUTTON, self._on_click_cl_goback )
 		self._btn_cl_next.Bind( wx.EVT_BUTTON, self._on_click_cl_next )
+		self._btn_tag_goback.Bind( wx.EVT_BUTTON, self._on_click_tag_goback )
+		self._btn_tag_next.Bind( wx.EVT_BUTTON, self._on_click_tag_next )
 		self._btn_copy_files.Bind( wx.EVT_BUTTON, self._on_click_copy_files )
 		self._btn_out_go_to_review.Bind( wx.EVT_BUTTON, self._on_click_out_go_to_review )
 		self._btn_out_goback.Bind( wx.EVT_BUTTON, self._on_click_out_goback )
 		self._btn_out_exit.Bind( wx.EVT_BUTTON, self._on_click_out_exit )
 		self._btn_review_clear_all_tags.Bind( wx.EVT_BUTTON, self._on_click_clear_all_doc_tags )
 		self._lc_review.Bind( wx.EVT_LIST_ITEM_ACTIVATED, self._on_review_list_item_activated )
+		self._lc_review.Bind( wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click_menu )
 		self._lc_review.Bind( wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected )
 		self._chbx_doc_responsive.Bind( wx.EVT_CHECKBOX, self._on_check_box_doc_responsive )
 		self._chbx_doc_privileged.Bind( wx.EVT_CHECKBOX, self._on_check_box_doc_privileged )
 		self._btn_review_gen_report.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report )
 		self._btn_review_goback.Bind( wx.EVT_BUTTON, self._on_click_review_goback )
 		self._btn_review_exit.Bind( wx.EVT_BUTTON, self._on_click_review_exit )
+		self.Bind( wx.EVT_MENU, self.on_popup_open_file_irfanview, id = self.menu_open_file_irfanview.GetId() )
+		self.Bind( wx.EVT_MENU, self.on_popup_open_file_other, id = self.menu_open_file_other.GetId() )
+		self.Bind( wx.EVT_MENU, self.on_popup_open_folder, id = self.menu_open_folder.GetId() )
 	
 	def __del__( self ):
 		pass
@@ -485,6 +564,12 @@ class RandomSamplerGUI ( wx.Frame ):
 	def _on_click_cl_next( self, event ):
 		event.Skip()
 	
+	def _on_click_tag_goback( self, event ):
+		event.Skip()
+	
+	def _on_click_tag_next( self, event ):
+		event.Skip()
+	
 	def _on_click_copy_files( self, event ):
 		event.Skip()
 	
@@ -501,6 +586,9 @@ class RandomSamplerGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_review_list_item_activated( self, event ):
+		event.Skip()
+	
+	def on_right_click_menu( self, event ):
 		event.Skip()
 	
 	def _on_review_list_item_selected( self, event ):
@@ -521,6 +609,18 @@ class RandomSamplerGUI ( wx.Frame ):
 	def _on_click_review_exit( self, event ):
 		event.Skip()
 	
+	def on_popup_open_file_irfanview( self, event ):
+		event.Skip()
+	
+	def on_popup_open_file_other( self, event ):
+		event.Skip()
+	
+	def on_popup_open_folder( self, event ):
+		event.Skip()
+	
+	def RandomSamplerGUIOnContextMenu( self, event ):
+		self.PopupMenu( self.menu_open, event.GetPosition() )
+		
 
 ###########################################################################
 ## Class TagDocumentDialog
