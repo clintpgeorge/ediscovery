@@ -252,7 +252,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_tags.SetSizer( bsizer_tags )
 		self._panel_tags.Layout()
 		bsizer_tags.Fit( self._panel_tags )
-		self.nb_config_sampler.AddPage( self._panel_tags, u"Tags", True )
+		self.nb_config_sampler.AddPage( self._panel_tags, u"Tags", False )
 		self._panel_create_sample = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		sbsizer_sampler = wx.StaticBoxSizer( wx.StaticBox( self._panel_create_sample, wx.ID_ANY, u"Sampler" ), wx.VERTICAL )
 		
@@ -391,16 +391,15 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_doc_tags = wx.BoxSizer( wx.VERTICAL )
 		
-		sbsizer_doc_tags = wx.StaticBoxSizer( wx.StaticBox( self._panel_doc_tags, wx.ID_ANY, u"Select document tags" ), wx.VERTICAL )
+		_rbx_responsiveChoices = [ u"Yes", u"No", u"Unknown" ]
+		self._rbx_responsive = wx.RadioBox( self._panel_doc_tags, wx.ID_ANY, u"Responsive", wx.DefaultPosition, wx.DefaultSize, _rbx_responsiveChoices, 2, wx.RA_SPECIFY_ROWS )
+		self._rbx_responsive.SetSelection( 2 )
+		bsizer_doc_tags.Add( self._rbx_responsive, 0, wx.ALL, 5 )
 		
-		self._chbx_doc_responsive = wx.CheckBox( self._panel_doc_tags, wx.ID_ANY, u"Responsive", wx.DefaultPosition, wx.DefaultSize, 0 )
-		sbsizer_doc_tags.Add( self._chbx_doc_responsive, 0, wx.ALL, 5 )
-		
-		self._chbx_doc_privileged = wx.CheckBox( self._panel_doc_tags, wx.ID_ANY, u"Privileged", wx.DefaultPosition, wx.DefaultSize, 0 )
-		sbsizer_doc_tags.Add( self._chbx_doc_privileged, 0, wx.ALL, 5 )
-		
-		
-		bsizer_doc_tags.Add( sbsizer_doc_tags, 0, wx.EXPAND, 5 )
+		_rbx_privilegedChoices = [ u"Yes", u"No", u"Unknown" ]
+		self._rbx_privileged = wx.RadioBox( self._panel_doc_tags, wx.ID_ANY, u"Privileged", wx.DefaultPosition, wx.DefaultSize, _rbx_privilegedChoices, 2, wx.RA_SPECIFY_ROWS )
+		self._rbx_privileged.SetSelection( 2 )
+		bsizer_doc_tags.Add( self._rbx_privileged, 0, wx.ALL, 5 )
 		
 		
 		bsizer_doc_tags.AddSpacer( ( 0, 10), 1, wx.EXPAND, 5 )
@@ -466,7 +465,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", False )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", True )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -517,12 +516,12 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._lc_review.Bind( wx.EVT_LIST_ITEM_ACTIVATED, self._on_review_list_item_activated )
 		self._lc_review.Bind( wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click_menu )
 		self._lc_review.Bind( wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected )
-		self._chbx_doc_responsive.Bind( wx.EVT_CHECKBOX, self._on_check_box_doc_responsive )
-		self._chbx_doc_privileged.Bind( wx.EVT_CHECKBOX, self._on_check_box_doc_privileged )
+		self._rbx_responsive.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated )
+		self._rbx_privileged.Bind( wx.EVT_RADIOBOX, self._on_rbx_privileged_updated )
 		self._btn_review_gen_report.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report )
 		self._btn_review_goback.Bind( wx.EVT_BUTTON, self._on_click_review_goback )
 		self._btn_review_exit.Bind( wx.EVT_BUTTON, self._on_click_review_exit )
-		self.Bind( wx.EVT_MENU, self.on_popup_open_file_irfanview, id = self.menu_open_file_irfanview.GetId() )
+		self.Bind( wx.EVT_MENU, self.on_popup_open_file_viewer, id = self.menu_open_file_irfanview.GetId() )
 		self.Bind( wx.EVT_MENU, self.on_popup_open_file_other, id = self.menu_open_file_other.GetId() )
 		self.Bind( wx.EVT_MENU, self.on_popup_open_folder, id = self.menu_open_folder.GetId() )
 	
@@ -594,10 +593,10 @@ class RandomSamplerGUI ( wx.Frame ):
 	def _on_review_list_item_selected( self, event ):
 		event.Skip()
 	
-	def _on_check_box_doc_responsive( self, event ):
+	def _on_rbx_responsive_updated( self, event ):
 		event.Skip()
 	
-	def _on_check_box_doc_privileged( self, event ):
+	def _on_rbx_privileged_updated( self, event ):
 		event.Skip()
 	
 	def _on_click_review_gen_report( self, event ):
@@ -609,7 +608,7 @@ class RandomSamplerGUI ( wx.Frame ):
 	def _on_click_review_exit( self, event ):
 		event.Skip()
 	
-	def on_popup_open_file_irfanview( self, event ):
+	def on_popup_open_file_viewer( self, event ):
 		event.Skip()
 	
 	def on_popup_open_file_other( self, event ):
@@ -629,22 +628,21 @@ class RandomSamplerGUI ( wx.Frame ):
 class TagDocumentDialog ( wx.Dialog ):
 	
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Tag the Document", pos = wx.DefaultPosition, size = wx.Size( 250,150 ), style = wx.DEFAULT_DIALOG_STYLE )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Tag the Document", pos = wx.DefaultPosition, size = wx.Size( 250,227 ), style = wx.DEFAULT_DIALOG_STYLE )
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
 		
 		bsizer_doc_tags = wx.BoxSizer( wx.VERTICAL )
 		
-		sbsizer_doc_tags = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"Select document tags" ), wx.VERTICAL )
+		_rbx_responsiveChoices = [ u"Yes", u"No", u"Unknown" ]
+		self._rbx_responsive = wx.RadioBox( self, wx.ID_ANY, u"Responsive", wx.DefaultPosition, wx.DefaultSize, _rbx_responsiveChoices, 2, wx.RA_SPECIFY_ROWS )
+		self._rbx_responsive.SetSelection( 2 )
+		bsizer_doc_tags.Add( self._rbx_responsive, 0, wx.ALL, 5 )
 		
-		self._chbx_doc_responsive = wx.CheckBox( self, wx.ID_ANY, u"Responsive", wx.DefaultPosition, wx.DefaultSize, 0 )
-		sbsizer_doc_tags.Add( self._chbx_doc_responsive, 0, wx.ALL, 5 )
-		
-		self._chbx_doc_privileged = wx.CheckBox( self, wx.ID_ANY, u"Privileged", wx.DefaultPosition, wx.DefaultSize, 0 )
-		sbsizer_doc_tags.Add( self._chbx_doc_privileged, 0, wx.ALL, 5 )
-		
-		
-		bsizer_doc_tags.Add( sbsizer_doc_tags, 1, wx.EXPAND, 10 )
+		_rbx_privilegedChoices = [ u"Yes", u"No", u"Unknown" ]
+		self._rbx_privileged = wx.RadioBox( self, wx.ID_ANY, u"Privileged", wx.DefaultPosition, wx.DefaultSize, _rbx_privilegedChoices, 2, wx.RA_SPECIFY_ROWS )
+		self._rbx_privileged.SetSelection( 2 )
+		bsizer_doc_tags.Add( self._rbx_privileged, 0, wx.ALL, 5 )
 		
 		gsizer_buttons = wx.GridSizer( 1, 2, 0, 0 )
 		
@@ -664,8 +662,7 @@ class TagDocumentDialog ( wx.Dialog ):
 		self.Centre( wx.BOTH )
 		
 		# Connect Events
-		self._chbx_doc_responsive.Bind( wx.EVT_CHECKBOX, self.on_check_box_doc_responsive )
-		self._chbx_doc_privileged.Bind( wx.EVT_CHECKBOX, self.on_check_box_doc_privileged )
+		self._rbx_responsive.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated )
 		self._btn_add_tags.Bind( wx.EVT_BUTTON, self._on_click_add_tags )
 		self._btn_clear_doc_tags.Bind( wx.EVT_BUTTON, self._on_click_clear_tags )
 	
@@ -674,10 +671,7 @@ class TagDocumentDialog ( wx.Dialog ):
 	
 	
 	# Virtual event handlers, overide them in your derived class
-	def on_check_box_doc_responsive( self, event ):
-		event.Skip()
-	
-	def on_check_box_doc_privileged( self, event ):
+	def _on_rbx_responsive_updated( self, event ):
 		event.Skip()
 	
 	def _on_click_add_tags( self, event ):

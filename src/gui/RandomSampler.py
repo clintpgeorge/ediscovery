@@ -33,7 +33,7 @@ def get_IrfanView_path():
     '''
     Gets IrfanView path
     '''
-    # Registry key path where IrfanView is stored 
+    # Registry key path where IrfanView is stored
     key_paths = [r'SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\IrfanView']
     subkey = "InstallLocation"
     for key_path in key_paths:
@@ -121,6 +121,7 @@ class RandomSampler(RandomSamplerGUI):
         # Getting default viewer path
         self.DEFAULT_VIEWER_OPTIONS = {'IrfanView': get_IrfanView_path}
         self.viewer_executable_location = self.get_default_fileviewer_path()
+        print self.viewer_executable_location
 #        # stack to store files and tags
 #        self.file_tag_dict = {}
 #        '''
@@ -686,14 +687,18 @@ class RandomSampler(RandomSamplerGUI):
         # Handles the document tags check boxes 
         
         if responsive.Text == 'Yes':
-            self._chbx_doc_responsive.SetValue(True)
-        else:
-            self._chbx_doc_responsive.SetValue(False)
+            self._rbx_responsive.SetStringSelection('Yes')
+        elif responsive.Text == 'No':
+            self._rbx_responsive.SetStringSelection('No')
+        elif responsive.Text == '':
+            self._rbx_responsive.SetStringSelection('Unknown')
             
         if privileged.Text == 'Yes':
-            self._chbx_doc_privileged.SetValue(True)
-        else:
-            self._chbx_doc_privileged.SetValue(False)
+            self._rbx_privileged.SetStringSelection('Yes')
+        elif privileged.Text == 'No':
+            self._rbx_privileged.SetStringSelection('No')
+        elif privileged.Text == '':
+            self._rbx_privileged.SetStringSelection('Unknown')
         
         # Shows the tags panel 
         
@@ -711,32 +716,36 @@ class RandomSampler(RandomSamplerGUI):
 
         
         
-    def _on_check_box_doc_responsive( self, event ):
+    def _on_rbx_responsive_updated( self, event ):
         '''
         Handles the selected document responsive check box 
         check and uncheck events 
          
         '''
-        is_checked = self._chbx_doc_responsive.GetValue()
-        if is_checked: 
+        responsive_status = self._rbx_responsive.GetStringSelection() 
+        if responsive_status == 'Yes': 
             self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
-        else: 
+        elif responsive_status == 'No': 
             self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
+        elif responsive_status == 'Unknown': 
+            self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
         self._is_rt_updated = True 
     
-    def _on_check_box_doc_privileged( self, event ):
+    def _on_rbx_privileged_updated( self, event ):
         '''
         Handles the selected document privileged check box 
         check and uncheck events 
          
         '''
-        is_checked = self._chbx_doc_privileged.GetValue()
-        if is_checked: 
-            self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
-        else: 
-            self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
         
-        self._is_rt_updated = True 
+        privileged_status = self._rbx_privileged.GetStringSelection() 
+        if privileged_status == 'Yes': 
+            self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
+        elif privileged_status == 'No': 
+            self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
+        elif privileged_status == 'Unknown': 
+            self._lc_review.SetStringItem(self.selected_doc_id, 3, '')
+        self._is_rt_updated = True  
 
 
     def _on_click_clear_all_doc_tags( self, event ):
@@ -747,9 +756,10 @@ class RandomSampler(RandomSamplerGUI):
         for i in range(0, len(self.sampled_files)):
             self._lc_review.SetStringItem(i, 2, '')
             self._lc_review.SetStringItem(i, 3, '')       
+        
+        self._rbx_responsive.SetStringSelection('Unknown')    
+        self._rbx_privileged.SetStringSelection('Unknown')  
             
-        self._chbx_doc_responsive.SetValue(False)  
-        self._chbx_doc_privileged.SetValue(False)    
 
         self._is_rt_updated = True 
 
@@ -770,11 +780,11 @@ class RandomSampler(RandomSamplerGUI):
         src_file_path = self.sampled_files[self.selected_doc_id]
         dest_file_path = get_destination_file_path(self.dir_path, src_file_path, self.output_dir_path)
         
-        is_responsive = False 
-        is_privileged = False 
-        if responsive.Text == 'Yes': is_responsive = True 
-        if privileged.Text == 'Yes': is_privileged = True 
+        
         _, file_name = os.path.split(src_file_path)
+        
+        responsive_status = self._rbx_responsive.GetStringSelection()
+        privileged_status = self._rbx_privileged.GetStringSelection()
 
         if os.path.exists(dest_file_path):
                   
@@ -783,37 +793,8 @@ class RandomSampler(RandomSamplerGUI):
                 # Open a file   
 
                 webbrowser.open(dest_file_path)
-
-
-                # Creates a document tagging dialog 
                 
-                dlg = TagDocument(self, file_name, is_responsive, is_privileged)
-                
-                # Gets the tag selections from the dialog
-                
-                if dlg.ShowModal() == wx.ID_OK:
-                    is_responsive = dlg._chbx_doc_responsive.GetValue()  
-                    is_privileged = dlg._chbx_doc_privileged.GetValue()
-                    
-                    # Sets the selections to the parent window 
-
-                    self._chbx_doc_responsive.SetValue(is_responsive)
-                    if is_responsive: 
-                        self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
-                    elif dlg._is_responsive_updated: 
-                        self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
-                    
-                    self._chbx_doc_privileged.SetValue(is_privileged)
-                    if is_privileged: 
-                        self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
-                    elif dlg._is_privileged_updated: 
-                        self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
-                        
-                    self._is_rt_updated = True 
-                    
-                # Destroys the dialog object 
-                
-                dlg.Destroy()
+                self.make_tag_popup(file_name,responsive_status, privileged_status)
 
 
             except Exception as anyException:
@@ -822,7 +803,40 @@ class RandomSampler(RandomSamplerGUI):
         else: 
             self._show_error_message("Open File Error!", "The file does not exist!")
 
-        
+    def make_tag_popup(self, file_name, responsive_status, privileged_status):
+        # Creates a document tagging dialog 
+                
+            dlg = TagDocument(self, file_name, responsive_status, privileged_status)
+            
+            # Gets the tag selections from the dialog
+            
+            if dlg.ShowModal() == wx.ID_OK:
+                responsive_status = dlg._rbx_responsive.GetStringSelection()  
+                privileged_status = dlg._rbx_privileged.GetStringSelection()
+                
+                # Sets the selections to the parent window 
+
+                self._rbx_responsive.SetStringSelection(responsive_status)
+                if responsive_status == 'Yes': 
+                    self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
+                elif responsive_status == 'No': 
+                    self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
+                elif responsive_status == 'Unknown': 
+                    self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
+                
+                self._rbx_privileged.SetStringSelection(privileged_status)
+                if privileged_status == 'Yes': 
+                    self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
+                elif privileged_status == 'No': 
+                    self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
+                elif privileged_status == 'Unknown': 
+                    self._lc_review.SetStringItem(self.selected_doc_id, 3, '')
+                    
+                self._is_rt_updated = True 
+                
+            # Destroys the dialog object 
+            
+            dlg.Destroy()    
     
     def _on_click_review_goback( self, event ):
         '''
@@ -1840,11 +1854,8 @@ class TagDocument(TagDocumentDialog):
         # Sets the dialog controls based on the selected document value 
         
         self.SetTitle('Tag %s' % file_name)
-        self._chbx_doc_privileged.SetValue(privileged)
-        self._chbx_doc_responsive.SetValue(responsive)
-        
-        self._is_responsive_updated = False
-        self._is_privileged_updated = False 
+        self._rbx_privileged.SetStringSelection(responsive)
+        self._rbx_responsive.SetStringSelection(privileged)
         
         
     def _on_click_add_tags( self, event ):
@@ -1859,14 +1870,8 @@ class TagDocument(TagDocumentDialog):
         Clears the check box values 
         '''
         
-        self._chbx_doc_privileged.SetValue(False)
-        self._chbx_doc_responsive.SetValue(False)
-        
-    def on_check_box_doc_responsive( self, event ):
-        self._is_responsive_updated = True 
-    
-    def on_check_box_doc_privileged( self, event ):
-        self._is_privileged_updated = True  
+        self._rbx_privileged.SetStringSelection("Unknown")
+        self._rbx_responsive.SetStringSelection("Unknown")
 #
 #class LabelChoiceDialog(wx.Dialog):
 #    def __init__(self, parent, title, style):
