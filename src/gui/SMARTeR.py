@@ -121,7 +121,7 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, Col
         #print "Right Click called .... "
         Rating(None,self)
          
-    def  OnDoubleClick(self,event):
+    def OnDoubleClick(self,event):
         focussed_item_index = self.GetFocusedItem()
         file_Name = self.GetItem(focussed_item_index,1)
         webbrowser.get().open(file_Name.GetText())
@@ -186,9 +186,7 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, Col
         # For now, just call _populate_results since it internally does the sorting 
         self._populate_results(present_chunk)
         
-    packages = [('abiword', '5.8M', 'base'), ('adie', '145k', 'base'),
-    ('airsnort', '71k', 'base'), ('ara', '717k', 'base'), ('arc', '139k', 'base'),
-    ('asc', '5.8M', 'base'), ('ascii', '74k', 'base'), ('ash', '74k', 'base')]
+
 
 ###########################################################################
 # # Class Rating
@@ -290,12 +288,7 @@ class SMARTeR (SMARTeRGUI):
 
         self._tc_files_log = wx.TextCtrl(_panel_right, -1, style=wx.TE_MULTILINE, size=(-1, 100))
         self._lc_results = CheckListCtrl(_panel_right)
-        
-        '''
-        self._lc_results.InsertColumn(0, 'Package', width=140)
-        self._lc_results.InsertColumn(1, 'Size')
-        self._lc_results.InsertColumn(2, 'Repository')
-        '''
+
         
         # Populate the column names using the metadata types from MetadataType_types &RB
         columnHeaders = MetadataType._types
@@ -305,13 +298,6 @@ class SMARTeR (SMARTeRGUI):
             columnNumber = columnNumber + 1
         self._lc_results.InsertColumn(columnNumber,"rating")
         
-        '''
-        # Commented the below lines so that results can be populated AFTER the search         
-        for i in packages:
-            index = self._lc_results.InsertStringItem(sys.maxint, i[0])
-            self._lc_results.SetStringItem(index, 1, i[1])
-            self._lc_results.SetStringItem(index, 2, i[2])
-        '''
         vbox2 = wx.BoxSizer(wx.VERTICAL)
 
         self._btn_sel_all = wx.Button(_panel_left, -1, 'Select All', size=(100, -1))
@@ -405,6 +391,12 @@ class SMARTeR (SMARTeRGUI):
                 self._tc_files_log.AppendText(self._lc_results.GetItemText(i) + '\n')
     
     def _on_file_change_mdl(self, event):
+        '''
+        TODO: It's better use the python config reader
+        interface. See read_config function in utils/utils_file 
+        and use that function to read the model file  
+        '''
+        
         fileName = self._file_picker_mdl.GetPath()
         pattern = re.compile('\[.+\]')
         fileInstance = open(fileName)
@@ -450,7 +442,8 @@ class SMARTeR (SMARTeRGUI):
         
         global dictionary_of_rows
         queryText = self._tc_query.GetValue() #'email_body:senorita:MUST'
-        #queryTest has Queries, Fields, BooleanClauses
+        
+        #queryText has Queries, Fields, BooleanClauses
         queries = []
         fields = []
         clauses = []
@@ -467,8 +460,8 @@ class SMARTeR (SMARTeRGUI):
                     clauses.append(BooleanClause.Occur.MUST_NOT)
                 else:
                     clauses.append(BooleanClause.Occur.SHOULD)
-        
-        #print 'Clauses is\n',clauses
+                
+                print res
         
         queryList = []
         queryList.append(queries)
