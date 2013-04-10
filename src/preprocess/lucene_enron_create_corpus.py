@@ -26,7 +26,7 @@ def store_file_paths_index(index_reader, paths_index_file):
                 file_id = doc.get(MetadataType.FILE_ID)
                 file_path = doc.get(MetadataType.FILE_PATH)
                 file_name = doc.get(MetadataType.FILE_NAME)
-                print >>fw, file_id, file_path.rstrip(file_path), file_name
+                print >>fw, file_id, file_path.rstrip(file_name), file_name
 
     
 

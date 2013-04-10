@@ -25,7 +25,7 @@ if __name__=="__main__":
 
     Examples: 
         python build_lucene_enron_lda_corpus.py -h # for help 
-        python build_lucene_enron_lda_corpus.py -l -d /home/cgeorge/ediscovey/enron/lucene -o /home/cgeorge/ediscovey/enron/tm 
+        python build_lucene_enron_lda_corpus.py -l -d /home/cgeorge/data/lucene -o /home/cgeorge/data/tm 
 
     ''')
     arg_parser.add_argument("-d", dest="index_folder", type=str, help="data folder", required=True)
@@ -34,7 +34,7 @@ if __name__=="__main__":
     arg_parser.add_argument("-l", "--log", dest="log", default=False, action="store_true", help="log details into a file")
     arg_parser.add_argument("-f", dest="log_file", type=str, help="logs file (default: build_lucene_enron_lda_corpus.log)", default='build_lucene_enron_lda_corpus.log')
     arg_parser.add_argument("-w", dest="stop_words_file", type=str, help="stop words file (default: en_stopwords)", default='en_stopwords')
-    arg_parser.add_argument("-m", dest="min_frequency", type=int, help="minimum frequency of vocabulary terms (default: 15)", default=15)
+    arg_parser.add_argument("-m", dest="min_frequency", type=int, help="minimum frequency of vocabulary terms (default: 1)", default=1)
     arg_parser.add_argument("-i", dest="min_word_len", type=int, help="minimum length of vocabulary terms (default: 2)", default=2)    
     args = arg_parser.parse_args()
     

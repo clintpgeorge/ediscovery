@@ -25,11 +25,11 @@ if __name__=="__main__":
 
     Examples: 
         python index_dir.py -h # for help 
-        python index_dir.py -l -d /home/cgeorge/ediscovey/enron/maildir/ -o /home/cgeorge/ediscovey/enron/lucene -p /home/cgeorge/ediscovey/enron/enron.path.index    
+        python index_dir.py -l -d /home/cgeorge/data/maildir/ -o /home/cgeorge/data/lucene -p /home/cgeorge/data/enron.path.index    
 
     ''')
-    arg_parser.add_argument("-d", dest="data_folder", type=str, help="the data folder", required=True)
-    arg_parser.add_argument("-o", dest="index_folder", type=str, help="the output folder", required=True)
+    arg_parser.add_argument("-d", dest="data_folder", type=str, help="data folder", required=True)
+    arg_parser.add_argument("-o", dest="index_folder", type=str, help="output folder", required=True)
     arg_parser.add_argument("-p", dest="path_index_file", type=str, help="File paths index file", required=True)
     arg_parser.add_argument("-l", "--log", dest="log", default=False, action="store_true", help="log details into a file")
     arg_parser.add_argument("-f", dest="log_file", type=str, help="Logs file (default: index_dir.log)", default='index_dir.log')

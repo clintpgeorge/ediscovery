@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 '''
-This script performs LDA estimation process on a given corpus 
+This script performs LSI estimation on a given Blei corpus 
 
 
 Created On: Feb 27, 2013
@@ -12,7 +12,7 @@ import sys
 import argparse
 import logging
 import os 
-from tm.lda_estimation import run_lda_estimation
+from tm.lsi_estimation import run_lsi_estimation
 
 
 
@@ -22,27 +22,26 @@ if __name__=="__main__":
     Performs LDA estimation process 
     '''
     
-    log_file = 'run_lda.log'
+    log_file = 'run_lsi.log'
     
     arg_parser = argparse.ArgumentParser('''
-    Performs LDA estimation process 
+    Performs LSI estimation
 
     Examples: 
-        python run_lda.py -h # for help 
-        python run_lda.py -l -d /home/cgeorge/data/tm -c enron.ldac -w enron.dict -m enron.lda -b enron.lda.beta -t enron.lda.theta -i enron.lda.cos.index -n 10 -p 5   
+        python run_lsi.py -h # for help 
+        python run_lsi.py -l -d /home/cgeorge/data/tm -c enron.ldac -w enron.dict -m enron.lsi -b enron.lsi.beta -t enron.lsi.theta -i enron.lsi.cos.index -n 300   
 
     ''')
     arg_parser.add_argument("-d", dest="data_folder", type=str, help="The data folder", required=True)
     arg_parser.add_argument("-c", dest="ldac_file", type=str, help="LDA corpus file", required=True)
     arg_parser.add_argument("-w", dest="dict_file", type=str, help="Dictionary file", required=True)
-    arg_parser.add_argument("-m", dest="model_file", type=str, help="LDA model file (out)", required=True)
-    arg_parser.add_argument("-b", dest="beta_file", type=str, help="Beta file (out)", required=True)
+    arg_parser.add_argument("-m", dest="model_file", type=str, help="LSI model file (out)", required=True)
+    arg_parser.add_argument("-b", dest="beta_file", type=str, help="Topics file (out)", required=True)
     arg_parser.add_argument("-t", dest="theta_file", type=str, help="Theta file (out)", required=True)
-    arg_parser.add_argument("-i", dest="lda_index_file", type=str, help="LDA cosine index file (out)", required=True)
+    arg_parser.add_argument("-i", dest="index_file", type=str, help="LSI cosine index file (out)", required=True)
     arg_parser.add_argument("-n", dest="num_topics", type=int, help="Number of topics", default=50)
-    arg_parser.add_argument("-p", dest="num_passes", type=int, help="Number of passes", default=10)
     arg_parser.add_argument("-l", "--log", dest="log", default=False, action="store_true", help="log details into a file")
-    arg_parser.add_argument("-f", dest="log_file", type=str, help="logs file (default: run_lda.log)", default='run_lda.log')
+    arg_parser.add_argument("-f", dest="log_file", type=str, help="logs file (default: run_lsi.log)", default='run_lsi.log')
     
     args = arg_parser.parse_args()
     
@@ -57,7 +56,7 @@ if __name__=="__main__":
     model_file = os.path.join(args.data_folder, args.model_file)   
     beta_file = os.path.join(args.data_folder, args.beta_file)   
     theta_file = os.path.join(args.data_folder, args.theta_file)   
-    index_file = os.path.join(args.data_folder, args.lda_index_file)  
+    index_file = os.path.join(args.data_folder, args.index_file)  
 
     # create file handler which 
     # logs even debug messages
@@ -70,5 +69,5 @@ if __name__=="__main__":
     
     
     logging.info('=============================================================================================================')
-    run_lda_estimation(dict_file, ldac_file, model_file, beta_file, theta_file, index_file, args.num_topics, args.num_passes)
+    run_lsi_estimation(dict_file, ldac_file, model_file, beta_file, theta_file, index_file, args.num_topics)
     logging.info('=============================================================================================================')
