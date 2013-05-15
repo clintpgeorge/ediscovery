@@ -13,20 +13,30 @@ import shelve
 import subprocess
 
 from gui.HTML import Table, TableRow, TableCell, link
+from gui.RandomSamplerGUI import RandomSamplerGUI
+from gui.TaggingControl import TaggingControl
 from datetime import datetime 
 from decimal import Decimal 
-from gui.RandomSamplerGUI import RandomSamplerGUI, TagDocumentDialog
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
 from file_utils import find_files_in_folder, convert_size, start_thread, copy_with_dialog, get_destination_file_path, free_space
 from _winreg import OpenKey, CloseKey, QueryValueEx, HKEY_LOCAL_MACHINE
 
 
-SHELVE_FILE_NAME = 'random_sampler.shelve'
+SHELVE_FILE_EXTENSION = '.shelve'
 REPORT_COMPLETE = 'complete_report.html'
 REPORT_RESPONSIVE = 'responsive_docs_report.html' 
 REPORT_PRIVILEGED = 'privileged_docs_report.html'
 DEFAULT_FILE_VIEWER = 'IrfanView'
-
+ABOUT_TEXT =  u"""Random sampler: 
+This application randomly samples the files 
+from the given data folder and copies them to the output 
+folder. Sample size is determined by the given 
+confidence interval.
+        
+         
+© 2013 University of Florida.  All rights reserved. 
+"""
+DEFAULT_TAGS = ["Responsive/Non-Responsive[Default]", "Privileged/Non-Privileged[Default]"]
 
 
 def get_IrfanView_path():
@@ -34,7 +44,7 @@ def get_IrfanView_path():
     Gets IrfanView path
     '''
     # Registry key path where IrfanView is stored
-    key_paths = [r'SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\IrfanView']
+    key_paths = [r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\IrfanView']
     subkey = "InstallLocation"
     for key_path in key_paths:
         try:
@@ -106,11 +116,7 @@ class RandomSampler(RandomSamplerGUI):
         '''
         # Defaults for random sample calculation
         self.SEED = 2013      
-        
-#        # Some value needs to initialized for this to run without exception
-#        self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
-#        self.precision_val = DEFAULT_CONFIDENCE_INTERVAL
-                
+                        
         # Calls the parent class's method 
         super(RandomSampler, self).__init__(parent) 
         
@@ -121,59 +127,29 @@ class RandomSampler(RandomSamplerGUI):
         # Getting default viewer path
         self.DEFAULT_VIEWER_OPTIONS = {'IrfanView': get_IrfanView_path}
         self.viewer_executable_location = self.get_default_fileviewer_path()
-        print self.viewer_executable_location
-#        # stack to store files and tags
-#        self.file_tag_dict = {}
-#        '''
-#        This is the tag format
-#        
-#        self.file_tag_dict(filename) = [('Reviewed','True'),('Accept', 'False'),('A1','False'),('A2','True')]
-#        '''
-#        
-#        # initialize the default list of tags and the current tag
-#        self.DEFAULT_TAGS_NUMBER = 2
-#        self.REVIEWED_TAG_INDEX = 0
-#        self.ACCEPT_TAG_INDEX = 1
-#        self.current_file_selected = None
-#        self.default_tag = ('Default' , 'True')
-#        self.current_tag_list = self.make_default_tag_list()
-#        self._tag_list.ClearAll()
-#        self._tag_list.InsertColumn(0,'Tag')
-#        self._tag_list.InsertColumn(1,'Status')
-#        self._tag_list.InsertStringItem(self.REVIEWED_TAG_INDEX, 'Reviewed')
-#        self._tag_list.SetStringItem(self.REVIEWED_TAG_INDEX, 1, 'False')
-#        self._tag_list.InsertStringItem(self.ACCEPT_TAG_INDEX, 'Accept')
-#        self._tag_list.SetStringItem(self.ACCEPT_TAG_INDEX, 1, 'False')
-#        
-#        # Separator for splitting tags
-#        self.TAG_NAME_SEPARATOR = " , "
-#        self.TAG_PREFIX = 'tag :'
-#        
-#        # Maximum depth of folders expanded for display
-#        self.MAX_FOLDER_DEPTH = 2
+        
+        
+        #setup default values for project
+        self.shelf = None
+        self.project_title = '' 
+        self.dir_path = ''
+        self.output_dir_path = ''       
+
+    
+        
+        # Load default tags
+        self._add_default_tags()
+        self.ADDITIONAL_TAGS = []
         
 
-        
-
-#        self.from_copy_files_dir = self.dir_path 
-#        self.to_copy_files_dir = self.output_dir_path
-
-#        self.Bind(wx.EVT_COMMAND_FIND_REPLACE_ALL, self._on_load_tag_list)
-#        self._panel_samples.Show(False) # make the tree list control invisible
-        
-#        # Icon defaults
-#        self.icon_size = (16,16)
-#        self.image_list = wx.ImageList(self.icon_size[0], self.icon_size[1])
-#        self._tc_results.SetImageList(self.image_list)
-#        self.folder_icon     = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_FOLDER,      wx.ART_OTHER, self.icon_size))
-#        self.folder_open_icon = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_FILE_OPEN,   wx.ART_OTHER, self.icon_size))
-#        self.file_icon     = self.image_list.Add(wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, self.icon_size))  
-
+#       
         self._is_io_updated = False # for the i/o tab updates  
-        self._is_ct_updated = False # for the confidence tab updates      
+        self._is_ct_updated = False # for the confidence tab updates
+        self._is_tags_updated = False # for tags tab updates      
         self._is_rt_updated = False # for the review tab updates      
         self._lc_review_loaded = False # for the review tab table 
         self._is_samples_created = False # for the samples tab  
+        self._is_project_loaded = False # Existing project loaded status
         self._prior_page_status = 0 # to keep the prior last page before application exit  
         self._current_page = 0
         self.nb_config_sampler.ChangeSelection(self._current_page)
@@ -183,37 +159,38 @@ class RandomSampler(RandomSamplerGUI):
         self._load_cbx_confidence_levels()
         
         # Sets up the application state
-        self._shelf_application_setup()
+        self.get_shelve_files()
+        
+        
+        # setup review tag
+        self._lc_review = TaggingControl( self._panel_review_tag, self)
+
         
         self.Center()
         self.Show(True)
     
-
+    def get_shelve_files(self):
+        '''
+        Adds shelve files in cutrrent directory
+        '''
+        # Gets all shelves in the current directory
+        current_dir = os.path.curdir
+        shelve_file_list = [filename for filename in os.listdir(current_dir) if filename.endswith('.shelve')]
+        shelve_file_list = [filename.replace(SHELVE_FILE_EXTENSION, '') for filename in shelve_file_list]
         
+        # Indexes shelf config with name
+        self.shelve_config_dict = {}
+        for shelve_file in shelve_file_list:
+            current_shelve = shelve.open(shelve_file + SHELVE_FILE_EXTENSION)
+            if current_shelve.has_key('config'):
+                self.shelve_config_dict[shelve_file]= current_shelve['config']
+                self._cbx_project_title.Append(shelve_file)
+            current_shelve.close()
+                
+            
+               
         
     
-#    def _on_remove_tag(self, event):
-#        '''
-#        Action on click on remove tag
-#        removes a tag from list
-#        Arguments: Event of remove tag button pressed
-#        Returns: Nothing
-#        '''
-#        
-#        super(RandomSampler, self)._on_remove_tag(event)
-#        
-#        item_index = self._tag_list.GetFirstSelected()
-#        
-#        if (item_index <> self.ACCEPT_TAG_INDEX and item_index <>  self.REVIEWED_TAG_INDEX):
-#            self.current_tag_list.pop(item_index)
-#            self._tag_list.DeleteItem(item_index)
-#        
-#        # Refresh tags
-#        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
-#        self.GetEventHandler().ProcessEvent(reload_tag)
-#        
-#        self.update_tag_in_results_tree()
-
     def _on_appln_close( self, event ):
         '''
         Action on closing the window
@@ -225,16 +202,8 @@ class RandomSampler(RandomSamplerGUI):
     def _on_mitem_about( self, event ):
         super(RandomSampler, self)._on_mitem_about(event) 
         
-        about_text = u"""Random sampler: 
-        This application randomly samples the files 
-        from the given data folder and copies them to the output 
-        folder. Sample size is determined by the given 
-        confidence interval.
-        
-         
-         © 2013 University of Florida.  All rights reserved. 
-         """
-        dlg = wx.MessageDialog(self, about_text, "About Random Sampler", wx.OK)
+
+        dlg = wx.MessageDialog(self, ABOUT_TEXT, "About Random Sampler", wx.OK)
         dlg.ShowModal() # Shows it
         dlg.Destroy() # finally destroy it when finished.
     
@@ -268,11 +237,37 @@ class RandomSampler(RandomSamplerGUI):
             self._current_page = selected_page
         
         self.nb_config_sampler.ChangeSelection(self._current_page)
-
-
+        
+    def _on_update_project_name(self, event):
+        self.project_title = self._cbx_project_title.GetValue()
+        # Enable all controls
+        if self.project_title not in self._cbx_project_title.GetStrings() or self.project_title == '':        
+            self._tc_data_dir.Enable()
+            self._tc_output_dir.Enable()
+            self._btn_io_sel_data_dir.Enable()
+            self._btn_io_sel_output_dir.Enable()
+            self._is_project_loaded = False
+        else :
+            self._shelf_application_setup()
+            self._is_project_loaded = True
+                
+        
+    def _on_set_existing_project(self, event):
+        '''
+        Shows info for existing loaded project
+        '''
+        self.project_title = self._cbx_project_title.GetValue()
+        self._shelf_application_setup()
+        self._is_project_loaded = True
+        
+        
+        
+        
     
     def _on_click_io_next( self, event ):
-
+        
+        # set project title
+        self.project_title = self._cbx_project_title.GetValue()
         # validations 
         if self.dir_path == '' or self.output_dir_path == '':
             self._show_error_message("Value Error!", "Please chose Source Document Folder and Sampled Output Folder.")
@@ -286,6 +281,13 @@ class RandomSampler(RandomSamplerGUI):
             self._show_error_message("Value Error!", "The Source document Folder does not have any files to sample.")
             self._tc_data_dir.SetFocus()
             return 
+        elif len(self.project_title) == 0:
+            self._show_error_message("Value Error!", "Enter a title for the project.")
+            self._cbx_project_title.SetFocus()
+        
+        if self._is_project_loaded is not True:
+            self._shelf_application_setup()
+        self._cbx_project_title.Disable()
         
         if self._is_io_updated:
             self._shelf_update_io_tab_state()
@@ -306,31 +308,35 @@ class RandomSampler(RandomSamplerGUI):
     
     
     def _on_click_cl_next( self, event ):
-
-        # Stores the configurations into a file 
-        self._current_page = 2
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        
-    def _on_click_tag_goback( self, event ):
-        self._current_page = 1
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        self.SetStatusText('')
-    
-    
-    def _on_click_tag_next( self, event ):
-
-        # Stores the configurations into a file 
+        # Stores the configurations into a file
         if self._is_ct_updated:
             self._shelf_update_confidence_tab_state()        
-            self._is_ct_updated = False 
+            self._is_ct_updated = False
         
-        self._current_page = 3
+        self._current_page = 2
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
+    def _on_click_tag_next(self, event):
+        
+        self._current_page = 3
+        if self._is_tags_updated:
+            self._shelf_update_tags_state()
+            self._is_tags_updated = False
+            
+        self.nb_config_sampler.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
+    
+    def _on_click_tag_goback(self, event):
+        
+        self._current_page = 1
+        self.nb_config_sampler.ChangeSelection(self._current_page)
+        self.SetStatusText('') 
+        
     
     def _on_click_out_goback( self, event ):
-        self._current_page = 1
+        self._current_page = 2
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
@@ -350,7 +356,7 @@ class RandomSampler(RandomSamplerGUI):
             
         # Sets up the review tab 
         
-        self._setup_review_tab(self.sampled_files)
+        self._lc_review._setup_review_tab(self.sampled_files)
         
         # changes the tab selection 
 
@@ -383,20 +389,14 @@ class RandomSampler(RandomSamplerGUI):
         
         self._tc_data_dir.SetValue(self.dir_path)
         self._tc_out_data_dir.SetValue(self.dir_path)
+        self._tc_out_data_dir.SetValue(self.output_dir_path)
+        self._tc_project_title.SetValue(self.project_title)
         
         self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
         self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
         self._is_io_updated = True
-#        
-#        self.sampled_files = random_sampler(self.file_list,
-#                                            self.confidence_val,
-#                                            self.precision_val, self.SEED)
-#        self.SetStatusText('%d files are sampled out of %d files.' % (len(self.sampled_files), len(self.file_list)))
-#
-#        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-#        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-#        self._st_num_samples.Show()
-    
+
+   
     
     def _generate_file_samples(self):
         '''
@@ -454,10 +454,6 @@ class RandomSampler(RandomSamplerGUI):
         
         self._generate_file_samples()
         
-#        self.sampled_files = random_sampler(self.file_list, self.confidence_val, self.precision_val, self.SEED)
-#        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-#        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-
     
     def get_precision_as_float(self):
         '''
@@ -491,12 +487,6 @@ class RandomSampler(RandomSamplerGUI):
 
         self._generate_file_samples()
         
-#        self.sampled_files = random_sampler(self.file_list, self.confidence_val, self.precision_val, self.SEED)
-#
-#        self._st_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-#        self._st_out_num_samples.SetLabel('%d samples found' % len(self.sampled_files))
-#        # self.GetSizer().Layout()
-
    
     def _on_click_io_sel_output_dir( self, event ):
         """ 
@@ -514,18 +504,10 @@ class RandomSampler(RandomSamplerGUI):
         
         self._tc_output_dir.SetValue(self.output_dir_path)
         self._tc_out_output_dir.SetValue(self.output_dir_path)
+        self._tc_project_title.SetValue(self.project_title)
         self.SetStatusText("The selected output folder is %s" % self.output_dir_path)
         self._is_io_updated = True
-        
-#    def _on_save_mark_file_status(self, e):
-#        '''
-#        Handles status update to upper control on saving marked file
-#        Arguments: New status message
-#        Returns: Nothing
-#        '''
-#        update_message = e.GetClientData()
-#        self.SetStatusText("Saved " + str(update_message) + " files at " 
-#                           + os.path.basename(self.output_dir_path))    
+            
 
     
     def do_copy(self, total_size, dialog):
@@ -578,8 +560,6 @@ class RandomSampler(RandomSamplerGUI):
             self._show_error_message("Error creating samples", "There was an error reading some files! Please check that you have access to the files.")
 
             
-        # print_total_file_size = convert_size(total_file_size)
-        
         #Show status of copy
         if total_file_size >= 0:
             
@@ -593,129 +573,77 @@ class RandomSampler(RandomSamplerGUI):
             start_thread(self.do_copy, total_file_size, progress_dialog)
             progress_dialog.ShowModal()
             
-            # from time import sleep
-            # while thread.isAlive(): sleep(0.1)
 
             self.Enable(True)
             self.SetStatusText('%d samples (from %d files) are created to the output folder.' % (len(self.sampled_files), len(self.file_list)))
-
-#            # shows the tree list control and sets defaults 
-#            self.from_copy_files_dir = self.dir_path
-#            self.to_copy_files_dir = self.output_dir_path
-#            self._tc_results.DeleteAllItems()
-#            root = self._tc_results.AddRoot(self.to_copy_files_dir)
-#            self._tc_results.SetPyData(root, os.path.abspath(self.to_copy_files_dir))
-#            self._tc_results.SetItemImage(root,self.folder_icon, wx.TreeItemIcon_Normal)
-#            self._tc_results.SetItemImage(root,self.folder_open_icon, wx.TreeItemIcon_Expanded)
-#            self.get_dirs(root,0)
-#            
-#            # Set defaults for all tagging panel
-#            self.disable_tag_interface()
-#            self.current_file_selected = ''
-#            self.current_tag_list = []
-#            self._panel_samples.Show(True)
-#            self._panel_samples.GetSizer().Layout()
-#            self.GetSizer().Layout()
         
         else :
             self.SetStatusText('Sample creation is cancelled.')
+        
+        
+    def _add_default_tags(self):
+        '''
+        Adds the default tags to the listbox of tags
+        '''
+        
+        for tag in DEFAULT_TAGS:
+            self._lbx_tag.Append(tag)
             
-            
-            
+    def _on_btn_new_tag(self, event):
+        '''
+        Adds a new tag to the listbox of tags
+        '''
+        tag_name = wx.GetTextFromUser('Enter name of new tag', 'New Tag')
+        if tag_name != '':
+            self._lbx_tag.Append(tag_name)
+        self._is_io_updated = True
+        
+    def _on_btn_delete_tag(self, event):
+        '''
+        Deletes a tag from listbox of tags
+        '''
+        selection = self._lbx_tag.GetSelection()
+             
+        # Do not modify if original tag
+        if selection in xrange(len(DEFAULT_TAGS)):
+            return
+        if selection != -1:
+            self._lbx_tag.Delete(selection)
+        self._is_io_updated = True
+        
+        
+    def _on_btn_rename_tag(self, event):
+        '''
+        Renames the non-default tags from the listbox of tags
+        '''
+        selection = self._lbx_tag.GetSelection()
+        tag_name = self._lbx_tag.GetString(selection)
+        
+        # Do not modify if original tag
+        if tag_name in DEFAULT_TAGS:
+            return
+        renamed = wx.GetTextFromUser('Enter new name of Tag', 'Rename Tag', tag_name)
+        if renamed != '':
+            self._lbx_tag.Delete(selection)
+            self._lbx_tag.Insert(renamed, selection)
+        self._is_io_updated = True
+        
+    def load_shelf_tags(self):
+        '''
+        Adds the tags from self to 
+        '''
+    
+#    def setup_file_tagger(self):
+#        '''
+#        Sets up the list showing all the tags in the interface
+#        '''
+#        # id + name + default_tags + additional_tags
+#        num_colums = 2 + len(DEFAULT_TAGS) + len(self.ADDITIONAL_TAGS)
+#        self.file_tagger = FileTagger(self._panel_review, num_colums, self.file_list)    
+           
     #********************************************* Review Tab Handling *******************************************************  
-    
-    
-    def _setup_review_tab(self, sampled_files):
-        '''
-        This functions sets up the review tab 
-        and its components 
-        
-        '''
-        
-        if self._lc_review_loaded: 
-            return 
-        
-        # Sets the list control headers 
-        
-        self._lc_review_loaded = True 
-        
-        self._lc_review.InsertColumn(0, '#', wx.LIST_FORMAT_CENTRE, width=30)
-        self._lc_review.InsertColumn(1, 'File Name', width=350)
-        self._lc_review.InsertColumn(2, 'Responsive', wx.LIST_FORMAT_CENTRE)
-        self._lc_review.InsertColumn(3, 'Privileged', wx.LIST_FORMAT_CENTRE)
-        
-        
-#        # Initializes the list control 
-#        
-#        file_id = 0
-#        for fs in sampled_files:
-#            _, tail = os.path.split(fs)
-#            self._lc_review.InsertStringItem(file_id, str(file_id + 1))
-#            self._lc_review.SetStringItem(file_id, 1, tail)
-#            self._lc_review.SetStringItem(file_id, 2, 'No')
-#            self._lc_review.SetStringItem(file_id, 3, 'No')           
-#            file_id += 1 
-
-        
-        # Initializes from the shelf 
-        
-        samples_lst = self.shelf['samples']
-        file_id = 0
-        for fs in samples_lst:
-            self._lc_review.InsertStringItem(file_id, str(file_id + 1))
-            self._lc_review.SetStringItem(file_id, 1, fs[1])
-            self._lc_review.SetStringItem(file_id, 2, fs[4])
-            self._lc_review.SetStringItem(file_id, 3, fs[5])           
-            file_id += 1 
-        
-        
-    
-    def _on_review_list_item_selected(self, event):
-
-        # Gets the selected row's details 
-        
-        self.selected_doc_id = self._lc_review.GetFocusedItem()
-        
-        if self.selected_doc_id < 0: return 
-        
-        responsive = self._lc_review.GetItem(self.selected_doc_id, 2)
-        privileged = self._lc_review.GetItem(self.selected_doc_id, 3)
-        
-        # file_name = self._lc_review.GetItem(self.selected_doc_id, 1)
-        # print 'Selected row id: ', self.selected_doc_id, file_name.Text, responsive.Text, privileged.Text     
-        
-        # Handles the document tags check boxes 
-        
-        if responsive.Text == 'Yes':
-            self._rbx_responsive.SetStringSelection('Yes')
-        elif responsive.Text == 'No':
-            self._rbx_responsive.SetStringSelection('No')
-        elif responsive.Text == '':
-            self._rbx_responsive.SetStringSelection('Unknown')
+     
             
-        if privileged.Text == 'Yes':
-            self._rbx_privileged.SetStringSelection('Yes')
-        elif privileged.Text == 'No':
-            self._rbx_privileged.SetStringSelection('No')
-        elif privileged.Text == '':
-            self._rbx_privileged.SetStringSelection('Unknown')
-        
-        # Shows the tags panel 
-        
-        self._panel_doc_tags.Show()
-        self._panel_doc_tags.GetParent().GetSizer().Layout()
-        
-#        
-#    def _on_review_list_item_deselected( self, event ):
-#        '''
-#        Hides the tags panel
-#        '''
-#        self._panel_doc_tags.Hide() 
-#        self._panel_doc_tags.GetParent().GetSizer().Layout()
-        
-
-        
-        
     def _on_rbx_responsive_updated( self, event ):
         '''
         Handles the selected document responsive check box 
@@ -761,82 +689,8 @@ class RandomSampler(RandomSamplerGUI):
         self._rbx_privileged.SetStringSelection('Unknown')  
             
 
-        self._is_rt_updated = True 
-
-    def _on_review_list_item_activated(self, event):
-        '''
-        Handles the list control row double click event 
+        self._is_rt_updated = True
         
-        '''
-        
-        # Gets the selected row's details 
-        
-        self.selected_doc_id = self._lc_review.GetFocusedItem()
-        
-        if self.selected_doc_id < 0: return 
-        
-        responsive = self._lc_review.GetItem(self.selected_doc_id, 2)
-        privileged = self._lc_review.GetItem(self.selected_doc_id, 3)
-        src_file_path = self.sampled_files[self.selected_doc_id]
-        dest_file_path = get_destination_file_path(self.dir_path, src_file_path, self.output_dir_path)
-        
-        
-        _, file_name = os.path.split(src_file_path)
-        
-        responsive_status = self._rbx_responsive.GetStringSelection()
-        privileged_status = self._rbx_privileged.GetStringSelection()
-
-        if os.path.exists(dest_file_path):
-                  
-            try:
-                
-                # Open a file   
-
-                webbrowser.open(dest_file_path)
-                
-                self.make_tag_popup(file_name,responsive_status, privileged_status)
-
-
-            except Exception as anyException:
-                self._show_error_message("Open File Error!", str(anyException))
-        
-        else: 
-            self._show_error_message("Open File Error!", "The file does not exist!")
-
-    def make_tag_popup(self, file_name, responsive_status, privileged_status):
-        # Creates a document tagging dialog 
-                
-            dlg = TagDocument(self, file_name, responsive_status, privileged_status)
-            
-            # Gets the tag selections from the dialog
-            
-            if dlg.ShowModal() == wx.ID_OK:
-                responsive_status = dlg._rbx_responsive.GetStringSelection()  
-                privileged_status = dlg._rbx_privileged.GetStringSelection()
-                
-                # Sets the selections to the parent window 
-
-                self._rbx_responsive.SetStringSelection(responsive_status)
-                if responsive_status == 'Yes': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
-                elif responsive_status == 'No': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
-                elif responsive_status == 'Unknown': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
-                
-                self._rbx_privileged.SetStringSelection(privileged_status)
-                if privileged_status == 'Yes': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
-                elif privileged_status == 'No': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
-                elif privileged_status == 'Unknown': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 3, '')
-                    
-                self._is_rt_updated = True 
-                
-            # Destroys the dialog object 
-            
-            dlg.Destroy()    
     
     def _on_click_review_goback( self, event ):
         '''
@@ -1055,139 +909,6 @@ class RandomSampler(RandomSamplerGUI):
     #********************************************* END Review Tab Handling *******************************************************  
 
         
-    
-#    def _on_activated_file(self, event):
-#        '''
-#        Marks a file as reviewed on double click
-#        Returns: None
-#        Arguments: File to set status
-#        '''
-#        super(RandomSampler, self)._on_activated_file(event)
-#        
-#        #Get filename
-#        if self.current_tag_list is not None:
-#            self.file_tag_dict[self.current_file_selected] = self.current_tag_list
-#        treeitem = event.GetItem()
-#        filename  = self.get_filename_from_treenode(treeitem)
-#        
-#        #Nothing if directory
-#        if os.path.isdir(filename):
-#            return
-#        
-#        self.current_file_selected = filename
-#        
-#        
-#        #Get tag for filename
-#        tag = self.file_tag_dict.get(filename)
-#        if tag is None:
-#            self.current_tag_list = self.make_default_tag_list()
-#        self.set_tag_status(self.REVIEWED_TAG_INDEX, 'True')
-#        self.file_tag_dict[filename] = self.current_tag_list  
-#        
-#        #Open file        
-#        try:
-#            webbrowser.open(filename)
-#        except Exception as anyException:
-#            dlg = wx.MessageDialog(self, str(anyException), "Cannot open this file",
-#                                    wx.ICON_ERROR)
-#            dlg.ShowModal()
-#        # Fire an event to reload the tag listbox
-#        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
-#        self.GetEventHandler().ProcessEvent(reload_tag)
-#        
-#        self.update_tag_in_results_tree()
-#    
-#    def make_default_tag_list(self):
-#        '''
-#        Makes a default tag to add
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        
-#        tag_label = 'DEFAULT LABEL'
-#        new_tag = []
-#        for i in xrange(self.DEFAULT_TAGS_NUMBER): 
-#            new_tag.append((tag_label, 'False'))
-#        tag_0 = new_tag.pop(self.REVIEWED_TAG_INDEX)
-#        tag_0 = ('Reviewed', 'False')
-#        new_tag.insert(self.REVIEWED_TAG_INDEX, tag_0)
-#        tag_1 = new_tag.pop(self.ACCEPT_TAG_INDEX)
-#        tag_1 = ('Accept', 'False')
-#        new_tag.insert(self.ACCEPT_TAG_INDEX, tag_1)
-#        
-#        return new_tag
-#    
-#    def set_tag_status(self, index, value):
-#        '''
-#        Sets tag indexed by index to value
-#        Arguments: 
-#        index: Index of tag to set
-#        value: value to set, for now only use True/False 
-#        '''
-#        tag_name, tag_value = self.current_tag_list.pop(index)
-#        tag_dirty = (tag_name, value)
-#        self.current_tag_list.insert(index, tag_dirty)
-#    
-#    def _on_select_file(self, event):
-#        '''
-#        Gets tag on file select and fires an event to show status of file
-#        Returns: None
-#        Arguments: File to display status for 
-#        '''
-#        
-#        super(RandomSampler, self)._on_select_file(event)
-#        treeitem = event.GetItem()
-#        self.get_dirs(treeitem,0)
-#        self._tc_results.Refresh()
-#        filename = self.get_filename_from_treenode(treeitem)
-#        # Do not tag directories
-#        if os.path.isdir(filename):
-#            self.disable_tag_interface()
-#            return
-#        self.enable_tag_inteface()
-#        # If no current tag, load a default tag
-#        if (self.current_file_selected is None or self.current_tag_list is None):
-#            self.current_tag_list  = self.make_default_tag_list()
-#            self.current_file_selected = filename
-#        
-#        # Else save the current tag and load from the tag dictionary for next file
-#        else:
-#            self.file_tag_dict[self.current_file_selected] = self.current_tag_list
-#            tag = self.file_tag_dict.get(filename)
-#            if tag is None:
-#                tag = self.make_default_tag_list()
-#            self.current_file_selected = filename
-#            self.current_tag_list = tag
-#        
-#        # Fire an event to reload the tag listbox
-#        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
-#        self.GetEventHandler().ProcessEvent(reload_tag)
-#             
-#    
-#    def _on_load_tag_list( self , evt):
-#        '''
-#        Reloads the tag list from 'dirty' tag in the tag dictionary
-#        Take note to save the last dirty tag before closing
-#        Returns: None
-#        Arguments: None
-#        '''
-#        # Format the current 'dirty' tag and add to control
-#        self._tag_list.ClearAll()
-#        self._tag_list.InsertColumn(0,'Tag')
-#        self._tag_list.InsertColumn(1,'Status')
-#        row_num = 0
-#        for  tag_name, tag_value in self.current_tag_list:
-#            self._tag_list.InsertStringItem(row_num, tag_name)
-#            if tag_value is None: 
-#                self._tag_list.SetStringItem(row_num, 1, 'False')
-#                self._tag_list.SetItemData(row_num, 0)
-#            else:
-#                self._tag_list.SetStringItem(row_num, 1, str(tag_value))
-#                if str(tag_value) == 'False':
-#                    self._tag_list.SetItemData(row_num, 0)
-#                if str(tag_value) == 'True':
-#                    self._tag_list.SetItemData(row_num, 1)
-#            row_num = row_num + 1
 
     def _on_click_out_exit( self, event ):
         '''
@@ -1195,63 +916,7 @@ class RandomSampler(RandomSamplerGUI):
         Arguments: Nothing
         Returns: Nothing
         '''
-        self._on_close()
-        
-        
- 
-    
-#    def _on_click_log_details( self, event ):
-#        '''
-#        Saves the marked history to a file in a specified folder
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        super(RandomSampler, self)._on_click_log_details(event) 
-#        # Save the tag_list and Get type of selected tag to be saved
-#        self.file_tag_dict[self.current_file_selected] = self.current_tag_list
-#        save_files = self.file_tag_dict.keys()
-#        tag_selected_type = self._cbx_tag_type.GetValue()
-#        if tag_selected_type == 'Reviewed':
-#            tag_selected_index = self.REVIEWED_TAG_INDEX
-#        elif tag_selected_type == 'Accept':
-#            tag_selected_index = self.ACCEPT_TAG_INDEX
-#        else:
-#            tag_selected_index = -1
-#        
-#        save_filename = 'Log_history_' + time.strftime("%b%d%Y%H%M%S", time.localtime())
-#        fire_mark_saved  = wx.PyCommandEvent(wx.EVT_ACTIVATE.typeId)
-#        try:
-#            with open(os.path.join(self.to_copy_files_dir,save_filename), 'w') as file_handle:
-#                file_handle.write('Data Folder:' + self.from_copy_files_dir + '\n')
-#                file_handle.write('Sampled Output:' + self.to_copy_files_dir + '\n')
-#                file_handle.write('Confidence Level: +/-'+str(self.confidence_val) + '\n')
-#                file_handle.write('Confidence Interval: +/-'+str(self.precision_val) + '\n')
-#                for save_file in save_files:
-#                    
-#                    # Lookahead for the required tag status
-#                    is_write = True 
-#                    index = 0
-#                    if (tag_selected_index >= 0):
-#                        for item, status in self.file_tag_dict.get(save_file):
-#                            if (index == tag_selected_index and status == 'False'):
-#                                is_write = False
-#                                break
-#                            index = index +1     
-#                        
-#                    # Start writing the selected file tags
-#                    if is_write is True:
-#                        file_handle.write(save_file)
-#                        for item, status in self.file_tag_dict.get(save_file):
-#                            file_handle.write('\n' + '\t'+ item + '\t' + str(status))
-#                        file_handle.write('\n')
-#            self.GetEventHandler().ProcessEvent(fire_mark_saved)
-#        # Fire an event warning of the exception
-#        except Exception as anyException:
-#            fire_mark_saved.SetClientData(str(anyException))
-#            self.GetEventHandler().ProcessEvent(fire_mark_saved)
-#            dlg = wx.MessageDialog(self, "Unable to write save history of files.", "Error", wx.ICON_ERROR)
-#            dlg.ShowModal()
-   
+        self._on_close()   
    
     def _on_close(self):
         '''
@@ -1326,25 +991,11 @@ class RandomSampler(RandomSamplerGUI):
         Initialize all the application controls to defaults 
          
         '''
-        
-        # for the I/O tab 
-        self.dir_path = '' # tempfile.gettempdir() # a cross-platform way of getting the path to the temp directory
-        self.output_dir_path = '' # tempfile.gettempdir()
-        self._tc_data_dir.ChangeValue('') # We shouldn't load all files from temp on init (this maybe big!!) 
-        self._tc_output_dir.ChangeValue('')
-        self._tc_out_data_dir.ChangeValue('')
-        self._tc_out_output_dir.ChangeValue('')
-        self.file_list = []
-        self._st_num_data_dir_files.SetLabel('0 documents available')
-        self._st_out_num_data_dir_files.SetLabel('0 documents available')
 
         # for the confidence tab 
         self._init_confidence()
 
 
-
-
-        
     def _shelf_application_setup(self):
         '''
         Loads an existing shelf stored in the application 
@@ -1352,7 +1003,7 @@ class RandomSampler(RandomSamplerGUI):
         '''
 
         # Creates the data shelf if not exists 
-        self.shelf = shelve.open(SHELVE_FILE_NAME) # open -- file may get suffix added by low-level
+        self.shelf = shelve.open(self.project_title+SHELVE_FILE_EXTENSION) # open -- file may get suffix added by low-level
 
         self._shelf_has_cfg = False 
         self._shelf_has_samples = False
@@ -1371,13 +1022,14 @@ class RandomSampler(RandomSamplerGUI):
             self.confidence_val = cfg._confidence_level
             self._prior_page_status = cfg._current_page
             self.file_list = self.shelf['file_list'] 
-
+            self.ADDITIONAL_TAGS = self.shelf['additional_tags']
             
             # for the I/O tab 
             self._tc_data_dir.SetValue(self.dir_path)
             self._tc_output_dir.SetValue(self.output_dir_path)
             self._tc_out_data_dir.SetValue(self.dir_path)
             self._tc_out_output_dir.SetValue(self.output_dir_path)
+            self._tc_project_title.SetValue(self.project_title)
             self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
             self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
             
@@ -1387,7 +1039,10 @@ class RandomSampler(RandomSamplerGUI):
             self._cbx_confidence_levels.SetValue(str_confidence_level)
             self._tc_confidence_interval.ChangeValue(str_precision)
             self._tc_out_confidence_levels.ChangeValue(str_confidence_level)
-            self._tc_out_confidence_interval.ChangeValue(str_precision) 
+            self._tc_out_confidence_interval.ChangeValue(str_precision)
+            
+            # sets the additional tags 
+            
             
         # Creates the data shelf for the first time 
         else:
@@ -1396,6 +1051,7 @@ class RandomSampler(RandomSamplerGUI):
             self._init_controls()
             
             self.shelf['file_list'] = self.file_list
+            self.shelf['additional_tags'] = []
             self.shelf['config'] = RSConfig(self.dir_path, self.output_dir_path, self.precision_val, self.confidence_val) 
             self.shelf.sync()
         
@@ -1419,6 +1075,7 @@ class RandomSampler(RandomSamplerGUI):
         self.shelf['file_list'] = self.file_list
         self.shelf['samples'] = self.sampled_files = [] # need to reset the samples   
         self.shelf.sync()
+        
      
     
     def _shelf_update_confidence_tab_state(self):
@@ -1436,6 +1093,19 @@ class RandomSampler(RandomSamplerGUI):
         self.shelf.sync()
 
         self._shelf_update_samples()
+        
+    def _shelf_update_tags_state(self):
+        '''
+        Updates the additional tags added to shelf
+        '''
+        
+        cfg = self.shelf['config']
+        cfg._modified_date = datetime.now()
+        cfg._current_page = 2
+        self.shelf['config'] = cfg
+        self.shelf['additiional_tags'] = self.ADDITIONAL_TAGS
+         
+        self.shelf.sync()
         
 
 
@@ -1462,7 +1132,7 @@ class RandomSampler(RandomSamplerGUI):
     def _shelf_update_sample_tab_state(self):
         cfg = self.shelf['config']
         cfg._modified_date = datetime.now()
-        cfg._current_page = 2
+        cfg._current_page = 3
         self.shelf['config'] = cfg
         self.shelf.sync()
 
@@ -1476,7 +1146,7 @@ class RandomSampler(RandomSamplerGUI):
         cfg = self.shelf['config']
         
         cfg._modified_date = datetime.now()
-        cfg._current_page = 3
+        cfg._current_page = 4
 
         for file_id in range(0, len(samples_lst)):
             responsive = self._lc_review.GetItem(file_id, 2)
@@ -1514,7 +1184,7 @@ class RandomSampler(RandomSamplerGUI):
         self._st_out_num_samples.Show()
 
     
-    def _shelf_update_doc_tags_state(self, file_id, is_responsive, is_privileged):
+    def _shelf_update_doc_tags_state(self, file_id, is_responsive, is_privileged, other_tags):
         '''
         Updates the given document sample' tags 
         '''
@@ -1523,6 +1193,7 @@ class RandomSampler(RandomSamplerGUI):
         fs = self.shelf['samples'][file_id]
         fs[4] = is_responsive
         fs[5] = is_privileged
+        fs[6] = other_tags
         self.shelf.sync()
         
 
@@ -1550,11 +1221,17 @@ class RandomSampler(RandomSamplerGUI):
         Opens irfanview with file as argument
         '''
         
+        
         dest_file_path = self.get_selection_file_name()
         if self.viewer_executable_location is None:
             self._show_error_message("File Open Error!", "Could not open file with " + DEFAULT_FILE_VIEWER + ". Check if "  + DEFAULT_FILE_VIEWER + " is installed.")
         try:
             subprocess.call([self.viewer_executable_location, dest_file_path])
+            
+            file_name = os.path.basename(dest_file_path)
+            responsive_status = self._rbx_responsive.GetStringSelection()
+            privileged_status = self._rbx_privileged.GetStringSelection()
+            self.make_tag_popup(file_name,responsive_status, privileged_status)
         except:
             self._show_error_message("File Open Error!", "Could not open file with " + DEFAULT_FILE_VIEWER + ". Check if "  + DEFAULT_FILE_VIEWER + " can open this file.")
             
@@ -1576,6 +1253,10 @@ class RandomSampler(RandomSamplerGUI):
             executable_path = program_dialog.GetPath()
             try: 
                 subprocess.call([executable_path, dest_file_path])
+                file_name = os.path.basename(dest_file_path)
+                responsive_status = self._rbx_responsive.GetStringSelection()
+                privileged_status = self._rbx_privileged.GetStringSelection()
+                self.make_tag_popup(file_name,responsive_status, privileged_status)
             except:
                 self._show_error_message("File Open Error!", "Could not open the selected file with the Application.")
             
@@ -1611,307 +1292,7 @@ class RandomSampler(RandomSamplerGUI):
         to a dictionary here
         '''
         return self.DEFAULT_VIEWER_OPTIONS[DEFAULT_FILE_VIEWER]()
-        
-
-            
-        
-            
-#    def _on_edit_status(self, event):
-#        '''
-#        Edits Label for Accept
-#        Arguments: event identifying the row to edit
-#        Returns: Nothing
-#        '''
-#        super(RandomSampler, self)._on_edit_status(event)
-#        # Do not let user edit if it is the Reviewed Tag
-#        row_num = event.GetIndex()
-#        if (row_num is self.REVIEWED_TAG_INDEX):
-#            event.Veto()
-#            return
-#        status =  self._tag_list.GetItemData(row_num)
-#        # This is a circuitous way as you can't directly read the tag_list tag status
-#        # So we save a 0/1 for the status. Supports only boolean 
-#        if status is 0: 
-#            self._tag_list.SetStringItem(row_num , 1, 'True')
-#            self.set_tag_status(row_num, 'True')
-#            self._tag_list.SetItemData(row_num , 1)
-#        if status is 1: 
-#            self._tag_list.SetStringItem(row_num , 1, 'False')
-#            self.set_tag_status(row_num, 'False')
-#            self._tag_list.SetItemData(row_num , 0)
-#        
-#        self.update_tag_in_results_tree()
-#        
-#            
-#    def _on_clear_tags(self, event):
-#        '''
-#        Removes tags for all files
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        super(RandomSampler, self)._on_clear_tags(event)
-#        self.file_tag_dict.clear()
-#        self.current_tag_list = self.make_default_tag_list()
-#        self.current_file_selected = self.to_copy_files_dir
-#        reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
-#        self.GetEventHandler().ProcessEvent(reload_tag)
-#        
-#        self.to_copy_files_dir = self.output_dir_path
-#        self._tc_results.DeleteAllItems()
-#        root = self._tc_results.AddRoot(self.to_copy_files_dir)
-#        self._tc_results.SetPyData(root, os.path.abspath(self.to_copy_files_dir))
-#        self._tc_results.SetItemImage(root,self.folder_icon, wx.TreeItemIcon_Normal)
-#        self._tc_results.SetItemImage(root,self.folder_open_icon, wx.TreeItemIcon_Expanded)
-#        self.get_dirs(root,0)
-#        
-#    def _on_add_tag(self, event):
-#        '''
-#        Adds a new default tag to end of file list
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        super(RandomSampler, self)._on_add_tag(event)
-#        dlg = LabelChoiceDialog(self, "Enter Label", style=wx.CAPTION)
-#        result = dlg.ShowModal()
-#        if result == wx.ID_OK:
-#            tag_name = dlg.label_name.GetValue()
-#            tag_value = dlg.label_value.GetValue()
-#
-#            self.current_tag_list.append((tag_name,tag_value))
-#            self.file_tag_dict[self.current_file_selected] = self.current_tag_list
-#            # Refresh tags
-#            reload_tag  = wx.PyCommandEvent(wx.EVT_COMMAND_FIND_REPLACE_ALL.typeId)
-#            self.GetEventHandler().ProcessEvent(reload_tag)
-#            # Reload the tag in tree
-#            self.update_tag_in_results_tree()
-        
-#    def _on_edit_property(self, event):
-#        '''
-#        Edits tag for file
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        super(RandomSampler, self)._on_edit_property(event)
-#        row_num = event.GetIndex()
-#        # Do not let default tag_names to be edited
-#        if row_num is self.REVIEWED_TAG_INDEX or row_num is self.ACCEPT_TAG_INDEX:
-#            event.Veto()
-#        
-#        self.update_tag_in_results_tree()
-#            
-#    def _on_set_property(self, event):
-#        '''
-#        Sets tag name  for file
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        super(RandomSampler, self)._on_set_property(event)
-#        # If no name set the name back to previous
-#        row_num = event.GetIndex()
-#        if row_num is self.REVIEWED_TAG_INDEX or row_num is self.ACCEPT_TAG_INDEX:
-#            event.Veto()
-#        new_tag_property_name = event.GetLabel()
-#        if new_tag_property_name is '':
-#            return 
-#        # Pop the appropriate tag and then update it
-#        tag_name, tag_value = self.current_tag_list.pop(row_num)
-#        tag_dirty = (new_tag_property_name, tag_value)
-#        self.current_tag_list.insert(row_num, tag_dirty)
-#        
-#        self.update_tag_in_results_tree()
-#        
-        
-#    def get_dirs(self, item, level):
-#        '''
-#        Fetches the contents of a directory 
-#        Arguments: 
-#        item: Item to be expanded
-#        level: Level of expansion from initial click
-#        Returns: Nothing
-#        '''
-#        if level == self.MAX_FOLDER_DEPTH:
-#            return  
-#        dirname = self._tc_results.GetPyData(item)
-#        dir_list = []
-#        if os.path.isdir(dirname) is  True:
-#            try:
-#                # Dont append to list if files added previously
-#                if self._tc_results.GetChildrenCount(item, False) == 0:
-#                    dir_list += os.listdir(dirname)
-#                    dir_list.sort()
-#                    for pathname in dir_list:
-#                        new_item = self._tc_results.AppendItem(item,pathname)
-#                        self._tc_results.SetPyData(new_item,os.path.join(dirname, pathname))
-#                        self.get_dirs(new_item, level +1)
-#                        if os.path.isdir(os.path.join(dirname,pathname)):
-#                            self._tc_results.SetItemImage(new_item,self.folder_icon, wx.TreeItemIcon_Normal)
-#                            self._tc_results.SetItemImage(new_item,self.folder_open_icon, wx.TreeItemIcon_Expanded)
-#                        else:
-#                            self._tc_results.SetItemImage(new_item,self.file_icon, wx.TreeItemIcon_Normal)
-#                    
-#            except OSError:
-#                None
-#            
-#    def get_filename_from_treenode(self, treeitem):
-#        '''
-#        Returns filename for given node
-#        Arguments: treeitem to get filename for
-#        Returns: filename
-#        '''
-#        
-#        return self._tc_results.GetPyData(treeitem)
-#    
-#    def get_positive_tag_string(self, filename):
-#        '''
-#        Gets the string containing the positive tags concatenated with a tag name separator
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        # First write current dirty tag to file_tag_dict to process it
-#        
-#        self.file_tag_dict[self.current_file_selected] = self.current_tag_list 
-#        
-#        # No tag present case
-#        tag_list = self.file_tag_dict.get(filename)
-#        if tag_list is None:
-#            return ""
-#        else:
-#            tag_prefix = 'tag :'
-#            tag_string = ''
-#            index = 0
-#            for tag in tag_list:
-#                tag_name, tag_status = tag
-#                if index is not 0:
-#                    if tag_status == 'True':
-#                        tag_string = tag_string+self.TAG_NAME_SEPARATOR+tag_name
-#                        index = index+1
-#                else:
-#                    if tag_status == 'True':
-#                        tag_string = tag_string+tag_name
-#                        index = index+1
-#                
-#                    
-#            
-#            # Remove the separator at the list
-#            if tag_string.endswith(self.TAG_NAME_SEPARATOR):
-#                tag_string = tag_string[0:(0-len(self.TAG_NAME_SEPARATOR))]
-#            if tag_string <> '':
-#                return tag_prefix+tag_string
-#            return ''
-#    
-#    def update_tag_in_results_tree(self):
-#        '''
-#        Fires an update to load new tag in tree
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        # Get TreeItem and filename
-#        tree_item = self._tc_results.GetSelection()
-#        filename = self.get_filename_from_treenode(tree_item)
-#                
-#        # Get the displayname and positive tag and join them 
-#        display_name = self._tc_results.GetItemText(tree_item).split(self.TAG_PREFIX)[0]
-#        self._tc_results.SetItemText(tree_item,display_name + "  " + self.get_positive_tag_string(filename))
-#        self._tc_results.Refresh()
-#    
-#    def disable_tag_interface(self):
-#        '''
-#        Disables all events on tagging inteface:
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        self._btn_add_tag.Disable()
-#        self._btn_remove_tag.Disable()
-#        self._tag_list.Disable()
-#        
-#    
-#    def enable_tag_inteface(self):
-#        '''
-#        Disables all events on tagging inteface:
-#        Arguments: Nothing
-#        Returns: Nothing
-#        '''
-#        self._btn_add_tag.Enable()
-#        self._btn_remove_tag.Enable()
-#        self._tag_list.Enable()
-
-
-class TagDocument(TagDocumentDialog):
-    '''
-    Tag document custom dialog implementation 
-    '''
-
-
-    def __init__(self, parent, file_name, responsive, privileged):
-        '''
-        Constructor
-        '''
-        
-        # Calls the parent class's method 
-        
-        super(TagDocument, self).__init__(parent) 
-        
-        # Sets the dialog controls based on the selected document value 
-        
-        self.SetTitle('Tag %s' % file_name)
-        self._rbx_privileged.SetStringSelection(responsive)
-        self._rbx_responsive.SetStringSelection(privileged)
-        
-        
-    def _on_click_add_tags( self, event ):
-        '''
-        Returns the numeric code 'ID_OK' to caller
-        '''
-        
-        self.EndModal(wx.ID_OK) 
-    
-    def _on_click_clear_tags( self, event ):
-        '''
-        Clears the check box values 
-        '''
-        
-        self._rbx_privileged.SetStringSelection("Unknown")
-        self._rbx_responsive.SetStringSelection("Unknown")
-#
-#class LabelChoiceDialog(wx.Dialog):
-#    def __init__(self, parent, title, style):
-#        wx.Dialog.__init__(self,parent =  parent,pos = wx.DefaultPosition,size = wx.Size(200,200), title=title,
-#                          style=wx.CAPTION)
-#        
-#        sizer = wx.BoxSizer(wx.VERTICAL)
-#        self.label_name_text = wx.StaticText( self, wx.ID_ANY, u"Enter the label name. ", wx.DefaultPosition, wx.Size( -1,-1 ) )
-#        self.label_name = wx.TextCtrl(parent = self, size = wx.DefaultSize)
-#        value_choices = ['True', 'False']
-#        self.label_value_text = wx.StaticText( self, wx.ID_ANY, u"Enter the label value. ", wx.DefaultPosition, wx.Size( -1,-1 ))
-#        self.label_value = wx.ComboBox(parent = self, size = wx.DefaultSize, choices = value_choices, style = wx.CB_READONLY | wx.CB_DROPDOWN)
-#        self.label_value.SetValue('True')
-#        
-#      
-#        
-#        
-#        button_panel = wx.BoxSizer(wx.HORIZONTAL)
-#        ok_button = wx.Button(self, id = wx.ID_OK, label='OK')
-#        close_button = wx.Button(self,id = wx.ID_CANCEL, label='CANCEL')
-#        button_panel.Add(ok_button, border = 5)
-#        button_panel.Add(close_button,border = 5)
-#        
-#        
-#        sizer.Add(self.label_name_text, 0, wx.CENTER, 5)
-#        sizer.Add(self.label_name, 0,  wx.CENTER, 5)
-#        sizer.Add(self.label_value_text, 0,  wx.CENTER, 5)
-#        sizer.Add(self.label_value, 0 ,  wx.CENTER, 5)
-#
-#        
-#        sizer.Add(button_panel,0 , wx.ALIGN_LEFT, 5)
-#
-#        self.SetSizerAndFit(sizer)
-#
-#        
-#    def OnClose(self, e):
-#        
-#        self.Destroy()
-#        
-#        self.SetSizer(sizer)
+                
 
 
 def main():

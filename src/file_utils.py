@@ -87,6 +87,9 @@ def copy_with_dialog(lcp, file_paths, output_dir_path, size, dialog, in_file_pre
         except Exception:
             status +=  src_file_path + " could not be copied.\n"
         current_copy += os.path.getsize(src_file_path)
+        # This will update the UI, putting this thread on wait for 8 millisecs,
+        # This is a thread safe method
+        # python does not have true threading, only timeslicing
         wx.CallAfter(dialog.Update, int(100*current_copy/size))
         wx.MilliSleep(8)
         if (src_file_path == file_paths[len(file_paths) -1]):
