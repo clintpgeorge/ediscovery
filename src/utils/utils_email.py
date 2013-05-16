@@ -97,7 +97,7 @@ def load_en_stopwords(filename):
 
 
 
-def parse_plain_text_email(file_path):
+def parse_plain_text_email(file_path, tokenize = True):
     '''Processes a single email file that's in plain/text format 
     
     Arguments: 
@@ -120,7 +120,8 @@ def parse_plain_text_email(file_path):
             email_text = fp.read()
             email_text = email_text.encode('UTF-8') # encodes to UNICODE 
             fp.close()
-        except UnicodeError: pass
+        except UnicodeError:
+            raise
         else: break
 
     if len(email_text) > 0: 
@@ -134,7 +135,15 @@ def parse_plain_text_email(file_path):
         subject = xstr(msg['subject'])
         date = xstr(msg['date'])
         body_text = msg.get_payload()
-        body_text = ' '.join(punkt_word_tokenizer(body_text.lower()))
+        if tokenize:
+            body_text = ' '.join(punkt_word_tokenizer(body_text.lower()))
+        else:
+            if msg.get_content_maintype() == 'multipart': #If message is multi part we only want the text version of the body, this walks the message and gets the body.
+                for part in msg.walk():       
+                    if part.get_content_type() == "text/plain":
+                        body_text += part.get_payload(decode=True)
+                    else:
+                        continue
     
     return (receiver, sender, cc, subject, body_text,bcc,date)
     

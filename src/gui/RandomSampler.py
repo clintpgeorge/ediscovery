@@ -11,6 +11,8 @@ import sys
 import webbrowser
 import shelve
 import subprocess
+import tempfile
+
 
 from gui.HTML import Table, TableRow, TableCell, link
 from gui.RandomSamplerGUI import RandomSamplerGUI
@@ -94,11 +96,12 @@ class RSConfig:
     '''
     Application State  
     '''
-    def __init__(self, data_folder, output_folder, confidence_interval, confidence_level):
+    def __init__(self, data_folder, output_folder, confidence_interval, confidence_level, is_pst_project):
         self._data_folder = data_folder
         self._output_folder = output_folder
         self._confidence_interval = confidence_interval
         self._confidence_level = confidence_level
+        self._is_pst_project = is_pst_project
         self._current_page = 0
         self._created_date = datetime.now() 
         self._modified_date = datetime.now() 
@@ -133,7 +136,8 @@ class RandomSampler(RandomSamplerGUI):
         self.shelf = None
         self.project_title = '' 
         self.dir_path = ''
-        self.output_dir_path = ''       
+        self.output_dir_path = ''
+        self.file_list = []      
 
     
         
@@ -165,7 +169,11 @@ class RandomSampler(RandomSamplerGUI):
         # setup review tag
         self._lc_review = TaggingControl( self._panel_review_tag, self)
 
-        
+        # Hide panel for dynamic tags
+        self.nb_config_sampler.RemovePage(2);
+        self.GetSizer().Layout()
+
+
         self.Center()
         self.Show(True)
     
@@ -285,7 +293,7 @@ class RandomSampler(RandomSamplerGUI):
             self._show_error_message("Value Error!", "Enter a title for the project.")
             self._cbx_project_title.SetFocus()
         
-        if self._is_project_loaded is not True:
+        if self._is_project_loaded is False:
             self._shelf_application_setup()
         self._cbx_project_title.Disable()
         
@@ -314,29 +322,30 @@ class RandomSampler(RandomSamplerGUI):
             self._is_ct_updated = False
         
         self._current_page = 2
+        self._shelf_update_tags_state()
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
-    def _on_click_tag_next(self, event):
-        
-        self._current_page = 3
-        if self._is_tags_updated:
-            self._shelf_update_tags_state()
-            self._is_tags_updated = False
-            
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        self.SetStatusText('')
+#    def _on_click_tag_next(self, event):
+#        
+#        self._current_page = 3
+#        if self._is_tags_updated:
+#            self._shelf_update_tags_state()
+#            self._is_tags_updated = False
+#            
+#        self.nb_config_sampler.ChangeSelection(self._current_page)
+#        self.SetStatusText('')
         
     
-    def _on_click_tag_goback(self, event):
-        
-        self._current_page = 1
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        self.SetStatusText('') 
-        
+#    def _on_click_tag_goback(self, event):
+#        
+#        self._current_page = 1
+#        self.nb_config_sampler.ChangeSelection(self._current_page)
+#        self.SetStatusText('') 
+#        
     
     def _on_click_out_goback( self, event ):
-        self._current_page = 2
+        self._current_page = 1
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
@@ -345,11 +354,11 @@ class RandomSampler(RandomSamplerGUI):
         TODO: need to fix an error in application state update 
         '''
         
-        if not self._is_samples_created and self._prior_page_status < 4:
+        if not self._is_samples_created and self._prior_page_status < 3:
             self._show_error_message("Review Error!", "Please create the sample before go to review.")
             return 
         
-        if self._is_samples_created and self._prior_page_status >= 4:
+        if self._is_samples_created and self._prior_page_status >= 3:
             self._shelf_update_samples()
         elif self._is_samples_created:
             self._shelf_update_sample_tab_state()
@@ -360,7 +369,7 @@ class RandomSampler(RandomSamplerGUI):
         
         # changes the tab selection 
 
-        self._current_page = 4
+        self._current_page = 3
         self.nb_config_sampler.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -372,31 +381,54 @@ class RandomSampler(RandomSamplerGUI):
         Arguments: Event of item selected
         Returns: Nothing
         """
-        super(RandomSampler, self)._on_click_io_sel_data_dir(event) 
-        
-        dlg = wx.DirDialog(self, "Choose the input folder to sample", self.dir_path, wx.DD_DIR_MUST_EXIST)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.dir_path = dlg.GetPath()
-
-            self.SetStatusText("The selected data folder is %s" % self.dir_path)
-            message_dialog =  wx.MessageDialog(parent = self, 
-                                               message = "This may take a few minutes. \nPress OK to continue loading... ",
-                                               caption = "Loading Source Documents",
-                                               style = wx.ICON_INFORMATION | wx.OK)
-            message_dialog.ShowModal()
-            self.do_load(message_dialog)
-        dlg.Destroy()
+        super(RandomSampler, self)._on_click_io_sel_data_dir(event)
+        self._shelf_has_samples = False
+        if self._chbx_pst.IsChecked():
+            self._is_pst_project = True
+            #subprocess.call(['java',  'PstInterface'])
+            wildcard = "Outlook Data Files (*.pst)|*.pst" 
+            dlg = wx.FileDialog(self, "Choose the input folder to sample", self.dir_path, wildcard = wildcard, style=wx.OPEN |wx.CHANGE_DIR)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.dir_path = dlg.GetPath()
+    
+                self.SetStatusText("The selected email pst is %s" % self.dir_path)
+                message_dialog =  wx.MessageDialog(parent = self, 
+                                                   message = "This may take a few minutes. \nPress OK to continue loading... ",
+                                                   caption = "Loading Source Documents",
+                                                   style = wx.ICON_INFORMATION | wx.OK)
+                message_dialog.ShowModal()
+                #self.gateway = JavaGateway()
+                try:
+                    wx.BusyCursor()
+                    self.convert_pst(self.dir_path)
+                    wx.EndBusyCursor()
+                except Exception as anyException:
+                    self._show_error_message("Read Error","Some e-mails could not be read.")
+            dlg.Destroy()
+        else:
+            self._is_pst_project = False
+            dlg = wx.DirDialog(self, "Choose the input folder to sample", self.dir_path, wx.DD_DIR_MUST_EXIST)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.dir_path = dlg.GetPath()
+    
+                self.SetStatusText("The selected data folder is %s" % self.dir_path)
+                message_dialog =  wx.MessageDialog(parent = self, 
+                                                   message = "This may take a few minutes. \nPress OK to continue loading... ",
+                                                   caption = "Loading Source Documents",
+                                                   style = wx.ICON_INFORMATION | wx.OK)
+                message_dialog.ShowModal()
+                self.do_load(message_dialog)
+            dlg.Destroy()
         
         self._tc_data_dir.SetValue(self.dir_path)
         self._tc_out_data_dir.SetValue(self.dir_path)
-        self._tc_out_data_dir.SetValue(self.output_dir_path)
+        if self._is_pst_project:
+            self.dir_path = self.tempdir
         self._tc_project_title.SetValue(self.project_title)
         
         self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
         self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
         self._is_io_updated = True
-
-   
     
     def _generate_file_samples(self):
         '''
@@ -515,10 +547,15 @@ class RandomSampler(RandomSamplerGUI):
         Thread to handle copy
         Arguments: Total size of copy, Handle to dialog
         '''
+        wx.BusyCursor()
         copy_with_dialog(self.dir_path, self.sampled_files,
                                      self.output_dir_path, total_size, dialog)
         finish_copy_event  = wx.PyCommandEvent(wx.EVT_COMMAND_SET_FOCUS.typeId)
         self.GetEventHandler().ProcessEvent(finish_copy_event)
+        wx.EndBusyCursor()
+        dialog.Destoy()
+#        if self.isAlive():
+#                dialog.Destroy() 
         sys.exit()
 
         
@@ -527,6 +564,17 @@ class RandomSampler(RandomSamplerGUI):
         self.file_list = find_files_in_folder(self.dir_path)
         self.Refresh()
         dialog.Close()
+    
+    def convert_pst(self, pstfilename):
+        '''
+        This method will be a little creative 
+        '''
+        #pst_reader = self.gateway.getPSTReader()
+        #pst_reader.printDepth()
+        self.tempdir = tempfile.mkdtemp()
+        subprocess.call(['readpst', '-o', self.tempdir, '-e', '-b', '-S', pstfilename])
+        self.file_list = find_files_in_folder(self.tempdir)
+
     
     def _on_click_copy_files( self, event ):
         '''
@@ -570,7 +618,7 @@ class RandomSampler(RandomSamplerGUI):
                                                 style = wx.PD_ELAPSED_TIME | wx.PD_ESTIMATED_TIME | wx.PD_REMAINING_TIME)
             
             # Runs copy on a different thread
-            start_thread(self.do_copy, total_file_size, progress_dialog)
+            thread = start_thread(self.do_copy, total_file_size, progress_dialog)
             progress_dialog.ShowModal()
             
 
@@ -1021,8 +1069,10 @@ class RandomSampler(RandomSamplerGUI):
             self.precision_val = cfg._confidence_interval
             self.confidence_val = cfg._confidence_level
             self._prior_page_status = cfg._current_page
+            self._is_pst_project = cfg._is_pst_project
             self.file_list = self.shelf['file_list'] 
             self.ADDITIONAL_TAGS = self.shelf['additional_tags']
+
             
             # for the I/O tab 
             self._tc_data_dir.SetValue(self.dir_path)
@@ -1032,6 +1082,7 @@ class RandomSampler(RandomSamplerGUI):
             self._tc_project_title.SetValue(self.project_title)
             self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
             self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
+            self._chbx_pst.SetValue(self._is_pst_project)
             
             # for confidence interval 
             str_confidence_level = str(self.confidence_val * Decimal('100'))
@@ -1040,8 +1091,7 @@ class RandomSampler(RandomSamplerGUI):
             self._tc_confidence_interval.ChangeValue(str_precision)
             self._tc_out_confidence_levels.ChangeValue(str_confidence_level)
             self._tc_out_confidence_interval.ChangeValue(str_precision)
-            
-            # sets the additional tags 
+             
             
             
         # Creates the data shelf for the first time 
@@ -1052,13 +1102,13 @@ class RandomSampler(RandomSamplerGUI):
             
             self.shelf['file_list'] = self.file_list
             self.shelf['additional_tags'] = []
-            self.shelf['config'] = RSConfig(self.dir_path, self.output_dir_path, self.precision_val, self.confidence_val) 
+            self.shelf['config'] = RSConfig(self.dir_path, self.output_dir_path, self.precision_val, self.confidence_val, self._is_pst_project) 
             self.shelf.sync()
         
         if self._shelf_has_samples:
             self._shelf_load_file_samples()
             
-            
+        self.shelf.sync()
         
     
     def _shelf_update_io_tab_state(self):
