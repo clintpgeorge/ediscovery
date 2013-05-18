@@ -50,12 +50,15 @@ The following are some useful ***git*** commands
 
 **Python**
 
-- do not check in *.pyc files 
-- follow [coding standards](http://www.python.org/dev/peps/pep-0008)
-- use [argparse](http://docs.python.org/2/howto/argparse.html) for handling arguments 
-- use no hard coding in functions except for the test scripts, try to pass all constants as function parameters
+- Do not check in *.pyc files 
+- Follow [coding standards](http://www.python.org/dev/peps/pep-0008)
+- Use [argparse](http://docs.python.org/2/howto/argparse.html) for handling arguments 
+- Use no hard coding in functions except for the test scripts, try to pass all constants as function parameters
 
-**pyLucene Installation help**
+**pyLucene installation**
+
+**Ubuntu**
+
 - Install g++
 - Install python-dev
 - Download pylucene3.6 from http://mirror.sdunix.com/apache/lucene/pylucene/
@@ -63,13 +66,18 @@ The following are some useful ***git*** commands
     - python setup.py build 
     - sudo python setup.py install
 - Uncomment properties applicable to relevant platform(Linux,Mac,Windows) etc. from pylucene makefile
-- install ant
-- install setuptools
+- Install ant
+- Install setuptools
 - Execute following commands from pylucene directory
       - make
       - sudo make install
       - make test
 
+**Windows 7 and Python 32 bit**
+
+- Install Java JDK (32 bit) latest version 
+- Install Python [setup tools](http://pypi.python.org/pypi/setuptools) 
+- Follow instructions in [pyLucene Extra](https://code.google.com/a/apache-extras.org/p/pylucene-extra/wiki/PyLucene). Direct installation using the installation files from the Apache site is cumbersome some times. 
 
 --------------------------------------
 
