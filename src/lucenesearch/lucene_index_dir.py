@@ -8,7 +8,7 @@ Created By: Clint P. George
 Created On: Feb 19, 2013 
 
 '''
-
+import datetime
 import os
 import logging 
 from lucene import IndexWriter, StandardAnalyzer, Document, Field 
@@ -16,8 +16,7 @@ from lucene import SimpleFSDirectory, File, initVM, Version
 from lucene import IndexSearcher, QueryParser, MultiFieldQueryParser, BooleanClause
 from utils.utils_email import parse_plain_text_email 
 from utils.utils_file import get_file_paths_index, load_file_paths_index, store_file_paths_index
-import sys
-from const import SEARCH_RESULTS_LIMIT
+
 
 '''
 The analyzer used for both indexing and searching  
@@ -133,9 +132,7 @@ def test_search(index_dir):
     The test function to test the created index 
     '''
     store = SimpleFSDirectory(File(index_dir))
-    
-    import datetime
-    
+   
     searcher = IndexSearcher(store, True)
     parser = QueryParser(Version.LUCENE_CURRENT, "keywords", STD_ANALYZER)
     parser.setDefaultOperator(QueryParser.Operator.AND)
@@ -153,20 +150,70 @@ def test_search(index_dir):
                      for field in doc.getFields())
         print table
 
-def search_for_query(index_dir, queryList):
+def get_indexed_file_details(ts_results, lucene_index_dir):
+    '''
+    This function gets each files details from the lucene 
+    index. 
+    
+    Arguments: 
+        ts_results - topic search results, each item contains 
+                     [file id, root, file name, similarity score]
+        lucene_index_dir - lucene index directory 
+    
+    Returns: 
+        file details in a list 
+    '''
+    
+    store = SimpleFSDirectory(File(lucene_index_dir))
+    searcher = IndexSearcher(store, True)
+    
+    rows = []
+    for rs in ts_results:
+        doc = searcher.doc(rs[0])
+        table = dict((field.name(), field.stringValue())
+                     for field in doc.getFields())
+        row = []
+        metadata = MetadataType._types
+        for field in metadata:
+            if table.get(field,'empty') != 'empty' :
+                row.append(table.get(field,'empty'))
+            else: 
+                row.append('')
+        row.append(str(table.get(MetadataType.FILE_ID,'empty')))
+        row.append(str(rs[3]))
+        
+        rows.append(row)
+    
+    return rows
+    
+    
+def retrieve_document_details(docid, index_dir):
+    '''
+    This method will be used to retrieve a single document associated with the docid 
+    that is passed to it as parameter. 
+    The document will be searched in the directory referred by index_dir.
+    
+    If you want to access a specific field's value you can access that using the instance 
+    of this document class as document.get(<field_name>). Here <field_name> is a string.
+    '''
+    
+    store = SimpleFSDirectory(File(index_dir))
+    searcher = IndexSearcher(store, True)
+    document = searcher.doc(int(docid))
+    return document
+
+
+def search_for_query(index_dir, queryList, limit):
     '''
     This function searches the corpus for emails that match the queryList
     queryList
     '''
     store = SimpleFSDirectory(File(index_dir))
-    
-    import datetime
-    
     searcher = IndexSearcher(store, True)
     parser = MultiFieldQueryParser(Version.LUCENE_CURRENT, queryList[1], STD_ANALYZER)
     query = parser.parse(Version.LUCENE_CURRENT, queryList[0], queryList[1], queryList[2], STD_ANALYZER)
     start = datetime.datetime.now()
-    scoreDocs = searcher.search(query, SEARCH_RESULTS_LIMIT).scoreDocs
+    scoreDocs = searcher.search(query, limit).scoreDocs
     duration = datetime.datetime.now() - start
     
     print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
@@ -182,11 +229,10 @@ def search_for_query(index_dir, queryList):
             #print field+' : '+table.get(field,'empty')
             if table.get(field,'empty') != 'empty' :
                 row.append(table.get(field,'empty'))
+            else: 
+                row.append('')
+        row.append(str(table.get(MetadataType.FILE_ID,'empty')))
+        row.append('')
         rows.append(row)
     
-    '''
-    for r in rows:
-        print 'HERE !!! -------------------------------------------\n', r
-    print '\nsize = ', len(rows)
-    '''
     return rows

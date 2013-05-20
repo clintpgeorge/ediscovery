@@ -95,6 +95,9 @@ def process_query(query, dictionary, lsi, index, files_info, limit=5):
 
 
 
+
+
+
 def test_query():
     '''
     This function tests a sample query 
@@ -114,6 +117,12 @@ def test_query():
     return responsive_docs, non_responsive_docs
 
 
-responsive_docs, non_responsive_docs = test_query()
-print responsive_docs
+# responsive_docs, non_responsive_docs = test_query()
+# print responsive_docs
 
+
+
+
+    
+    
+    

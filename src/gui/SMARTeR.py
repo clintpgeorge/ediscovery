@@ -5,20 +5,25 @@ Created on Feb 23, 2013
 '''
 import sys 
 import wx 
-import lucenesearch
-import gui
+import shelve
+import os 
+
 from lucene import BooleanClause
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin,\
     ColumnSorterMixin
 from gui.SMARTeRGUI import SMARTeRGUI,RatingControl
-from lucenesearch.lucene_index_dir import search_for_query, MetadataType
+from lucenesearch.lucene_index_dir import search_for_query, MetadataType, get_indexed_file_details
 import re
 import webbrowser
 from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS,\
-    CHAR_LIMIT_IN_RESULTS_TAB_CELLS, SHELVE_CHUNK_SIZE, SHELVE_FILE_EXTENSION
-from mako.runtime import _populate_self_namespace
+    CHAR_LIMIT_IN_RESULTS_TAB_CELLS, SHELVE_CHUNK_SIZE, SHELVE_FILE_EXTENSION,\
+    COLUMN_NUMBER_OF_RATING
 from collections import OrderedDict
-import shelve
+from utils.utils_file import read_config, load_file_paths_index
+from tm.lda_process_query import load_lda_variables, do_topic_search
+from const import SEARCH_RESULTS_LIMIT
+
+
 
 ###########################################################################
 # # This global dictionary is used to keep track of the query-results 
@@ -73,12 +78,11 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, Col
         for key in shelve_file.keys():
             row = shelve_file[key]
             # 2. Updates the dictionary_of_rows with this chunk of results
-            dictionary_of_rows.__setitem__(key, row)
-
+            dictionary_of_rows.__setitem__(key, row) 
         #print "Populated Dictionary from file: \n", dictionary_of_rows.keys()
         #print "Rows size = ", len( dictionary_of_rows.values()[0] )
         # 3. Sorts the dictionary_of_rows based on rating
-        dictionary_sorted_as_list = sorted(dictionary_of_rows.items(), key=lambda (k, v): v[9], reverse=True)
+        dictionary_sorted_as_list = sorted(dictionary_of_rows.items(), key=lambda (k, v): v[COLUMN_NUMBER_OF_RATING], reverse=True)
         keys = map(lambda (k,v): k, dictionary_sorted_as_list)
         values = map(lambda (k,v): v, dictionary_sorted_as_list)
         dictionary_of_rows = OrderedDict( zip(keys, values) )
@@ -105,15 +109,15 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, Col
             self.SetItemData(index, long(key))
             i = 0
             for cell in row:
-                column_name = self.GetColumn(i).GetText()            
+                column_name = self.GetColumn(i).GetText()     
+                cell = str(cell)        
                 #Only the file_path is displayed completely.
                 #The content of all other cells are restricted to 30 characters.                 
-                if(column_name <> 'file_path'):
-                    #if(type(cell) is not int):
+                if(column_name <> 'file_path') and len(cell) > CHAR_LIMIT_IN_RESULTS_TAB_CELLS:
                     self.SetStringItem(index, i, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
                 else:
                     self.SetStringItem(index, i, cell)
-                i = i + 1
+                i += 1
         #self.Refresh()
     
     def onRightClick(self,event):
@@ -195,7 +199,6 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, Col
 class Rating (RatingControl):
     selected_record_index = None
     checklist_control = None
-    column_index_of_rating = 9
     
     def __init__(self, parent, checklist_control):
         """ Calls the parent class's method """ 
@@ -207,7 +210,7 @@ class Rating (RatingControl):
         #print self.selected_record_index
         
         #If the Relevance-recording window is opened again, it must show the score already given  
-        relevance_score = checklist_control.GetItem(self.selected_record_index,self.column_index_of_rating)
+        relevance_score = checklist_control.GetItem(self.selected_record_index,COLUMN_NUMBER_OF_RATING)
         self.radio_control.SetSelection( int(relevance_score.GetText()) )
         
     def _on_btn_click_submit(self, event):
@@ -219,7 +222,7 @@ class Rating (RatingControl):
 
         # 1. Updates the Relevance column with the given rating
         rating = self.radio_control.GetSelection()
-        self.checklist_control.SetStringItem(self.selected_record_index,self.column_index_of_rating, str(rating))
+        self.checklist_control.SetStringItem(self.selected_record_index, COLUMN_NUMBER_OF_RATING, str(rating))
         
         # Statements to just debug
         #print "Old rating = ", dictionary_of_rows[self.selected_record_index][-1]
@@ -246,29 +249,31 @@ class Rating (RatingControl):
 ###########################################################################
 
 class SMARTeR (SMARTeRGUI):
-    root_dir_from_model = None
+
     def __init__(self, parent):
 
         # Calls the parent class's method 
         super(SMARTeR, self).__init__(parent) 
-        
+        self._is_lucene_index_available = False 
+        self._is_tm_index_available = False
+        self._current_page = 0
         self._add_query_results_panel()
         self._populate_comboBox()
         self.Center()
         self.Show(True)
-    '''
-    This function will populate the metadata combo box 
-    dynamically at the time of file loading. This will help
-    to accommodate new metadata types as and when they are needed. 
-    '''
+
     def _populate_comboBox(self):
+        '''
+        This function will populate the metadata combo box 
+        dynamically at the time of file loading. This will help
+        to accommodate new metadata types as and when they are needed. 
+        '''
         metaDataTypes = MetadataType._types
         for l in metaDataTypes :
-            self._cbx_meta_type. Append(l) 
+            self._cbx_meta_type.Append(l) 
         
     def _on_menu_sel_exit(self, event):
-        super(SMARTeR, self)._on_menu_sel_exit(event) 
-    
+
         dlg = wx.MessageDialog(self,
                                "Do you really want to close this application?",
                                "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
@@ -277,6 +282,19 @@ class SMARTeR (SMARTeRGUI):
         if result == wx.ID_OK:
             self.Destroy()        
         
+    def _on_notebook_page_changed( self, event ):
+        '''
+        Handles the note book page change event 
+        '''
+        
+        self._current_page = event.Selection
+        self._notebook.ChangeSelection(self._current_page)
+
+    def _on_chbx_topic_search( self, event ):
+        self._chbx_facet_search.SetValue(False)
+    
+    def _on_chbx_facet_search( self, event ):
+        self._chbx_topic_search.SetValue(False)
         
     def _add_query_results_panel(self):
         
@@ -296,7 +314,9 @@ class SMARTeR (SMARTeRGUI):
         for c in columnHeaders:
             self._lc_results.InsertColumn(columnNumber,c )
             columnNumber = columnNumber + 1
-        self._lc_results.InsertColumn(columnNumber,"rating")
+        self._lc_results.InsertColumn(columnNumber, "file_id")
+        self._lc_results.InsertColumn(columnNumber+1, "file_score")
+        self._lc_results.InsertColumn(columnNumber+2, "rating")
         
         vbox2 = wx.BoxSizer(wx.VERTICAL)
 
@@ -392,31 +412,60 @@ class SMARTeR (SMARTeRGUI):
     
     def _on_file_change_mdl(self, event):
         '''
-        TODO: It's better use the python config reader
-        interface. See read_config function in utils/utils_file 
-        and use that function to read the model file  
+        Handles the model file change event  
         '''
         
-        fileName = self._file_picker_mdl.GetPath()
-        pattern = re.compile('\[.+\]')
-        fileInstance = open(fileName)
-        matchedList = [];
+        file_name = self._file_picker_mdl.GetPath()
+        self._load_model(file_name)
+
+        if self._is_tm_index_available or self._is_lucene_index_available:
+            self.SetStatusText("The %s model is loaded." % self.mdl_cfg['DATA']['name'])
+        else: 
+            self._show_error_message("Model Error", "Please select a valid model.")
+            self._file_picker_mdl.SetPath("")
+            self.mdl_cfg = None 
+            
+
         
-        for line in fileInstance :
-            firstList = pattern.findall(line);
-            for word in firstList :
-                matchedList.append(word)
+    def _load_model(self, model_cfg_file):
+        '''
+        Loads the models specified in the model configuration file  
         
-        while(matchedList.__len__() > 0) : 
-            value = matchedList.pop()
-            if(value != '[DATA]') :
-                self._tc_available_mdl.AppendText(value)
+        Arguments: 
+            model_cfg_file - the model configuration file  
         
-        fileInstance = open(fileName)
-        for line in fileInstance :
-            filesDir = re.search(r'(files_dir=)(.*)',line)
-            if filesDir is not None:
-                self.root_dir_from_model = filesDir.group(2)
+        '''
+        
+        self.mdl_cfg = read_config(model_cfg_file)
+        
+        # Loads LDA model files 
+        
+        dictionary_file = self.mdl_cfg['CORPUS']['dict_file']
+        path_index_file = self.mdl_cfg['CORPUS']['path_index_file']
+        lda_mdl_file = self.mdl_cfg['LDA']['lda_model_file']
+        lda_cos_index_file = self.mdl_cfg['LDA']['lda_cos_index_file']
+
+        # Loads the LDA model and file details 
+        if dictionary_file <> None and path_index_file <> None and lda_mdl_file <> None and lda_cos_index_file <> None: 
+            if os.path.exists(dictionary_file) and os.path.exists(path_index_file) and os.path.exists(lda_mdl_file) and os.path.exists(lda_cos_index_file):
+                self.lda_file_path_index = load_file_paths_index(path_index_file)
+                self.lda_dictionary, self.lda_mdl, self.lda_index = load_lda_variables(dictionary_file, lda_mdl_file, lda_cos_index_file)
+                self.lda_num_files = len(self.lda_file_path_index)
+                self.lda_vocab_size = len(self.lda_dictionary)        
+                self._is_tm_index_available = True  
+                self._tc_available_mdl.AppendText('[LDA] ')               
+
+        # Loads Lucene index files 
+        lucene_dir = self.mdl_cfg['LUCENE']['lucene_index_dir']
+        
+        if lucene_dir <> None:
+            if os.path.exists(lucene_dir):
+                self.lucene_index_dir = lucene_dir
+                self._is_lucene_index_available = True  
+                self._tc_available_mdl.AppendText('[LUCENE] ')  
+         
+
+
         
         
     def _on_click_add_to_query(self, event):
@@ -430,18 +479,48 @@ class SMARTeR (SMARTeRGUI):
         #    self._rbtn_conjunction.Enable()   
         self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":" + self._rbtn_compulsion_level.GetStringSelection()+ ' ')
     
+    def _show_error_message(self, _header, _message):
+        '''
+        Shows error messages in a pop up 
+        '''
+        
+        dlg = wx.MessageDialog(self, _message, _header, wx.OK | wx.ICON_ERROR)
+        dlg.ShowModal()
+    
     def _on_click_run_query(self, event):
         """
         Actions to be done when the "Run Query" button is clicked
+        0. Validations 
         1. Parse the query
         2. Run Lucene query 
         3. Put the results to the dictionary_of_rows
         """
-
+        
+        facet_search = self._chbx_facet_search.GetValue()
+        topic_search = self._chbx_topic_search.GetValue()
+        
         # 1. Parse the query
         
         global dictionary_of_rows
-        queryText = self._tc_query.GetValue() #'email_body:senorita:MUST'
+        queryText = self._tc_query.GetValue().strip() #'email_body:senorita:MUST'
+
+        # 0. Validations 
+        if not self._is_lucene_index_available:
+            # Lucene index is mandatory 
+            self._show_error_message('Run Query Error!', 'Please select a valid index for searching.')
+            return  
+        elif not facet_search and not topic_search:
+            self._show_error_message('Run Query Error!', 'Please select a search type.')
+            return 
+        elif queryText == '':
+            self._show_error_message('Run Query Error!', 'Please enter a valid query.')
+            return 
+        elif topic_search and not self._is_tm_index_available:
+            self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
+            return 
+        elif facet_search and not self._is_lucene_index_available:
+            self._show_error_message('Run Query Error!', 'Lucene index is not available for facet search.')
+            return
         
         #queryText has Queries, Fields, BooleanClauses
         queries = []
@@ -451,6 +530,7 @@ class SMARTeR (SMARTeRGUI):
         
         for l in filteredQuery:
             res = re.split(':', l )
+            print res 
             if len(res) > 1:
                 fields.append(res[0])
                 queries.append(res[1])
@@ -460,26 +540,46 @@ class SMARTeR (SMARTeRGUI):
                     clauses.append(BooleanClause.Occur.MUST_NOT)
                 else:
                     clauses.append(BooleanClause.Occur.SHOULD)
-                
-                print res
         
         queryList = []
         queryList.append(queries)
         queryList.append(fields)
         queryList.append(clauses)
-        
-        # 2. Run Lucene query         
-        lucene_index_dir = self.root_dir_from_model +"/lucene"
-        rows = search_for_query(lucene_index_dir, queryList)
 
+        rows = [] 
+        fs_results = []
+        ts_results = [] 
+        
+        if facet_search:
+            fs_results = search_for_query(self.lucene_index_dir, queryList, SEARCH_RESULTS_LIMIT)
+            
+        if topic_search: 
+            query_text = ' '.join(queries) # combines all the text in a query model 
+            ts_results = do_topic_search(query_text, self.lda_dictionary, self.lda_mdl, self.lda_index, self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
+            ## ts_results are in this format (idx, root, file_name) 
+            ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index 
+            
+        if facet_search and not topic_search: 
+            # 2. Run Lucene query      
+            rows = fs_results
+        elif not facet_search and topic_search: 
+            rows = ts_results
+        elif facet_search and topic_search: 
+            # TODO need to combine results  
+            rows = fs_results
+            
+        if len(rows) == 0: return 
+        
         # 3. Put the results to the dictionary_of_rows
-        key = 0
-        for r in rows:
-            # Add a 'relevance' value of '0' to each search-result
-            r.append('0')
-            dictionary_of_rows.__setitem__(str(key), r)
-            key = key + 1
-        #print "---------------------------\n", rows, "\n---------------\n"
+        key = 0 
+        for row in rows:
+            file_id = row[9] # key is obtained from the lucene index
+            #print retrieve_document_details(file_id, self.lucene_index_dir).get('email_subject')
+            file_details = row # values of the defined MetadataTypes 
+            file_details.append('0') # Add a 'relevance' value of '0' to each search-result
+        
+            dictionary_of_rows.__setitem__(str(key), file_details)
+            key += 1
 
         self._lc_results.itemDataMap = dictionary_of_rows
         self._lc_results.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results.OnColClick)
@@ -489,6 +589,16 @@ class SMARTeR (SMARTeRGUI):
         global present_chunk
         present_chunk = 0
         self._lc_results._populate_results(present_chunk)
+        self._tc_files_log.SetValue('')
+        
+        
+        # Goes to the results tab 
+        self._current_page = 2
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+      
+      
+
         
 def main():
     '''

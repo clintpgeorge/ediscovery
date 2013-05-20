@@ -52,13 +52,6 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self.SetMenuBar( self._menubar )
 		
-		self._toolbar = self.CreateToolBar( wx.TB_HORIZONTAL, wx.ID_ANY ) 
-		self._toolbar.AddLabelTool( wx.ID_ANY, _(u"Select"), wx.NullBitmap, wx.NullBitmap, wx.ITEM_NORMAL, _(u"Select Model"), wx.EmptyString, None ) 
-		
-		self._toolbar.AddLabelTool( wx.ID_ANY, _(u"Exit"), wx.NullBitmap, wx.NullBitmap, wx.ITEM_NORMAL, _(u"Exit"), wx.EmptyString, None ) 
-		
-		self._toolbar.Realize() 
-		
 		_bsizer_main = wx.BoxSizer( wx.VERTICAL )
 		
 		self._notebook = wx.Notebook( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -86,7 +79,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_available_mdl.Wrap( -1 )
 		_gbsizer_mdl.Add( self._st_available_mdl, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_available_mdl = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY|wx.STATIC_BORDER|wx.SUNKEN_BORDER )
+		self._tc_available_mdl = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY )
 		self._tc_available_mdl.SetMinSize( wx.Size( 300,-1 ) )
 		
 		_gbsizer_mdl.Add( self._tc_available_mdl, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -122,7 +115,7 @@ class SMARTeRGUI ( wx.Frame ):
 		_gbsizer_query.Add( self._rbtn_compulsion_level, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		_cbx_meta_typeChoices = []
-		self._cbx_meta_type = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"Select Type"), wx.DefaultPosition, wx.DefaultSize, _cbx_meta_typeChoices, wx.CB_SORT )
+		self._cbx_meta_type = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"Select Type"), wx.DefaultPosition, wx.DefaultSize, _cbx_meta_typeChoices, wx.CB_READONLY|wx.CB_SORT )
 		_gbsizer_query.Add( self._cbx_meta_type, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._tc_query = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,50 ), wx.TE_MULTILINE )
@@ -131,11 +124,11 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_run_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Run Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_query.Add( self._btn_run_query, wx.GBPosition( 2, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._chbx_topic_mdl = wx.CheckBox( self._panel_query, wx.ID_ANY, _(u"topic model"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_query.Add( self._chbx_topic_mdl, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._chbx_topic_search = wx.CheckBox( self._panel_query, wx.ID_ANY, _(u"Topic Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_query.Add( self._chbx_topic_search, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._chbx_meta_data = wx.CheckBox( self._panel_query, wx.ID_ANY, _(u"metadata"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_query.Add( self._chbx_meta_data, wx.GBPosition( 4, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._chbx_facet_search = wx.CheckBox( self._panel_query, wx.ID_ANY, _(u"Facet Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_query.Add( self._chbx_facet_search, wx.GBPosition( 4, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._st_use_model = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Search type"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_use_model.Wrap( -1 )
@@ -179,11 +172,12 @@ class SMARTeRGUI ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self._on_menu_sel_exit, id = self._mitem_exit.GetId() )
 		self.Bind( wx.EVT_MENU, self._on_menu_sel_about, id = self._mitem_about.GetId() )
 		self.Bind( wx.EVT_MENU, self._on_men_sel_help, id = self._mitem_help.GetId() )
+		self._notebook.Bind( wx.EVT_NOTEBOOK_PAGE_CHANGED, self._on_notebook_page_changed )
 		self._file_picker_mdl.Bind( wx.EVT_FILEPICKER_CHANGED, self._on_file_change_mdl )
 		self._btn_add_to_query.Bind( wx.EVT_BUTTON, self._on_click_add_to_query )
 		self._btn_run_query.Bind( wx.EVT_BUTTON, self._on_click_run_query )
-		self._chbx_topic_mdl.Bind( wx.EVT_CHECKBOX, self._on_sel_topic_mdl )
-		self._chbx_meta_data.Bind( wx.EVT_CHECKBOX, self._on_sel_metadata )
+		self._chbx_topic_search.Bind( wx.EVT_CHECKBOX, self._on_chbx_topic_search )
+		self._chbx_facet_search.Bind( wx.EVT_CHECKBOX, self._on_chbx_facet_search )
 	
 	def __del__( self ):
 		pass
@@ -202,6 +196,9 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_men_sel_help( self, event ):
 		event.Skip()
 	
+	def _on_notebook_page_changed( self, event ):
+		event.Skip()
+	
 	def _on_file_change_mdl( self, event ):
 		event.Skip()
 	
@@ -211,10 +208,10 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_click_run_query( self, event ):
 		event.Skip()
 	
-	def _on_sel_topic_mdl( self, event ):
+	def _on_chbx_topic_search( self, event ):
 		event.Skip()
 	
-	def _on_sel_metadata( self, event ):
+	def _on_chbx_facet_search( self, event ):
 		event.Skip()
 	
 

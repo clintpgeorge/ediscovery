@@ -105,6 +105,54 @@ def process_query(query, dictionary, lda, index, files_info, limit=5):
     return (responsive_docs, non_responsive_docs)
 
 
+def do_topic_search(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_path_index, limit):
+    '''Tokenize the input query and finds topically 
+    similar documents (responsive) using LDA based 
+    document search. Currently, the responsive documents 
+    are determined by just taking top N records from 
+    the ranked set of documents. 
+    
+    
+    Returns:
+        a lists of lists of responsive and non responsive 
+        document details such as [doc_id, doc_dir_path, doc_name, score] 
+    Arguments:
+        query_text - the query in text format 
+        dictionary - the dictionary object 
+        lda - the LDA model object 
+        index - the index object 
+        files_info - the list of file details 
+        limit - the limit on the number of responsive records 
+    
+    '''
+
+    # process the query 
+    
+    query_vec = lda_dictionary.doc2bow(query_text.lower().split())
+    
+    if len(query_vec) == 0: 
+        print 'Query words are not in the dictionary. Exiting topic search!'
+        return [] 
+    
+    query_td = lda_mdl[query_vec]
+    
+    # querying based on cosine distance
+    
+    sims = lda_index[query_td] # perform a similarity query against the corpus
+    sims = sorted(enumerate(sims), key=lambda item: -item[1])
+    
+    ## Identifies responsive and non-responsive documents
+     
+    responsive_docs_idx = sims[0:limit]
+    responsive_docs = [] 
+    for (doc_id, score) in responsive_docs_idx: 
+        doc = [w for w in lda_file_path_index[doc_id]] # it's a tuple (idx, root, file_name) 
+        doc.append(score)
+        responsive_docs.append(doc)
+    
+    return responsive_docs
+    
+    
 
 def test_query():
     '''
@@ -125,6 +173,6 @@ def test_query():
     return responsive_docs, non_responsive_docs
 
 
-responsive_docs, non_responsive_docs = test_query()
-print responsive_docs
+#responsive_docs, non_responsive_docs = test_query()
+#print responsive_docs
 
