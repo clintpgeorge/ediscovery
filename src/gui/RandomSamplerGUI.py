@@ -72,7 +72,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_io.Add( self._cbx_project_title, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
-		self._st_data_folder1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Source Document Folder", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self._st_data_folder1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Source Document Folder/ PST File", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self._st_data_folder1.Wrap( -1 )
 		self._st_data_folder1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		
@@ -107,10 +107,10 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._st_num_data_dir_files.SetFont( wx.Font( 8, 72, 94, 90, False, wx.EmptyString ) )
 		self._st_num_data_dir_files.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		gbsizer_io.Add( self._st_num_data_dir_files, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT, 5 )
+		gbsizer_io.Add( self._st_num_data_dir_files, wx.GBPosition( 5, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT, 5 )
 		
 		self._chbx_pst = wx.CheckBox( self._panel_io, wx.ID_ANY, u"Select an Outlook mailbox (.PST File )", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_io.Add( self._chbx_pst, wx.GBPosition( 5, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbsizer_io.Add( self._chbx_pst, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._sl_tailer1 = wx.StaticLine( self._panel_io, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_io.Add( self._sl_tailer1, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 6 ), wx.ALL|wx.EXPAND, 5 )
@@ -130,7 +130,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_io.SetSizer( sbsizer_io )
 		self._panel_io.Layout()
 		sbsizer_io.Fit( self._panel_io )
-		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", False )
+		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", True )
 		self._panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -207,7 +207,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_confidence.SetSizer( bsizer_confidence )
 		self._panel_confidence.Layout()
 		bsizer_confidence.Fit( self._panel_confidence )
-		self.nb_config_sampler.AddPage( self._panel_confidence, u"Confidence", True )
+		self.nb_config_sampler.AddPage( self._panel_confidence, u"Confidence", False )
 		self._panel_tags = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self._panel_tags.Hide()
 		
@@ -293,7 +293,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._tc_project_title = wx.TextCtrl( self._panel_create_sample, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,20 ), wx.TE_LEFT|wx.TE_READONLY|wx.NO_BORDER )
 		gbsizer_sampler1.Add( self._tc_project_title, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), 0, 5 )
 		
-		self._st_data_folder = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"Source Document Folder", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self._st_data_folder = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"Source Document Folder/PST File", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self._st_data_folder.Wrap( -1 )
 		self._st_data_folder.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		
@@ -403,23 +403,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_review_clear_all_tags = wx.Button( self._panel_review, wx.ID_ANY, u"Clear All Tags", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbsizer_review.Add( self._btn_review_clear_all_tags, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.LEFT|wx.RIGHT, 5 )
 		
-		self._panel_preview = wx.Panel( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self._panel_preview.SetMinSize( wx.Size( 200,-1 ) )
-		
-		bsizer_preview = wx.StaticBoxSizer( wx.StaticBox( self._panel_preview, wx.ID_ANY, wx.EmptyString ), wx.VERTICAL )
-		
-		bsizer_preview.SetMinSize( wx.Size( 170,-1 ) ) 
-		self._tc_preview = wx.TextCtrl( self._panel_preview, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.NO_BORDER )
-		self._tc_preview.SetMinSize( wx.Size( -1,230 ) )
-		
-		bsizer_preview.Add( self._tc_preview, 0, wx.ALL|wx.EXPAND, 5 )
-		
-		
-		self._panel_preview.SetSizer( bsizer_preview )
-		self._panel_preview.Layout()
-		bsizer_preview.Fit( self._panel_preview )
-		gbsizer_review.Add( self._panel_preview, wx.GBPosition( 2, 4 ), wx.GBSpan( 4, 6 ), wx.EXPAND |wx.ALL, 5 )
-		
 		self._panel_doc_tags = wx.Panel( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self._panel_doc_tags.SetMinSize( wx.Size( 180,100 ) )
 		
@@ -477,7 +460,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		bsizer_review_buttons.Add( self._btn_review_exit, 0, wx.ALL, 5 )
 		
 		
-		gbsizer_review.Add( bsizer_review_buttons, wx.GBPosition( 6, 0 ), wx.GBSpan( 1, 2 ), wx.EXPAND, 5 )
+		gbsizer_review.Add( bsizer_review_buttons, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 2 ), wx.EXPAND, 5 )
 		
 		self.m_staticText21 = wx.StaticText( self._panel_review, wx.ID_ANY, u"This tab shows the documents samples produced based on your sampler specifications. ", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText21.Wrap( -1 )
@@ -487,12 +470,20 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_review.Add( self.m_staticText21, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 4 ), wx.ALL, 5 )
 		
 		self._sl_header3 = wx.StaticLine( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		gbsizer_review.Add( self._sl_header3, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 10 ), wx.EXPAND |wx.ALL, 5 )
+		gbsizer_review.Add( self._sl_header3, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 12 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._panel_review_tag = wx.Panel( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self._panel_review_tag.SetMinSize( wx.Size( 500,200 ) )
+		self._panel_review_tag.SetMinSize( wx.Size( 350,200 ) )
 		
 		gbsizer_review.Add( self._panel_review_tag, wx.GBPosition( 3, 0 ), wx.GBSpan( 3, 4 ), wx.EXPAND, 5 )
+		
+		self._tc_preview = wx.TextCtrl( self._panel_review, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
+		self._tc_preview.SetMinSize( wx.Size( 320,230 ) )
+		
+		gbsizer_review.Add( self._tc_preview, wx.GBPosition( 3, 4 ), wx.GBSpan( 4, 6 ), wx.ALL, 5 )
+		
+		self._sl_header31 = wx.StaticLine( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbsizer_review.Add( self._sl_header31, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 12 ), wx.EXPAND |wx.ALL, 5 )
 		
 		
 		sbsizer_review.Add( gbsizer_review, 0, wx.BOTTOM|wx.EXPAND, 5 )
@@ -530,14 +521,14 @@ class RandomSamplerGUI ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self._on_mitem_exit, id = self._mitem_exit.GetId() )
 		self.nb_config_sampler.Bind( wx.EVT_NOTEBOOK_PAGE_CHANGED, self._on_nb_page_changed )
 		self._cbx_project_title.Bind( wx.EVT_COMBOBOX, self._on_set_existing_project )
-		self._cbx_project_title.Bind( wx.EVT_TEXT, self._on_update_project_name )
+		self._cbx_project_title.Bind( wx.EVT_KILL_FOCUS, self._on_update_project_name )
 		self._cbx_project_title.Bind( wx.EVT_TEXT_ENTER, self._on_update_project_name )
 		self._btn_io_sel_data_dir.Bind( wx.EVT_BUTTON, self._on_click_io_sel_data_dir )
 		self._btn_io_sel_output_dir.Bind( wx.EVT_BUTTON, self._on_click_io_sel_output_dir )
 		self._chbx_pst.Bind( wx.EVT_CHECKBOX, self._on_chbx_toggle )
 		self._btn_io_next.Bind( wx.EVT_BUTTON, self._on_click_io_next )
 		self._cbx_confidence_levels.Bind( wx.EVT_COMBOBOX, self._on_confidence_changed )
-		self._tc_confidence_interval.Bind( wx.EVT_KEY_UP, self._on_precision_changed )
+		self._tc_confidence_interval.Bind( wx.EVT_KILL_FOCUS, self._on_precision_changed )
 		self._btn_cl_goback.Bind( wx.EVT_BUTTON, self._on_click_cl_goback )
 		self._btn_cl_next.Bind( wx.EVT_BUTTON, self._on_click_cl_next )
 		self._btn_tag_goback.Bind( wx.EVT_BUTTON, self._on_click_tag_goback )
