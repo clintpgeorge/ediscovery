@@ -6,17 +6,12 @@ Created on Apr 22, 2013
 import wx
 import os
 import webbrowser 
-from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin,\
-    ColumnSorterMixin
+from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from file_utils import get_destination_file_path
-import email
-import re
-import codecs
-from utils.utils_email import  parse_plain_text_email
 
 class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
     def __init__(self, parent, rs):
-        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size( 500,200 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
+        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size( 420,200 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
         ListCtrlAutoWidthMixin.__init__(self)
         self.random_sampler = rs
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected)
@@ -31,19 +26,21 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         '''
         rs = self.random_sampler
-        if rs._lc_review_loaded: 
-            return 
+        #if rs._lc_review_loaded: 
+        #    return 
         
         # Sets the list control headers 
         
-        rs._lc_review_loaded = True 
+         
+        if rs._lc_review_loaded==True:
+            self.ClearAll()
+            
         
         self.InsertColumn(0, '#', wx.LIST_FORMAT_CENTRE, width=30)
-        self.InsertColumn(1, 'File Name', width=250)
+        self.InsertColumn(1, 'File Name', width=200)
         self.InsertColumn(2, 'Responsive', wx.LIST_FORMAT_CENTRE)
         self.InsertColumn(3, 'Privileged', wx.LIST_FORMAT_CENTRE)
-        
-        
+        rs._lc_review_loaded = True
         # Initializes from the shelf 
         
         samples_lst = rs.shelf['samples']
@@ -89,26 +86,21 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         rs._panel_doc_tags.GetParent().GetSizer().Layout()
         
         #Show the preview
-        if rs._is_pst_project:
-            print_message = ''
-            is_message_opened = False
-            try:
-                src_file_path = rs.sampled_files[rs.selected_doc_id]
-                file_path = get_destination_file_path(rs.dir_path, src_file_path, rs.output_dir_path)
-                (receiver, sender, cc, subject, body_text,bcc,date) = parse_plain_text_email(file_path, tokenize = False)
-                print_message += 'From:'+ sender +'\n'
-                print_message += 'CC:'+ cc +'\n'
-                print_message += 'BCC:'+ bcc +'\n'
-                print_message += 'To:'+ receiver +'\n'
-                print_message += 'Subject:'+ subject +'\n\n'
-                print_message += 'Body:'+ body_text +'\n'
-                print_message += 'Date:'+ date
+        print_message = ''
+        is_message_opened = False
+        try:
+            src_file_path = rs.sampled_files[rs.selected_doc_id]
+            file_path = get_destination_file_path(rs.dir_path, src_file_path, rs.output_dir_path)
+            _, fileExtension = os.path.splitext(file_path)
+            if fileExtension=="" or fileExtension==".txt":
+                with open(file_path,'r') as content:
+                    print_message+=content.read()
                 is_message_opened = True
-            except Exception as anyException:
-                print str(anyException)
-                is_message_opned = False;
-            if is_message_opened:
-                rs._tc_preview.SetValue(str(print_message))
+        except Exception as anyException:
+            is_message_opned = False;
+        if is_message_opened:
+            rs._tc_preview.SetValue(str(print_message))
+            
                 
 
     def _on_review_list_item_activated(self, event):
@@ -144,7 +136,9 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
 
 
             except Exception as anyException:
-                rs._show_error_message("Open File Error!", "The file could not be opened with the default application.")
+                pass
+                #print anyException
+                #rs._show_error_message("Open File Error!", "The file could not be opened with the default application.")
         
         else: 
             rs._show_error_message("Open File Error!", "The file does not exist!")

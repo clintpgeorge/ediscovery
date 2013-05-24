@@ -1,0 +1,28 @@
+The Random Sampler application randomly samples the files from the given data folder and copies them to the output folder. Sample Size is determined by the given confidence intervals and confidence levels.
+
+The application follows a wizard-based approach and it is divided into four sections (tabs) as described below.
+
+Data and Output Tab
+This tab helps the user to define a project. The project is defined by an input folder containing documents to be sampled, an output folder for the sampled files to be copied and a unique project name to store this project.
+
+The salient features of this tab are:
+1.	The user can select an existing project or create a new project.
+2.	On selecting an existing project, the input and output folders will be populated according to the prior values.
+NOTE-: Every project generates temporary files. If the project files are deleted, the project is no longer useable.
+3.	On selecting a new project, the project title needs to be entered before selecting the input and output folder. 
+4.	Clear button helps to clear all UI control entries.
+
+Confidence Tab
+This tab helps the user to enter the Confidence Level and Interval to generate the sample. The Confidence Level is selected from a predefined list; however the Confidence Interval is to be entered by the user. Confidence Interval is restricted to be between 0 and 100.
+
+Create Sample Tab 
+This tab serves as a review tab for the prior tabs before creating the required sample. The user must click on “Create Sample” to generate the samples before going to the next screen.
+
+Note-:  If the generated samples still exits from the previous execution of the project this step can be skipped. 
+
+Document Review Tab
+This tab is meant to review the sampled documents. Following are the salient features of this tab-:
+1.	The sampled documents along with their associated tags are listed in the table.
+2.	‘Text’ files and emails can be viewed in the document viewer besides the table. All other files (e.g. PDF, MS Word) can be open in the default system viewer by double clicking individual file rows.
+3.	After selecting a file (clicking on the required row), the appropriate tags, e.g., ‘privileged’, ‘responsive’, etc., can be selected from the extreme right panel.
+4.	HTML reports can be generated for all files, privileged files, or responsive files
