@@ -89,8 +89,9 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         print_message = ''
         is_message_opened = False
         try:
+            
             src_file_path = rs.sampled_files[rs.selected_doc_id]
-            file_path = get_destination_file_path(rs.dir_path, src_file_path, rs.output_dir_path)
+            file_path = get_destination_file_path(rs._tempdir, src_file_path, rs.output_dir_path)
             _, fileExtension = os.path.splitext(file_path)
             if fileExtension=="" or fileExtension==".txt":
                 with open(file_path,'r') as content:
@@ -100,6 +101,8 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
             is_message_opned = False;
         if is_message_opened:
             rs._tc_preview.SetValue(str(print_message))
+        else:
+            rs._tc_preview.SetValue('')
             
                 
 
@@ -118,14 +121,14 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         responsive = self.GetItem(rs.selected_doc_id, 2)
         privileged = self.GetItem(rs.selected_doc_id, 3)
         src_file_path = rs.sampled_files[rs.selected_doc_id]
-        dest_file_path = get_destination_file_path(rs.dir_path, src_file_path, rs.output_dir_path)
-        
-        
+        dest_file_path = get_destination_file_path(rs._tempdir, src_file_path, rs.output_dir_path)
+        print rs._tempdir+"\n"
         _, file_name = os.path.split(src_file_path)
         
         responsive_status = rs._rbx_responsive.GetStringSelection()
         privileged_status = rs._rbx_privileged.GetStringSelection()
 
+        print dest_file_path     
         if os.path.exists(dest_file_path):
                   
             try:
@@ -137,7 +140,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
 
             except Exception as anyException:
                 pass
-                #print anyException
+                print anyException
                 #rs._show_error_message("Open File Error!", "The file could not be opened with the default application.")
         
         else: 

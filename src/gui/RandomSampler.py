@@ -13,6 +13,7 @@ import shelve
 import subprocess
 import tempfile
 import distutils
+import shutil
 from distutils import dir_util
 
 
@@ -28,6 +29,7 @@ from pickle import TRUE, FALSE
 from multiprocessing import Event
 import shutil
 from test.test_mutants import Parent
+from wx._misc import Sleep
 
 
 
@@ -114,6 +116,7 @@ class RSConfig:
         self._modified_date = datetime.now() 
         self._tempdir=tempdir
         
+        
 
 class RandomSampler(RandomSamplerGUI,LicenseDialog):
     '''
@@ -182,6 +185,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         # Hide panel for dynamic tags
         self.nb_config_sampler.RemovePage(2);
         self.GetSizer().Layout()
+        
+        self._st_new_project_title.Show(False)
 
 
         self.Center()
@@ -318,7 +323,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             return 
     
         if os.path.exists(self.output_dir_path)==False:
-            os.mkdir(self.output_dir_path)
+            os.makedirs(self.output_dir_path)
         
         if self._is_project_loaded is False:
             self._shelf_application_setup()
@@ -381,6 +386,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         TODO: need to fix an error in application state update 
         '''
         
+        self._tc_preview.SetValue('')
         if not self._is_samples_created and self._prior_page_status < 3:
             self._show_error_message("Review Error!", "Please create the sample before go to review.")
             return 
@@ -428,13 +434,16 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             message_dialog.ShowModal()
             try:
                 wx.BeginBusyCursor()
-                self._tempdir=tempfile.mkdtemp()
-                print self._tempdir
-                distutils.dir_util.copy_tree(self.dir_path,self._tempdir)
+                self._tempdir="tmp\\"+self.project_title+"\\"
+                if(os.path.exists(self._tempdir)):
+                    shutil.rmtree(self._tempdir)
+               # os.makedirs(self._tempdir)
                 
-
+                print self._tempdir
+                shutil.copytree(self.dir_path,self._tempdir)
                 for root, _, files in os.walk(self._tempdir):
                     for file_name in files:
+                        print file_name
                         file=os.path.join(root, file_name)
                         fileName, fileExtension = os.path.splitext(file)
                         if fileExtension==".pst":
@@ -598,9 +607,11 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         This method will be a little creative 
         '''        
         #ToDo....NOT SAFE
-        
-        subprocess.check_output(['readpst', '-o', temp, '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
-        
+        try:
+            subprocess.check_output(['readpst', '-o', temp, '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
+        except Exception, e:
+            print e;
+        #print response
         for root, _, files in os.walk(temp):
             for file_name in files:
                 filename=os.path.join(root, file_name)
@@ -646,14 +657,22 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             progress_dialog = wx.ProgressDialog(
                                                 'Creating samples', 
                                                 'Please wait for a few minutes...', 
-                                                parent = self, 
-                                                style = wx.PD_ELAPSED_TIME | wx.PD_ESTIMATED_TIME | wx.PD_REMAINING_TIME)
+                                                parent = self)
             
             # Runs copy on a different thread
             thread = start_thread(self.do_copy, total_file_size, progress_dialog)
             progress_dialog.ShowModal()
-            
-
+            print "Hello2"
+            thread.join()
+            #Sleep(100)
+            print "Hello1"
+            progress_dialog.Show(False)
+            #self._btn_out_go_to_review.Enable()
+            self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
+            self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
+            self.shelf['isSampleCreated']=True
+            self._is_samples_created=True
+            self.shelf.sync()
             self.Enable(True)
             self.SetStatusText('%d samples (from %d files) are created to the output folder.' % (len(self.sampled_files), len(self.file_list)))
         
@@ -1033,7 +1052,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         '''
         
         confidence_levels = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
-        confidence_levels.sort()
+        confidence_levels.sort(reverse=True)
         self._cbx_confidence_levels.Clear()
         for cl in confidence_levels:
             self._cbx_confidence_levels.Append(cl)
@@ -1092,6 +1111,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._tc_io_new_project.SetValue("Title of new project...")
             self._cbx_project_title.Enable()
             self._is_samples_created=False
+            ##self._btn_out_go_to_review.Enable(False)
+            self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
+            self._btn_out_go_to_review.SetLabel("Please Create Samples")
+            
             
 
         self._shelf_has_cfg = False 
@@ -1100,7 +1123,16 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._shelf_has_cfg = True 
             if self.shelf.has_key('samples'):
                 self._shelf_has_samples = True
-                self._is_samples_created = True
+                if self.shelf['isSampleCreated']:
+                    self._is_samples_created = True
+                    #self._btn_out_go_to_review.Enable()
+                    self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
+                    self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
+                else:
+                    self._is_samples_created = False
+                   # #self._btn_out_go_to_review.Enable(False)
+                    self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
+                    self._btn_out_go_to_review.SetLabel("Please Create Samples")
         
         # Loads the the application state from the shelf 
         if self._shelf_has_cfg:
@@ -1186,6 +1218,11 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.shelf['config'] = cfg
         self.shelf['file_list'] = self.file_list
         self.shelf['samples'] = self.sampled_files = [] # need to reset the samples   
+        self.shelf['isSampleCreated']=False
+        self._is_samples_created=False
+        ##self._btn_out_go_to_review.Enable(False)
+        self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
+        self._btn_out_go_to_review.SetLabel("Please Create Samples")
         self.shelf.sync()
         
      
@@ -1320,6 +1357,9 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
     
     def _on_copy_enable_review(self, event):
         self._is_samples_created = True
+        #self._btn_out_go_to_review.Enable()
+        self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
+        self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
         
     
     def on_right_click_menu(self, event):
@@ -1443,12 +1483,14 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         super(RandomSampler, self)._on_click_io_sel_new_project(event)
         self.clear()
         if self._chk_io_new_project.Value==True:
+            self._st_new_project_title.Show(True)
             self._is_project_new=True
             self._tc_io_new_project.Enable()
             self._tc_io_new_project.SetValue("")
             self._cbx_project_title.Disable()
             self._cbx_project_title.SetSelection(-1)
         else:
+            self._st_new_project_title.Show(False)
             self._is_project_new=False
             self._tc_io_new_project.Disable()
             self._tc_io_new_project.SetValue("Title of new project...")

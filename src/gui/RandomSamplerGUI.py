@@ -44,7 +44,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_main = wx.BoxSizer( wx.VERTICAL )
 		
-		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"res/uflaw-edisc11.jpg", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 160,50 ), 0 )
+		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"../../../ediscovery1/src/gui/res/uflaw-edisc11.jpg", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 160,50 ), 0 )
 		bsizer_main.Add( self._bitmap_uf_logo, 0, wx.ALIGN_RIGHT|wx.ALIGN_TOP|wx.ALL, 5 )
 		
 		self.nb_config_sampler = wx.Notebook( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -142,6 +142,10 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_io.Add( _bsizer_io_clrbtns, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT, 5 )
 		
+		self._st_new_project_title = wx.StaticText( self._panel_io, wx.ID_ANY, u"New Project Title", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_new_project_title.Wrap( -1 )
+		gbsizer_io.Add( self._st_new_project_title, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
 		
 		sbsizer_io.Add( gbsizer_io, 0, wx.ALL|wx.EXPAND, 10 )
 		
@@ -203,18 +207,18 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_confidence.Add( self._st_num_samples, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT, 5 )
 		
 		self._sl_tailer2 = wx.StaticLine( self._panel_confidence, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		gbsizer_confidence.Add( self._sl_tailer2, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 6 ), wx.ALL|wx.EXPAND, 5 )
+		gbsizer_confidence.Add( self._sl_tailer2, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 6 ), wx.ALL|wx.EXPAND, 5 )
 		
 		_bsizer_cl_buttons = wx.BoxSizer( wx.HORIZONTAL )
 		
 		self._btn_cl_goback = wx.Button( self._panel_confidence, wx.ID_ANY, u"Go Back", wx.DefaultPosition, wx.DefaultSize, 0 )
 		_bsizer_cl_buttons.Add( self._btn_cl_goback, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
-		self._btn_cl_next = wx.Button( self._panel_confidence, wx.ID_ANY, u"Next ( Create sample)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_cl_next = wx.Button( self._panel_confidence, wx.ID_ANY, u"Next ( Review Sample Creation Parameters )", wx.DefaultPosition, wx.DefaultSize, 0 )
 		_bsizer_cl_buttons.Add( self._btn_cl_next, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
 		
-		gbsizer_confidence.Add( _bsizer_cl_buttons, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
+		gbsizer_confidence.Add( _bsizer_cl_buttons, wx.GBPosition( 6, 2 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
 		
 		
 		sbsizer_confidence.Add( gbsizer_confidence, 0, wx.ALL|wx.EXPAND, 10 )
@@ -381,7 +385,9 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_copy_files = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Create Sample", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bsizer_cg.Add( self._btn_copy_files, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
-		self._btn_out_go_to_review = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Next ( Go to Review )", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_out_go_to_review = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Next(Samples Created, Go to Review)", wx.DefaultPosition, wx.Size( 220,-1 ), 0 )
+		self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
 		bsizer_cg.Add( self._btn_out_go_to_review, 0, wx.ALL, 5 )
 		
 		
@@ -405,7 +411,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_create_sample.SetSizer( sbsizer_sampler )
 		self._panel_create_sample.Layout()
 		sbsizer_sampler.Fit( self._panel_create_sample )
-		self.nb_config_sampler.AddPage( self._panel_create_sample, u"Create Sample", False )
+		self.nb_config_sampler.AddPage( self._panel_create_sample, u"Create Sample", True )
 		self._panel_review = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		sbsizer_review = wx.StaticBoxSizer( wx.StaticBox( self._panel_review, wx.ID_ANY, u"Samples" ), wx.VERTICAL )
 		
@@ -499,7 +505,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", True )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", False )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		
