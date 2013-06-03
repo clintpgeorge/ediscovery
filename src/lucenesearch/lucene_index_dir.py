@@ -212,11 +212,10 @@ def search_for_query(index_dir, queryList, limit):
     searcher = IndexSearcher(store, True)
     parser = MultiFieldQueryParser(Version.LUCENE_CURRENT, queryList[1], STD_ANALYZER)
     query = parser.parse(Version.LUCENE_CURRENT, queryList[0], queryList[1], queryList[2], STD_ANALYZER)
-    start = datetime.datetime.now()
+    # start = datetime.datetime.now()
     scoreDocs = searcher.search(query, limit).scoreDocs
-    duration = datetime.datetime.now() - start
-    
-    print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
+    # duration = datetime.datetime.now() - start
+    # print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
     
     rows = []
     for scoreDoc in scoreDocs:

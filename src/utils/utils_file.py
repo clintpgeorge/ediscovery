@@ -15,6 +15,20 @@ import os
 import shutil
 import ConfigParser
 
+def nexists(file_path):
+    '''
+    Checks whether a particular file path 
+    exists. It can handle the 'NoneType' input 
+    '''
+    
+    if file_path <> None:
+        if os.path.exists(file_path):
+            return True
+        
+    return False
+        
+    
+
 def copy_files_with_dir_tree(lcp, file_paths, output_dir_path, in_file_prefix=''):
     '''Copies the files given in path list into 
     the specified output directory. The directory structure 

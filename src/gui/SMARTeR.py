@@ -7,6 +7,8 @@ import sys
 import wx 
 import shelve
 import os 
+import mimetypes
+import codecs 
 
 from lucene import BooleanClause
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin,\
@@ -19,10 +21,10 @@ from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS,\
     CHAR_LIMIT_IN_RESULTS_TAB_CELLS, SHELVE_CHUNK_SIZE, SHELVE_FILE_EXTENSION,\
     COLUMN_NUMBER_OF_RATING
 from collections import OrderedDict
-from utils.utils_file import read_config, load_file_paths_index
-from tm.lda_process_query import load_lda_variables, do_topic_search
+from utils.utils_file import read_config, load_file_paths_index, nexists
+from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, load_lsi_variables
 from const import SEARCH_RESULTS_LIMIT
-
+from index_data import index_data
 
 
 ###########################################################################
@@ -37,16 +39,34 @@ present_chunk = 0
 # # Class SMARTeR
 ###########################################################################
 
-class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, ColumnSorterMixin):
-    def __init__(self, parent):
-        wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
+class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, ColumnSorterMixin):
+    def __init__(self, parent_panel, parent_window):
+        wx.ListCtrl.__init__(self, parent_panel, -1, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
         CheckListCtrlMixin.__init__(self)
         ListCtrlAutoWidthMixin.__init__(self)
         ColumnSorterMixin.__init__(self, NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
-        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnDeSelect)
-        self.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
-        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK,self.onRightClick)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_list_item_select)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_list_item_deselect)
+        self.Bind(wx.EVT_LEFT_DCLICK, self._on_row_double_click)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._on_row_right_click)
+        self._shelve_dir = ''
+        self._parent_window = parent_window  
+        
+    def _set_table_headers(self):
+        
+        self.ClearAll()
+        columnHeaders = MetadataType._types
+        columnNumber = 0
+        for c in columnHeaders:
+            self.InsertColumn(columnNumber, c)
+            columnNumber = columnNumber + 1
+        self.InsertColumn(columnNumber, "file_id")
+        self.InsertColumn(columnNumber+1, "file_score")
+        self.InsertColumn(columnNumber+2, "rating")        
+        
+    
+    def _set_shelve_dir(self, _dir_path):
+        self._shelve_dir = _dir_path
     
     def _populate_results(self, chunk_number):
         """ Given the 'chunk_number' 
@@ -68,8 +88,11 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, Col
         items = dictionary_of_rows.items() 
         for key, row in items:
         '''
+        # Populate the column names using the metadata types from MetadataType_types &RB
+        self._set_table_headers()
+        
         # 1. Reads from that particular shelved-file
-        shelve_file = shelve.open(str(chunk_number)+SHELVE_FILE_EXTENSION)
+        shelve_file = shelve.open(os.path.join(self._shelve_dir, str(chunk_number)+SHELVE_FILE_EXTENSION))
         self.DeleteAllItems()
         global dictionary_of_rows
         dictionary_of_rows = OrderedDict()
@@ -120,74 +143,46 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, Col
                 i += 1
         #self.Refresh()
     
-    def onRightClick(self,event):
+    def _on_row_right_click(self,event):
         """Right-Clicking on a row to specify the search-relevancy of the file"""
-        #print "Right Click called .... "
-        Rating(None,self)
+        Rating(None,self,self._shelve_dir)
          
-    def OnDoubleClick(self,event):
+    def _on_row_double_click(self,event):
         focussed_item_index = self.GetFocusedItem()
         file_Name = self.GetItem(focussed_item_index,1)
         webbrowser.get().open(file_Name.GetText())
     
-    def OnSelect(self,event) :
-        pass
+    def _on_list_item_select(self,event) :
+        '''
+        Handles the result list row select event 
+        '''
+        
+        focussed_item_index = self.GetFocusedItem()
+        file_name = self.GetItem(focussed_item_index, 1).GetText()
+        _, file_ext = os.path.splitext(file_name)
+        msg_text = 'Cannot open "%s" in this viewer! Please double click the row to open the file in a default system file viewer.' % file_name
+        try: 
+            if file_ext == '.txt' or file_ext == '':                
+                with open(file_name) as fp:
+                    msg_text = fp.read()            
+            else:
+                file_type, _ = mimetypes.guess_type(file_name, strict=True)
+                msg_text = 'Cannot open "%s (type:%s)" in this viewer! Please double click the row to open the file in a default system file viewer.' % (file_name, file_type)
+        except:
+            pass             
+            
+        self._parent_window._tc_file_preview_pane.SetValue(msg_text)
     
-    def OnDeSelect(self,event) :
-        pass
+    def _on_list_item_deselect(self,event) :
+        self._parent_window._tc_file_preview_pane.SetValue('')
     
     def GetListCtrl(self):
         return self
     
-    def OnColClick(self, event):
+    def _on_header_column_click(self, event):
         """
-        This method is used to sort the rows in the RESULTS CheckListCtrl
+        This method is used to sort the rows in the RESULTS ResultsCheckListCtrl
         """
-        ''' Have commented the below block since 'sorting' has been implemented
-            inside the populate_results
-        
-            #self.itemDataMap = dictionary_of_rows
-            oldCol = self._col
-            self._col = col = event.GetColumn()
-            print "Clicked on column ", self._col
-            #self._colSortFlag[col] = int(not self._colSortFlag[col])
-            #self.GetListCtrl().SortItems(self.GetColumnSorter        
-            #self.SortListItems(col, 0)  # 0 => descending order        
-            # Once the contents of the listCtrl are sorted, update the dictionary too (to preserve the order)        
-            #print dictionary_of_rows.keys()
-            
-            if col == 9: # 9 is the column number of Rating
-                global dictionary_of_rows
-                dictionary_sorted_as_list = sorted(dictionary_of_rows.items(), key=lambda (k, v): v[9], reverse=True)
-                keys = map(lambda (k,v): k, dictionary_sorted_as_list)
-                values = map(lambda (k,v): v, dictionary_sorted_as_list)
-                dictionary_of_rows = OrderedDict( zip(keys, values) )
-                
-                print dictionary_of_rows.keys()
-                ratings = []
-                for v in dictionary_of_rows.values():
-                    ratings.append(v[9])
-                print ratings
-                # Must now rewrite the shelved-file-chunk with the sorted dictionary_of_rows
-                items = dictionary_of_rows.items()
-                
-                fileName = str(present_chunk)
-                fileName = fileName + SHELVE_FILE_EXTENSION
-                shelve_file = shelve.open(fileName)
-                # First, delete the contents of the shelved-file
-                for key,value in items:
-                    print "Deleting key = ", key
-                    del shelve_file[str(key)]
-                # Then fill the file with the sorted dictionary contents
-                for key,row in items:
-                    shelve_file[str(key)] = row;
-                shelve_file.close()
-                
-                self._populate_results(present_chunk)
-                self.Refresh()
-        '''
-        
-        # For now, just call _populate_results since it internally does the sorting 
         self._populate_results(present_chunk)
         
 
@@ -200,19 +195,22 @@ class Rating (RatingControl):
     selected_record_index = None
     checklist_control = None
     
-    def __init__(self, parent, checklist_control):
+    def __init__(self, parent, checklist_control, _shelve_dir):
         """ Calls the parent class's method """ 
         super(Rating, self).__init__(parent) 
         self.Center()
         self.Show(True)
         self.checklist_control = checklist_control
         self.selected_record_index = checklist_control.GetFocusedItem()
-        #print self.selected_record_index
         
         #If the Relevance-recording window is opened again, it must show the score already given  
         relevance_score = checklist_control.GetItem(self.selected_record_index,COLUMN_NUMBER_OF_RATING)
-        self.radio_control.SetSelection( int(relevance_score.GetText()) )
+        # self.radio_control.SetSelection( int(relevance_score.GetText()) )
         
+        self._rating_slider.SetValue(int(relevance_score.GetText()))
+        self._shelve_dir = _shelve_dir
+    
+
     def _on_btn_click_submit(self, event):
         """
         1. Updates the Relevance column with the given rating
@@ -221,7 +219,8 @@ class Rating (RatingControl):
         """
 
         # 1. Updates the Relevance column with the given rating
-        rating = self.radio_control.GetSelection()
+        # rating = self.radio_control.GetSelection()
+        rating = self._rating_slider.GetValue()
         self.checklist_control.SetStringItem(self.selected_record_index, COLUMN_NUMBER_OF_RATING, str(rating))
         
         # Statements to just debug
@@ -232,7 +231,7 @@ class Rating (RatingControl):
         # 2. Stores this new rating in the dictionary
         dictionary_of_rows[str(selected_row_in_dict)][-1] = str(rating)
 
-        shelve_file = shelve.open( str(present_chunk)+ SHELVE_FILE_EXTENSION )
+        shelve_file = shelve.open(os.path.join(self._shelve_dir, str(present_chunk)+ SHELVE_FILE_EXTENSION ) )
         row = shelve_file[str(selected_row_in_dict)]
         #print "Before SUBMIT : ", shelve_file[str(selected_row_in_dict)]
         row[-1] = str(rating)
@@ -257,10 +256,26 @@ class SMARTeR (SMARTeRGUI):
         self._is_lucene_index_available = False 
         self._is_tm_index_available = False
         self._current_page = 0
+        self._shelve_dir = ''
+        self._shelve_file_names = []
         self._add_query_results_panel()
         self._populate_comboBox()
+        self._reset_defaults_indexing_preferences()        
         self.Center()
         self.Show(True)
+        
+    def _reset_defaults_indexing_preferences(self):
+        
+        self._num_topics = 50
+        self._tc_num_topics.SetValue('50')
+        self._num_passes = 1
+        self._tc_num_passes.SetValue('1')
+        self._min_token_freq = 1 
+        self._tc_min_token_freq.SetValue('1')
+        self._min_token_len = 2
+        self._tc_min_token_len.SetValue('2')
+
+        
 
     def _populate_comboBox(self):
         '''
@@ -304,19 +319,19 @@ class SMARTeR (SMARTeRGUI):
         _panel_left = wx.Panel(self._panel_query_results, -1)
         _panel_right = wx.Panel(self._panel_query_results, -1)
 
-        self._tc_files_log = wx.TextCtrl(_panel_right, -1, style=wx.TE_MULTILINE, size=(-1, 100))
-        self._lc_results = CheckListCtrl(_panel_right)
+        self._st_file_preview_header = wx.StaticText(_panel_right, -1, 'File Review Pane (Text Files)')
+        self._tc_file_preview_pane = wx.TextCtrl(_panel_right, -1, style=wx.TE_MULTILINE|wx.TE_READONLY, size=(-1, 200))
+        self._lc_results = ResultsCheckListCtrl(_panel_right, self)
+        self._lc_results._set_table_headers() # Populate the column names using the metadata types from MetadataType_types &RB
 
-        
-        # Populate the column names using the metadata types from MetadataType_types &RB
-        columnHeaders = MetadataType._types
-        columnNumber = 0
-        for c in columnHeaders:
-            self._lc_results.InsertColumn(columnNumber,c )
-            columnNumber = columnNumber + 1
-        self._lc_results.InsertColumn(columnNumber, "file_id")
-        self._lc_results.InsertColumn(columnNumber+1, "file_score")
-        self._lc_results.InsertColumn(columnNumber+2, "rating")
+#        columnHeaders = MetadataType._types
+#        columnNumber = 0
+#        for c in columnHeaders:
+#            self._lc_results.InsertColumn(columnNumber,c )
+#            columnNumber = columnNumber + 1
+#        self._lc_results.InsertColumn(columnNumber, "file_id")
+#        self._lc_results.InsertColumn(columnNumber+1, "file_score")
+#        self._lc_results.InsertColumn(columnNumber+2, "rating")
         
         vbox2 = wx.BoxSizer(wx.VERTICAL)
 
@@ -342,7 +357,9 @@ class SMARTeR (SMARTeRGUI):
 
         vbox.Add(self._lc_results, 1, wx.EXPAND | wx.TOP, 3)
         vbox.Add((-1, 10))
-        vbox.Add(self._tc_files_log, 0.5, wx.EXPAND)
+        vbox.Add(self._st_file_preview_header, 0.5, wx.EXPAND)
+        vbox.Add((-1, 5))
+        vbox.Add(self._tc_file_preview_pane, 0.5, wx.EXPAND)
         vbox.Add((-1, 10))
 
         _panel_right.SetSizer(vbox)
@@ -353,7 +370,7 @@ class SMARTeR (SMARTeRGUI):
 
         self._panel_query_results.SetSizer(hbox)
     
-    def _create_persistent_shelves(self,items):
+    def _create_persistent_shelves(self, items):
         """
             Stores the query-results into shelves. 
             *** Currently, the shelved files are named chunkNumber.shelve ***
@@ -361,20 +378,31 @@ class SMARTeR (SMARTeRGUI):
                 the query string
             ***
         """
+        self._shelve_file_names = []
         chunk_number = -1;
         shelve_file = None
         for key,row in items:
             if(int(key) % SHELVE_CHUNK_SIZE == 0):
                 chunk_number = chunk_number + 1 
                 fileName = str(chunk_number)
-                fileName = fileName + SHELVE_FILE_EXTENSION
+                fileName = os.path.join(self._shelve_dir, fileName + SHELVE_FILE_EXTENSION)
+                self._shelve_file_names.append(fileName)
                 if shelve_file is not None: 
                     shelve_file.close()
                 shelve_file = shelve.open(fileName)
             shelve_file[str(key)] = row;
         global num_of_chunks
-        num_of_chunks = chunk_number+1
+        num_of_chunks = chunk_number + 1
         shelve_file.close()
+        
+    def _reset_persistent_shelves(self):
+        '''
+        Removes all existing shelves 
+        '''
+        for file_name in self._shelve_file_names:
+            os.remove( file_name ) 
+        global num_of_chunks
+        num_of_chunks = 0
     
     def _on_click_next(self,event):
         global present_chunk
@@ -404,11 +432,12 @@ class SMARTeR (SMARTeRGUI):
             self._lc_results.CheckItem(i, False)
 
     def _on_click_log_files(self, event):
-        num = self._lc_results.GetItemCount()
-        for i in range(num):
-            if i == 0: self._tc_files_log.Clear()
-            if self._lc_results.IsChecked(i):
-                self._tc_files_log.AppendText(self._lc_results.GetItemText(i) + '\n')
+#        num = self._lc_results.GetItemCount()
+#        for i in range(num):
+#            if i == 0: self._tc_files_log.Clear()
+#            if self._lc_results.IsChecked(i):
+#                self._tc_files_log.AppendText(self._lc_results.GetItemText(i) + '\n')
+        None 
     
     def _on_file_change_mdl(self, event):
         '''
@@ -425,7 +454,6 @@ class SMARTeR (SMARTeRGUI):
             self._file_picker_mdl.SetPath("")
             self.mdl_cfg = None 
             
-
         
     def _load_model(self, model_cfg_file):
         '''
@@ -438,31 +466,46 @@ class SMARTeR (SMARTeRGUI):
         
         self.mdl_cfg = read_config(model_cfg_file)
         
-        # Loads LDA model files 
+        self._shelve_dir = self.mdl_cfg['DATA']['project_dir']
+        
+        # Retrieve topic model file names 
         
         dictionary_file = self.mdl_cfg['CORPUS']['dict_file']
         path_index_file = self.mdl_cfg['CORPUS']['path_index_file']
         lda_mdl_file = self.mdl_cfg['LDA']['lda_model_file']
         lda_cos_index_file = self.mdl_cfg['LDA']['lda_cos_index_file']
+#        lsi_mdl_file = self.mdl_cfg['LSI']['lsi_model_file']
+#        lsi_cos_index_file = self.mdl_cfg['LSI']['lsi_cos_index_file']
+        
 
-        # Loads the LDA model and file details 
-        if dictionary_file <> None and path_index_file <> None and lda_mdl_file <> None and lda_cos_index_file <> None: 
-            if os.path.exists(dictionary_file) and os.path.exists(path_index_file) and os.path.exists(lda_mdl_file) and os.path.exists(lda_cos_index_file):
-                self.lda_file_path_index = load_file_paths_index(path_index_file)
-                self.lda_dictionary, self.lda_mdl, self.lda_index = load_lda_variables(dictionary_file, lda_mdl_file, lda_cos_index_file)
-                self.lda_num_files = len(self.lda_file_path_index)
-                self.lda_vocab_size = len(self.lda_dictionary)        
+        # Loads learned topic models and file details 
+        if nexists(dictionary_file) and nexists(path_index_file):
+                
+            self.lda_file_path_index = load_file_paths_index(path_index_file)
+            self.lda_dictionary = load_dictionary(dictionary_file)
+            self.lda_num_files = len(self.lda_file_path_index)
+            self.lda_vocab_size = len(self.lda_dictionary)        
+            
+            # loads LDA model details 
+            if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
+                self.lda_mdl, self.lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
                 self._is_tm_index_available = True  
-                self._tc_available_mdl.AppendText('[LDA] ')               
+                self._tc_available_mdl.AppendText('[LDA] ')    
+                    
+#            # loads LSI model details 
+#            if nexists(lsi_mdl_file) and nexists(lsi_cos_index_file):
+#                self.lsi_mdl, self.lsi_index = load_lsi_variables(lsi_mdl_file, lsi_cos_index_file)
+#                self._is_tm_index_available = True  
+#                self._tc_available_mdl.AppendText('[LSI] ')    
+                                   
 
         # Loads Lucene index files 
         lucene_dir = self.mdl_cfg['LUCENE']['lucene_index_dir']
         
-        if lucene_dir <> None:
-            if os.path.exists(lucene_dir):
-                self.lucene_index_dir = lucene_dir
-                self._is_lucene_index_available = True  
-                self._tc_available_mdl.AppendText('[LUCENE] ')  
+        if nexists(lucene_dir):
+            self.lucene_index_dir = lucene_dir
+            self._is_lucene_index_available = True  
+            self._tc_available_mdl.AppendText('[LUCENE] ')  
          
 
 
@@ -494,15 +537,22 @@ class SMARTeR (SMARTeRGUI):
         1. Parse the query
         2. Run Lucene query 
         3. Put the results to the dictionary_of_rows
+        
+        
+        TODO: 
+            1. we need to clear the current shelf before we do a new search 
         """
         
         facet_search = self._chbx_facet_search.GetValue()
         topic_search = self._chbx_topic_search.GetValue()
         
+        # print facet_search, topic_search
+        
         # 1. Parse the query
         
         global dictionary_of_rows
-        queryText = self._tc_query.GetValue().strip() #'email_body:senorita:MUST'
+        dictionary_of_rows = OrderedDict()
+        queryText = self._tc_query.GetValue().strip() 
 
         # 0. Validations 
         if not self._is_lucene_index_available:
@@ -530,7 +580,7 @@ class SMARTeR (SMARTeRGUI):
         
         for l in filteredQuery:
             res = re.split(':', l )
-            print res 
+            # print res 
             if len(res) > 1:
                 fields.append(res[0])
                 queries.append(res[1])
@@ -555,8 +605,8 @@ class SMARTeR (SMARTeRGUI):
             
         if topic_search: 
             query_text = ' '.join(queries) # combines all the text in a query model 
-            ts_results = do_topic_search(query_text, self.lda_dictionary, self.lda_mdl, self.lda_index, self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
-            ## ts_results are in this format (idx, root, file_name) 
+            ts_results = search_lda_model(query_text, self.lda_dictionary, self.lda_mdl, self.lda_index, self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
+            ## ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
             ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index 
             
         if facet_search and not topic_search: 
@@ -571,25 +621,30 @@ class SMARTeR (SMARTeRGUI):
         if len(rows) == 0: return 
         
         # 3. Put the results to the dictionary_of_rows
+        
         key = 0 
         for row in rows:
-            file_id = row[9] # key is obtained from the lucene index
-            #print retrieve_document_details(file_id, self.lucene_index_dir).get('email_subject')
+            # file_id = row[9] # key is obtained from the lucene index
+            # print retrieve_document_details(file_id, self.lucene_index_dir).get('email_subject')
             file_details = row # values of the defined MetadataTypes 
             file_details.append('0') # Add a 'relevance' value of '0' to each search-result
         
             dictionary_of_rows.__setitem__(str(key), file_details)
             key += 1
+            
 
+        self._lc_results._set_shelve_dir(self._shelve_dir)
         self._lc_results.itemDataMap = dictionary_of_rows
-        self._lc_results.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results.OnColClick)
+        self._lc_results.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results._on_header_column_click)
 
+        
         items = dictionary_of_rows.items()
+        self._reset_persistent_shelves()
         self._create_persistent_shelves(items)
         global present_chunk
         present_chunk = 0
         self._lc_results._populate_results(present_chunk)
-        self._tc_files_log.SetValue('')
+        self._tc_file_preview_pane.SetValue('')
         
         
         # Goes to the results tab 
@@ -597,7 +652,60 @@ class SMARTeR (SMARTeRGUI):
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
       
-      
+    def _on_click_index_data( self, event ):
+        '''
+        Handles the data folder files' indexing and topic modeling 
+         
+         
+        TODO: 
+            1. validations to be done 
+        
+        '''
+        
+        project_name = self._tc_project_name.GetValue()
+        data_folder = self._data_dir_picker.GetPath()
+        output_folder = self._application_dir_picker.GetPath()
+        
+        # print project_name, data_folder, output_folder, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len
+        
+        index_data(data_folder, output_folder, project_name, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len, log_to_file=True)
+
+        # TODO need to show a status bar with execution status 
+        
+        
+    def _on_click_clear_project_details(self, event):
+        '''
+        Clears the project details 
+        
+        '''
+        
+        self._tc_project_name.SetValue('')
+        self._data_dir_picker.SetPath('')
+        self._application_dir_picker.SetPath('')
+        
+        
+    def _on_click_reset_defaults_indexing_preferences(self, event):
+        '''
+        Resets the indexing preferences to the default values 
+        
+        '''
+        
+        self._reset_defaults_indexing_preferences()
+        
+        
+    def _on_click_save_indexing_preferences(self, event):
+        '''
+        Saves the indexing preferences to the class variables 
+        
+        TODO: 
+            1. Need to save all these variables into the persistent storage 
+            2. Need to handle validations such as clicking another tab, negative values, etc. 
+        '''
+                
+        self._num_topics = int(self._tc_num_topics.GetValue().strip())
+        self._num_passes = int(self._tc_num_passes.GetValue().strip())
+        self._min_token_freq = int(self._tc_min_token_freq.GetValue().strip())
+        self._min_token_len = int(self._tc_min_token_len.GetValue().strip()) 
 
         
 def main():
