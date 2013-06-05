@@ -8,13 +8,13 @@ import wx
 import shelve
 import os 
 import mimetypes
-import codecs 
+
 
 from lucene import BooleanClause
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin,\
     ColumnSorterMixin
 from gui.SMARTeRGUI import SMARTeRGUI,RatingControl
-from lucenesearch.lucene_index_dir import search_for_query, MetadataType, get_indexed_file_details
+from lucenesearch.lucene_index_dir import search_lucene_index, MetadataType, get_indexed_file_details
 import re
 import webbrowser
 from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS,\
@@ -306,10 +306,12 @@ class SMARTeR (SMARTeRGUI):
         self._notebook.ChangeSelection(self._current_page)
 
     def _on_chbx_topic_search( self, event ):
-        self._chbx_facet_search.SetValue(False)
+        # self._chbx_facet_search.SetValue(False)
+        pass 
     
     def _on_chbx_facet_search( self, event ):
-        self._chbx_topic_search.SetValue(False)
+        pass 
+        # self._chbx_topic_search.SetValue(False)
         
     def _add_query_results_panel(self):
         
@@ -601,7 +603,7 @@ class SMARTeR (SMARTeRGUI):
         ts_results = [] 
         
         if facet_search:
-            fs_results = search_for_query(self.lucene_index_dir, queryList, SEARCH_RESULTS_LIMIT)
+            fs_results = search_lucene_index(self.lucene_index_dir, queryList, SEARCH_RESULTS_LIMIT)
             
         if topic_search: 
             query_text = ' '.join(queries) # combines all the text in a query model 
@@ -610,13 +612,13 @@ class SMARTeR (SMARTeRGUI):
             ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index 
             
         if facet_search and not topic_search: 
-            # 2. Run Lucene query      
+            # 2. Run Lucene query
             rows = fs_results
         elif not facet_search and topic_search: 
             rows = ts_results
         elif facet_search and topic_search: 
-            # TODO need to combine results  
-            rows = fs_results
+            # Combine results  
+            rows = self.combine_lucene_tm_results(fs_results, ts_results)
             
         if len(rows) == 0: return 
         
@@ -651,6 +653,38 @@ class SMARTeR (SMARTeRGUI):
         self._current_page = 2
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
+        
+    
+    def combine_lucene_tm_results(self, fs_results, ts_results):
+        
+        num_metadata_types = len(MetadataType._types)
+        default_lowest_score = -99999
+        
+        def get_tm_score(file_id, ts_results):
+            '''
+            TODO: Need to improve this logic. It'd be 
+            good if we can keep the scores in a dictionary. 
+            Otherwise, this function will be in efficient 
+            '''
+            
+            for ts_row in ts_results:
+                if ts_row[num_metadata_types] == file_id:
+                    return ts_row[num_metadata_types + 1]
+                
+            return default_lowest_score    
+        
+        
+        rows = [] 
+        
+        for fs_row in fs_results:
+            tm_score = get_tm_score(fs_row[num_metadata_types], ts_results)
+            fs_row[num_metadata_types + 1] = tm_score
+            rows.append(fs_row) 
+            print fs_row
+        
+        return rows 
+        
+    
       
     def _on_click_index_data( self, event ):
         '''

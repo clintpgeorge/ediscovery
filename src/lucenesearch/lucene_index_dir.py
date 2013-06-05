@@ -180,7 +180,7 @@ def get_indexed_file_details(ts_results, lucene_index_dir):
             else: 
                 row.append('')
         row.append(str(table.get(MetadataType.FILE_ID,'empty')))
-        row.append(str(rs[3]))
+        row.append(str(rs[3])) # similarity score
         
         rows.append(row)
     
@@ -203,19 +203,26 @@ def retrieve_document_details(docid, index_dir):
     return document
 
 
-def search_for_query(index_dir, queryList, limit):
+def search_lucene_index(index_dir, query_model, limit):
     '''
-    This function searches the corpus for emails that match the queryList
-    queryList
+    This function searches query model (query terms along with their 
+    meta data) in the learned lucene index
+    
+    Arguments: 
+        index_dir - the lucene index directory 
+        query_model - the query model (contains query terms, meta data, and conjunctions) 
+        limit - the number of records to be retrieved 
+    Return: 
+        rows - the returned document details 
+    
     '''
     store = SimpleFSDirectory(File(index_dir))
     searcher = IndexSearcher(store, True)
-    parser = MultiFieldQueryParser(Version.LUCENE_CURRENT, queryList[1], STD_ANALYZER)
-    query = parser.parse(Version.LUCENE_CURRENT, queryList[0], queryList[1], queryList[2], STD_ANALYZER)
-    # start = datetime.datetime.now()
+    parser = MultiFieldQueryParser(Version.LUCENE_CURRENT, query_model[1], STD_ANALYZER)
+    query = parser.parse(Version.LUCENE_CURRENT, query_model[0], query_model[1], query_model[2], STD_ANALYZER)
     scoreDocs = searcher.search(query, limit).scoreDocs
-    # duration = datetime.datetime.now() - start
-    # print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
+    
+    print "Found %d document(s) that matched query '%s':" %(len(scoreDocs), query)
     
     rows = []
     for scoreDoc in scoreDocs:
@@ -225,13 +232,13 @@ def search_for_query(index_dir, queryList, limit):
         row = []
         metadata = MetadataType._types
         for field in metadata:
-            #print field+' : '+table.get(field,'empty')
             if table.get(field,'empty') != 'empty' :
                 row.append(table.get(field,'empty'))
             else: 
                 row.append('')
-        row.append(str(table.get(MetadataType.FILE_ID,'empty')))
+        row.append(str(table.get(MetadataType.FILE_ID,'empty'))) # the unique file id of a file 
         row.append('')
         rows.append(row)
     
     return rows
+
