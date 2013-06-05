@@ -55,7 +55,7 @@ The following are some useful ***git*** commands
 - Use [argparse](http://docs.python.org/2/howto/argparse.html) for handling arguments 
 - Use no hard coding in functions except for the test scripts, try to pass all constants as function parameters
 
-**pyLucene installation**
+**pyLucene Installation**
 
 **Ubuntu**
 
@@ -78,6 +78,11 @@ The following are some useful ***git*** commands
 - Install Java JDK (32 bit) latest version 
 - Install Python [setup tools](http://pypi.python.org/pypi/setuptools) 
 - Follow instructions in [pyLucene Extra](https://code.google.com/a/apache-extras.org/p/pylucene-extra/wiki/PyLucene). Direct installation using the installation files from the Apache site is cumbersome some times. 
+
+
+**Topic Modeling**
+
+- Topic modeling is performed using the package Gensim -- http://radimrehurek.com/gensim/ 
 
 --------------------------------------
 
