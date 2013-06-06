@@ -53,7 +53,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
             file_id += 1            
         
     def _on_review_list_item_selected(self, event):
-
+        
         # Gets the selected row's details 
         
         rs = self.random_sampler
@@ -111,7 +111,6 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         Handles the list control row double click event 
         
         '''
-        
         # Gets the selected row's details 
         rs = self.random_sampler
         rs.selected_doc_id = self.GetFocusedItem()
@@ -122,13 +121,14 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         privileged = self.GetItem(rs.selected_doc_id, 3)
         src_file_path = rs.sampled_files[rs.selected_doc_id]
         dest_file_path = get_destination_file_path(rs._tempdir, src_file_path, rs.output_dir_path)
-        print rs._tempdir+"\n"
+        #print rs._tempdir+"\n"
+        
         _, file_name = os.path.split(src_file_path)
         
         responsive_status = rs._rbx_responsive.GetStringSelection()
         privileged_status = rs._rbx_privileged.GetStringSelection()
 
-        print dest_file_path     
+        #print dest_file_path     
         if os.path.exists(dest_file_path):
                   
             try:

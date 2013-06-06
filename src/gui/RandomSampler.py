@@ -259,7 +259,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.nb_config_sampler.ChangeSelection(self._current_page)
         
     def _on_update_project_name(self, event):
-        print str(event)
+        
         self.project_title = self._cbx_project_title.GetValue()
         # Enable all controls
         if self.project_title not in self._cbx_project_title.GetStrings() or self.project_title == '':     
@@ -323,7 +323,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             return 
     
         if os.path.exists(self.output_dir_path)==False:
-            os.makedirs(self.output_dir_path)
+            os.mkdir(self.output_dir_path)
         
         if self._is_project_loaded is False:
             self._shelf_application_setup()
@@ -437,13 +437,11 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 self._tempdir="tmp\\"+self.project_title+"\\"
                 if(os.path.exists(self._tempdir)):
                     shutil.rmtree(self._tempdir)
-               # os.makedirs(self._tempdir)
-                
-                print self._tempdir
                 shutil.copytree(self.dir_path,self._tempdir)
+                
+
                 for root, _, files in os.walk(self._tempdir):
                     for file_name in files:
-                        print file_name
                         file=os.path.join(root, file_name)
                         fileName, fileExtension = os.path.splitext(file)
                         if fileExtension==".pst":
@@ -462,8 +460,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self._tc_out_data_dir.SetValue(self.dir_path)
         self._tc_project_title.SetValue(self.project_title)
         
-        self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
-        self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
+        self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+        self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
         self._is_io_updated = True
     
     def _generate_file_samples(self):
@@ -607,11 +605,9 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         This method will be a little creative 
         '''        
         #ToDo....NOT SAFE
-        try:
-            subprocess.check_output(['readpst', '-o', temp, '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
-        except Exception, e:
-            print e;
-        #print response
+        
+        subprocess.check_output(['readpst', '-o', temp, '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
+        
         for root, _, files in os.walk(temp):
             for file_name in files:
                 filename=os.path.join(root, file_name)
@@ -662,14 +658,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             # Runs copy on a different thread
             thread = start_thread(self.do_copy, total_file_size, progress_dialog)
             progress_dialog.ShowModal()
-            print "Hello2"
             thread.join()
-            #Sleep(100)
-            print "Hello1"
             progress_dialog.Show(False)
-            #self._btn_out_go_to_review.Enable()
+            self._btn_out_go_to_review.SetFocus()
             self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
-            self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
             self.shelf['isSampleCreated']=True
             self._is_samples_created=True
             self.shelf.sync()
@@ -1113,7 +1105,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._is_samples_created=False
             ##self._btn_out_go_to_review.Enable(False)
             self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
-            self._btn_out_go_to_review.SetLabel("Please Create Samples")
+            #self._btn_out_go_to_review.SetLabel("Please Create Samples")
             
             
 
@@ -1127,12 +1119,12 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                     self._is_samples_created = True
                     #self._btn_out_go_to_review.Enable()
                     self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
-                    self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
+                    #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
                 else:
                     self._is_samples_created = False
-                   # #self._btn_out_go_to_review.Enable(False)
+                    #self._btn_out_go_to_review.Enable(False)
                     self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
-                    self._btn_out_go_to_review.SetLabel("Please Create Samples")
+                    #self._btn_out_go_to_review.SetLabel("Please Create Samples")
         
         # Loads the the application state from the shelf 
         if self._shelf_has_cfg:
@@ -1145,7 +1137,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._prior_page_status = cfg._current_page
             self._tempdir=cfg._tempdir
             
-            #print os.getcwd()
             if os.path.isdir(self._tempdir)==False:
                     self._show_error_message("Read Error","Temporary Folder corresponding to missing, Project will be deleted")
                     self.shelf.close()
@@ -1175,8 +1166,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._tc_out_data_dir.SetValue(self.dir_path)
             self._tc_out_output_dir.SetValue(self.output_dir_path)
             self._tc_project_title.SetValue(self.project_title)
-            self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
-            self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
+            self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+            self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
             
             # for confidence interval 
             str_confidence_level = str(self.confidence_val * Decimal('100'))
@@ -1222,7 +1213,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self._is_samples_created=False
         ##self._btn_out_go_to_review.Enable(False)
         self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
-        self._btn_out_go_to_review.SetLabel("Please Create Samples")
+        #self._btn_out_go_to_review.SetLabel("Please Create Samples")
         self.shelf.sync()
         
      
@@ -1359,7 +1350,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self._is_samples_created = True
         #self._btn_out_go_to_review.Enable()
         self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
-        self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
+        #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
         
     
     def on_right_click_menu(self, event):
@@ -1459,7 +1450,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.dir_path=""
         self.output_dir_path=""
         self.project_title=""
-        self._st_num_data_dir_files.SetLabel('0 documents available')
+        self._st_num_data_dir_files.SetLabel('0 documents')
             
     def _on_click_license(self,event):
         super(RandomSampler, self)._on_click_license(event)

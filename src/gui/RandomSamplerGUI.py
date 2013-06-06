@@ -44,7 +44,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_main = wx.BoxSizer( wx.VERTICAL )
 		
-		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"../../../ediscovery1/src/gui/res/uflaw-edisc11.jpg", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 160,50 ), 0 )
+		self._bitmap_uf_logo = wx.StaticBitmap( self, wx.ID_ANY, wx.Bitmap( u"res/uflaw-edisc11.jpg", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 160,50 ), 0 )
 		bsizer_main.Add( self._bitmap_uf_logo, 0, wx.ALIGN_RIGHT|wx.ALIGN_TOP|wx.ALL, 5 )
 		
 		self.nb_config_sampler = wx.Notebook( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -116,12 +116,16 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_io_sel_output_dir = wx.Button( self._panel_io, wx.ID_ANY, u"Select", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbsizer_io.Add( self._btn_io_sel_output_dir, wx.GBPosition( 7, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._st_num_data_dir_files = wx.StaticText( self._panel_io, wx.ID_ANY, u"0 documents available", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self._st_num_data_dir_files = wx.StaticText( self._panel_io, wx.ID_ANY, u"0 documents", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self._st_num_data_dir_files.Wrap( -1 )
 		self._st_num_data_dir_files.SetFont( wx.Font( 8, 72, 94, 90, False, wx.EmptyString ) )
 		self._st_num_data_dir_files.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		gbsizer_io.Add( self._st_num_data_dir_files, wx.GBPosition( 6, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT, 5 )
+		
+		self._st_new_project_title = wx.StaticText( self._panel_io, wx.ID_ANY, u"Enter New Project Title", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_new_project_title.Wrap( -1 )
+		gbsizer_io.Add( self._st_new_project_title, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._sl_tailer1 = wx.StaticLine( self._panel_io, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_io.Add( self._sl_tailer1, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 6 ), wx.ALL|wx.EXPAND, 5 )
@@ -142,10 +146,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_io.Add( _bsizer_io_clrbtns, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT, 5 )
 		
-		self._st_new_project_title = wx.StaticText( self._panel_io, wx.ID_ANY, u"New Project Title", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_new_project_title.Wrap( -1 )
-		gbsizer_io.Add( self._st_new_project_title, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
 		
 		sbsizer_io.Add( gbsizer_io, 0, wx.ALL|wx.EXPAND, 10 )
 		
@@ -153,7 +153,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_io.SetSizer( sbsizer_io )
 		self._panel_io.Layout()
 		sbsizer_io.Fit( self._panel_io )
-		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", False )
+		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", True )
 		self._panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -214,11 +214,11 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_cl_goback = wx.Button( self._panel_confidence, wx.ID_ANY, u"Go Back", wx.DefaultPosition, wx.DefaultSize, 0 )
 		_bsizer_cl_buttons.Add( self._btn_cl_goback, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
-		self._btn_cl_next = wx.Button( self._panel_confidence, wx.ID_ANY, u"Next ( Review Sample Creation Parameters )", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_cl_next = wx.Button( self._panel_confidence, wx.ID_ANY, u"Next ( Review Sample Creation Parameters)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		_bsizer_cl_buttons.Add( self._btn_cl_next, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
 		
-		gbsizer_confidence.Add( _bsizer_cl_buttons, wx.GBPosition( 6, 2 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
+		gbsizer_confidence.Add( _bsizer_cl_buttons, wx.GBPosition( 6, 1 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
 		
 		
 		sbsizer_confidence.Add( gbsizer_confidence, 0, wx.ALL|wx.EXPAND, 10 )
@@ -370,7 +370,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_sampler1.Add( self._st_out_num_samples, wx.GBPosition( 8, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT, 5 )
 		
-		self._st_out_num_data_dir_files = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"0 documents available", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self._st_out_num_data_dir_files = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"0 documents", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self._st_out_num_data_dir_files.Wrap( -1 )
 		self._st_out_num_data_dir_files.SetFont( wx.Font( 8, 72, 94, 90, False, wx.EmptyString ) )
 		self._st_out_num_data_dir_files.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
@@ -385,8 +385,8 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._btn_copy_files = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Create Sample", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bsizer_cg.Add( self._btn_copy_files, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
-		self._btn_out_go_to_review = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Next(Samples Created, Go to Review)", wx.DefaultPosition, wx.Size( 220,-1 ), 0 )
-		self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		self._btn_out_go_to_review = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Next ( Go to Review )", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
 		
 		bsizer_cg.Add( self._btn_out_go_to_review, 0, wx.ALL, 5 )
 		
@@ -411,7 +411,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_create_sample.SetSizer( sbsizer_sampler )
 		self._panel_create_sample.Layout()
 		sbsizer_sampler.Fit( self._panel_create_sample )
-		self.nb_config_sampler.AddPage( self._panel_create_sample, u"Create Sample", True )
+		self.nb_config_sampler.AddPage( self._panel_create_sample, u"Create Sample", False )
 		self._panel_review = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		sbsizer_review = wx.StaticBoxSizer( wx.StaticBox( self._panel_review, wx.ID_ANY, u"Samples" ), wx.VERTICAL )
 		
@@ -477,6 +477,10 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._tc_preview.SetMinSize( wx.Size( 320,230 ) )
 		
 		gbsizer_review.Add( self._tc_preview, wx.GBPosition( 3, 4 ), wx.GBSpan( 4, 4 ), wx.ALL, 5 )
+		
+		self.m_staticText25 = wx.StaticText( self._panel_review, wx.ID_ANY, u"File Preview (Only Emails and Text)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText25.Wrap( -1 )
+		gbsizer_review.Add( self.m_staticText25, wx.GBPosition( 2, 4 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
 		self._sl_header31 = wx.StaticLine( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_review.Add( self._sl_header31, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 12 ), wx.EXPAND |wx.ALL, 5 )
@@ -774,7 +778,7 @@ class LicenseDialog ( wx.Dialog ):
 class HelpDialog ( wx.Dialog ):
 	
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"License", pos = wx.DefaultPosition, size = wx.Size( 408,465 ), style = wx.DEFAULT_DIALOG_STYLE )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Help", pos = wx.DefaultPosition, size = wx.Size( 408,465 ), style = wx.DEFAULT_DIALOG_STYLE )
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
 		
