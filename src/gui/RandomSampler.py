@@ -259,7 +259,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.nb_config_sampler.ChangeSelection(self._current_page)
         
     def _on_update_project_name(self, event):
-        
+        print str(event)
         self.project_title = self._cbx_project_title.GetValue()
         # Enable all controls
         if self.project_title not in self._cbx_project_title.GetStrings() or self.project_title == '':     
@@ -323,7 +323,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             return 
     
         if os.path.exists(self.output_dir_path)==False:
-            os.mkdir(self.output_dir_path)
+            os.makedirs(self.output_dir_path)
         
         if self._is_project_loaded is False:
             self._shelf_application_setup()
@@ -427,33 +427,65 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self.dir_path = dlg.GetPath()
 
             self.SetStatusText("The selected data folder is %s" % self.dir_path)
-            message_dialog =  wx.MessageDialog(parent = self, 
-                                               message = "This may take a few minutes. \nPress OK to continue loading... ",
-                                               caption = "Loading Source Documents",
-                                               style = wx.ICON_INFORMATION | wx.OK)
+            message_dialog = wx.ProgressDialog(
+                                                'Loading Files', 
+                                                'Loading Source Documents. Please wait for a few minutes', 
+                                                parent = self, maximum=100)# =  wx.MessageDialog(parent = self, 
+                                             #  message = "This may take a few minutes. \nPress OK to continue loading... ",
+                                              # caption = "Loading Source Documents")
             message_dialog.ShowModal()
+#            exit()
+            file_list_tmp=[]
             try:
                 wx.BeginBusyCursor()
                 self._tempdir="tmp\\"+self.project_title+"\\"
                 if(os.path.exists(self._tempdir)):
                     shutil.rmtree(self._tempdir)
+                cnt=0
+                print self._tempdir
                 shutil.copytree(self.dir_path,self._tempdir)
-                
-
                 for root, _, files in os.walk(self._tempdir):
+                    message_dialog.Update(cnt)
                     for file_name in files:
+                        message_dialog.Update(0)
+                        if(cnt%4==0):
+                            message_dialog.Update(0)
+                        else:#elif (cnt%4==1) :
+                            message_dialog.Update((25*(int(cnt)%4))-1)
+                        message_dialog.Refresh()
+                        '''
+                        elif (cnt%4==2) :
+                            message_dialog.Update(75)
+                            print str(cnt)+"2"
+                        elif (cnt%4==3) :
+                            message_dialog.Update(90)
+                            print str(cnt)+"3"
+                        '''
+                        cnt+=1
+                        print str(cnt)
+                        wx.MilliSleep(300)
                         file=os.path.join(root, file_name)
                         fileName, fileExtension = os.path.splitext(file)
                         if fileExtension==".pst":
                             os.makedirs(fileName)
                             self.convert_pst(fileName+fileExtension, fileName)
                             os.remove(fileName+fileExtension)
-                self.do_load(message_dialog)
+                            for rootPST, _, filesPST in os.walk(fileName):
+                                for file_name_PST in filesPST:
+                                    file_list_tmp.append(os.path.join(rootPST, file_name_PST))
+                        else:
+                            file_list_tmp.append(os.path.join(root, file_name))
+                        
+                message_dialog.Update(100)
+                
+                #self.do_load(message_dialog)
+                self.file_list=file_list_tmp
                 wx.EndBusyCursor()
             except Exception as anyException:
                 wx.EndBusyCursor()
                 self._show_error_message("Read Error","Some e-mails could not be read.")
                 print anyException
+        message_dialog.Destroy()
         dlg.Destroy()
         
         self._tc_data_dir.SetValue(self.dir_path)
@@ -463,6 +495,42 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
         self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
         self._is_io_updated = True
+        
+    def generate_files(self,dialog,num_files):
+        print num_files
+        cnt=0
+        try:
+            #wx.BeginBusyCursor()
+            self._tempdir="tmp\\"+self.project_title+"\\"
+            if(os.path.exists(self._tempdir)):
+                shutil.rmtree(self._tempdir)
+                
+            print self._tempdir
+            shutil.copytree(self.dir_path,self._tempdir)
+            for root, _, files in os.walk(self._tempdir):
+                for file_name in files:
+                    print file_name
+                    file=os.path.join(root, file_name)
+                    fileName, fileExtension = os.path.splitext(file)
+                    if fileExtension==".pst":
+                        os.makedirs(fileName)
+                        self.convert_pst(fileName+fileExtension, fileName)
+                        os.remove(fileName+fileExtension)
+                    cnt+=1
+                    wx.CallAfter(dialog.Update, cnt)
+                    wx.MilliSleep(8)
+                    if (cnt==num_files):
+                        wx.CallAfter(dialog.Update, num_files)
+            print "asdfghjkl;''''''"
+            self.do_load(dialog)
+            #wx.EndBusyCursor()
+            #dialog.close()
+            return
+        except Exception as anyException:
+           # wx.EndBusyCursor()
+            self._show_error_message("Read Error","Some e-mails could not be read.")
+            print anyException
+            return
     
     def _generate_file_samples(self):
         '''
@@ -605,9 +673,11 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         This method will be a little creative 
         '''        
         #ToDo....NOT SAFE
-        
-        subprocess.check_output(['readpst', '-o', temp, '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
-        
+        try:
+            subprocess.check_output(['readpst', '-o', temp, '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
+        except Exception, e:
+            print e;
+        #print response
         for root, _, files in os.walk(temp):
             for file_name in files:
                 filename=os.path.join(root, file_name)
@@ -649,7 +719,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             
         #Show status of copy
         if total_file_size >= 0:
-            
+    
             progress_dialog = wx.ProgressDialog(
                                                 'Creating samples', 
                                                 'Please wait for a few minutes...', 
@@ -658,10 +728,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             # Runs copy on a different thread
             thread = start_thread(self.do_copy, total_file_size, progress_dialog)
             progress_dialog.ShowModal()
-            thread.join()
             progress_dialog.Show(False)
-            self._btn_out_go_to_review.SetFocus()
+            #self._btn_out_go_to_review.Enable()
             self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
+            #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
             self.shelf['isSampleCreated']=True
             self._is_samples_created=True
             self.shelf.sync()
@@ -1137,6 +1207,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._prior_page_status = cfg._current_page
             self._tempdir=cfg._tempdir
             
+            #print os.getcwd()
             if os.path.isdir(self._tempdir)==False:
                     self._show_error_message("Read Error","Temporary Folder corresponding to missing, Project will be deleted")
                     self.shelf.close()
@@ -1166,8 +1237,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._tc_out_data_dir.SetValue(self.dir_path)
             self._tc_out_output_dir.SetValue(self.output_dir_path)
             self._tc_project_title.SetValue(self.project_title)
-            self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
-            self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+            self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
+            self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
             
             # for confidence interval 
             str_confidence_level = str(self.confidence_val * Decimal('100'))
@@ -1450,7 +1521,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.dir_path=""
         self.output_dir_path=""
         self.project_title=""
-        self._st_num_data_dir_files.SetLabel('0 documents')
+        self._st_num_data_dir_files.SetLabel('0 documents available')
             
     def _on_click_license(self,event):
         super(RandomSampler, self)._on_click_license(event)
