@@ -153,7 +153,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_io.SetSizer( sbsizer_io )
 		self._panel_io.Layout()
 		sbsizer_io.Fit( self._panel_io )
-		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", True )
+		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", False )
 		self._panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -230,7 +230,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_confidence.SetSizer( bsizer_confidence )
 		self._panel_confidence.Layout()
 		bsizer_confidence.Fit( self._panel_confidence )
-		self.nb_config_sampler.AddPage( self._panel_confidence, u"Confidence", False )
+		self.nb_config_sampler.AddPage( self._panel_confidence, u"Confidence", True )
 		self._panel_tags = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self._panel_tags.Hide()
 		

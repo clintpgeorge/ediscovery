@@ -14,9 +14,8 @@ import subprocess
 import tempfile
 import distutils
 import shutil
+import wx.animate
 from distutils import dir_util
-
-
 from gui.HTML import Table, TableRow, TableCell, link
 from gui.RandomSamplerGUI import RandomSamplerGUI,LicenseDialog,HelpDialog
 from gui.TaggingControl import TaggingControl
@@ -30,6 +29,7 @@ from multiprocessing import Event
 import shutil
 from test.test_mutants import Parent
 from wx._misc import Sleep
+from _pyio import open
 
 
 
@@ -100,7 +100,38 @@ row_colors = {}
 row_colors['R'] = '#F8E0E6' 
 row_colors['NA'] = '#D8D8D8'
 
-
+class LoadDialog ( wx.Dialog ):
+    
+    def __init__( self, parent,id ):
+        wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Loading File", pos = wx.DefaultPosition, size = wx.Size( 400,75 ), style = wx.DEFAULT_DIALOG_STYLE )
+        
+        self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+        
+        _fgsizer_dialog = wx.FlexGridSizer( 0, 2, 0, 0 )
+        _fgsizer_dialog.SetFlexibleDirection( wx.BOTH )
+        _fgsizer_dialog.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+        
+        gif_fname = "hourglass1.gif"
+        gif = wx.animate.GIFAnimationCtrl(self, id, gif_fname, pos=(10, 10))
+        gif.GetPlayer().UseBackgroundColour(True)        
+        self._gif_ld_image = gif
+        _fgsizer_dialog.Add( self._gif_ld_image, 0, wx.ALL, 5 )
+        self._gif_ld_image.Play()
+        
+        self._st_ld_label = wx.StaticText( self, wx.ID_ANY, u"Estimating the number of files. Please wait...", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self._st_ld_label.Wrap( -1 )
+        self._st_ld_label.SetFont( wx.Font( 9, 74, 90, 90, False, "Tahoma" ) )
+        
+        _fgsizer_dialog.Add( self._st_ld_label, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
+        
+        
+        self.SetSizer( _fgsizer_dialog )
+        self.Layout()
+        
+        self.Centre( wx.BOTH )
+    
+    def __del__( self ):
+        pass
 
 class RSConfig: 
     '''
@@ -259,7 +290,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.nb_config_sampler.ChangeSelection(self._current_page)
         
     def _on_update_project_name(self, event):
-        print str(event)
         self.project_title = self._cbx_project_title.GetValue()
         # Enable all controls
         if self.project_title not in self._cbx_project_title.GetStrings() or self.project_title == '':     
@@ -425,67 +455,29 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         dlg = wx.DirDialog(self, "Choose the input folder to sample", self.dir_path, wx.DD_DIR_MUST_EXIST)
         if dlg.ShowModal() == wx.ID_OK:
             self.dir_path = dlg.GetPath()
-
+            self.count=0
+            self._copy=True
+            msg_dialog=LoadDialog(None,-1)
+            msg_dialog.Show()
+            msg_dialog.Update()
+            self.generate_files_preprocess()
+            #thread=start_thread(self.generate_files_preprocess)
+            #thread.join()
+            msg_dialog.Destroy()
+            if(self._copy==False):
+                return 
+            
             self.SetStatusText("The selected data folder is %s" % self.dir_path)
             message_dialog = wx.ProgressDialog(
                                                 'Loading Files', 
-                                                'Loading Source Documents. Please wait for a few minutes', 
-                                                parent = self, maximum=100)# =  wx.MessageDialog(parent = self, 
-                                             #  message = "This may take a few minutes. \nPress OK to continue loading... ",
-                                              # caption = "Loading Source Documents")
+                                                'Loading source documents. Please wait for a few minutes.', 
+                                                parent = self, maximum=self.count)
+            self.generate_files(message_dialog,self.count)
+            #thread = start_thread(self.generate_files,message_dialog)
             message_dialog.ShowModal()
-#            exit()
-            file_list_tmp=[]
-            try:
-                wx.BeginBusyCursor()
-                self._tempdir="tmp\\"+self.project_title+"\\"
-                if(os.path.exists(self._tempdir)):
-                    shutil.rmtree(self._tempdir)
-                cnt=0
-                print self._tempdir
-                shutil.copytree(self.dir_path,self._tempdir)
-                for root, _, files in os.walk(self._tempdir):
-                    message_dialog.Update(cnt)
-                    for file_name in files:
-                        message_dialog.Update(0)
-                        if(cnt%4==0):
-                            message_dialog.Update(0)
-                        else:#elif (cnt%4==1) :
-                            message_dialog.Update((25*(int(cnt)%4))-1)
-                        message_dialog.Refresh()
-                        '''
-                        elif (cnt%4==2) :
-                            message_dialog.Update(75)
-                            print str(cnt)+"2"
-                        elif (cnt%4==3) :
-                            message_dialog.Update(90)
-                            print str(cnt)+"3"
-                        '''
-                        cnt+=1
-                        print str(cnt)
-                        wx.MilliSleep(300)
-                        file=os.path.join(root, file_name)
-                        fileName, fileExtension = os.path.splitext(file)
-                        if fileExtension==".pst":
-                            os.makedirs(fileName)
-                            self.convert_pst(fileName+fileExtension, fileName)
-                            os.remove(fileName+fileExtension)
-                            for rootPST, _, filesPST in os.walk(fileName):
-                                for file_name_PST in filesPST:
-                                    file_list_tmp.append(os.path.join(rootPST, file_name_PST))
-                        else:
-                            file_list_tmp.append(os.path.join(root, file_name))
-                        
-                message_dialog.Update(100)
-                
-                #self.do_load(message_dialog)
-                self.file_list=file_list_tmp
-                wx.EndBusyCursor()
-            except Exception as anyException:
-                wx.EndBusyCursor()
-                self._show_error_message("Read Error","Some e-mails could not be read.")
-                print anyException
-        message_dialog.Destroy()
+            #thread.join()
+            message_dialog.Destroy()
+            
         dlg.Destroy()
         
         self._tc_data_dir.SetValue(self.dir_path)
@@ -496,41 +488,76 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
         self._is_io_updated = True
         
-    def generate_files(self,dialog,num_files):
-        print num_files
-        cnt=0
+    def generate_files_preprocess(self):
+        #self.Refresh()
+        #msg_dialog=LoadDialog(None,-1)
+        #msg_dialog.Show()
+        wx.BeginBusyCursor()
+        self.count = 0
+        for _,_, files in os.walk(self.dir_path):
+            #for file in files:
+            self.count += len(files)
+        self._tempdir="tmp\\"+self.project_title+"\\"
+        if(os.path.exists(self._tempdir)):
+            shutil.rmtree(self._tempdir)
         try:
-            #wx.BeginBusyCursor()
-            self._tempdir="tmp\\"+self.project_title+"\\"
-            if(os.path.exists(self._tempdir)):
-                shutil.rmtree(self._tempdir)
-                
-            print self._tempdir
             shutil.copytree(self.dir_path,self._tempdir)
-            for root, _, files in os.walk(self._tempdir):
-                for file_name in files:
-                    print file_name
-                    file=os.path.join(root, file_name)
-                    fileName, fileExtension = os.path.splitext(file)
-                    if fileExtension==".pst":
-                        os.makedirs(fileName)
+        except:
+            self._copy=False
+            self._show_error_message("Copy Error","Source folder could not be copied in temporary folder")
+            
+        wx.EndBusyCursor()
+        #wx.Sleep(100)
+        #msg_dialog.Destroy()
+        
+    def generate_files(self,dialog,num_files):
+        file_list_tmp=[]
+        count=1
+        
+        error_str=""
+        for root, _, files in os.walk(self._tempdir):
+            for file_name in files:
+                dialog.Update(count)
+                count=count+1
+                #wx.CallAfter(self._statusbar.SetLabel,"abc")
+                
+                wx.MilliSleep(300)
+                complete_fileName=os.path.join(root, file_name)
+                fileName, fileExtension = os.path.splitext(complete_fileName)
+                if fileExtension==".pst":
+                    os.makedirs(fileName)
+                    try:
                         self.convert_pst(fileName+fileExtension, fileName)
+                        
+                        for rootPST, _, filesPST in os.walk(fileName):
+                            for file_name_PST in filesPST:
+                                file_list_tmp.append(os.path.join(rootPST, file_name_PST))
+                        
+                    except:
+                        error_str+=file_name
+                        
+                    finally:
                         os.remove(fileName+fileExtension)
-                    cnt+=1
-                    wx.CallAfter(dialog.Update, cnt)
-                    wx.MilliSleep(8)
-                    if (cnt==num_files):
-                        wx.CallAfter(dialog.Update, num_files)
-            print "asdfghjkl;''''''"
-            self.do_load(dialog)
-            #wx.EndBusyCursor()
-            #dialog.close()
-            return
-        except Exception as anyException:
-           # wx.EndBusyCursor()
-            self._show_error_message("Read Error","Some e-mails could not be read.")
-            print anyException
-            return
+                    
+                else:
+                    file_list_tmp.append(os.path.join(root, file_name))
+                
+                
+        dialog.Update(num_files)
+        
+        #self.do_load(message_dialog)
+        self.file_list=file_list_tmp
+        
+        if(error_str!=""):
+            fileName=os.getcwd()+"\\error.log"
+            file_err=open(fileName,"a") 
+            date=unicode(datetime.now())
+            file_err.flush()
+            file_err.write(date+"=>")
+            file_err.write("Could not read "+ error_str+"\n")
+            
+            self._show_error_message("Copy Error","Source PST files could not be processed, for more information please check " + fileName)
+            file_err.close()
     
     def _generate_file_samples(self):
         '''
@@ -654,7 +681,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Total size of copy, Handle to dialog
         '''
         wx.BeginBusyCursor()
-        
         copy_with_dialog(self._tempdir, self.sampled_files,
                                      self.output_dir_path, total_size, dialog)
         finish_copy_event  = wx.PyCommandEvent(wx.EVT_COMMAND_SET_FOCUS.typeId)
@@ -676,7 +702,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         try:
             subprocess.check_output(['readpst', '-o', temp, '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
         except Exception, e:
-            print e;
+            pass
+    
         #print response
         for root, _, files in os.walk(temp):
             for file_name in files:
@@ -728,7 +755,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             # Runs copy on a different thread
             thread = start_thread(self.do_copy, total_file_size, progress_dialog)
             progress_dialog.ShowModal()
-            progress_dialog.Show(False)
+            thread.join()
+            #progress_dialog.Show(False)
             #self._btn_out_go_to_review.Enable()
             self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
             #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
@@ -1237,8 +1265,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._tc_out_data_dir.SetValue(self.dir_path)
             self._tc_out_output_dir.SetValue(self.output_dir_path)
             self._tc_project_title.SetValue(self.project_title)
-            self._st_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
-            self._st_out_num_data_dir_files.SetLabel('%d documents available' % len(self.file_list))
+            self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+            self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
             
             # for confidence interval 
             str_confidence_level = str(self.confidence_val * Decimal('100'))
@@ -1521,7 +1549,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.dir_path=""
         self.output_dir_path=""
         self.project_title=""
-        self._st_num_data_dir_files.SetLabel('0 documents available')
+        self._st_num_data_dir_files.SetLabel('0 documents')
             
     def _on_click_license(self,event):
         super(RandomSampler, self)._on_click_license(event)
