@@ -39,6 +39,7 @@ REPORT_COMPLETE = 'complete_report.html'
 REPORT_RESPONSIVE = 'responsive_docs_report.html' 
 REPORT_PRIVILEGED = 'privileged_docs_report.html'
 DEFAULT_FILE_VIEWER = 'IrfanView'
+APP_DIR=os.getcwd()
 ABOUT_TEXT =  u"""Random sampler: 
 This application randomly samples the files 
 from the given data folder and copies them to the output 
@@ -111,7 +112,7 @@ class LoadDialog ( wx.Dialog ):
         _fgsizer_dialog.SetFlexibleDirection( wx.BOTH )
         _fgsizer_dialog.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
         
-        gif_fname = "hourglass1.gif"
+        gif_fname = os.path.join(APP_DIR,"hourglass1.gif")
         gif = wx.animate.GIFAnimationCtrl(self, id, gif_fname, pos=(10, 10))
         gif.GetPlayer().UseBackgroundColour(True)        
         self._gif_ld_image = gif
@@ -159,7 +160,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         '''
         Constructor
         '''
-        # Defaults for random sample calculation
         self.SEED = 2013      
                         
         # Calls the parent class's method 
@@ -180,7 +180,13 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.dir_path = ''
         self.output_dir_path = ''
         self.file_list = []      
-
+        
+        from os.path import expanduser
+        home = expanduser("~")
+        self.directory=os.path.join(home,"E-Discovery Random Sampler")
+        if(os.path.exists(self.directory)==False):
+            os.mkdir(self.directory)
+#         print self.directory
     
         
         # Load default tags
@@ -218,8 +224,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.GetSizer().Layout()
         
         self._st_new_project_title.Show(False)
-
-
+        
         self.Center()
         self.Show(True)
         
@@ -229,14 +234,14 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Adds shelve files in cutrrent directory
         '''
         # Gets all shelves in the current directory
-        current_dir = os.path.curdir
+        current_dir = self.directory
         shelve_file_list = [filename for filename in os.listdir(current_dir) if filename.endswith('.shelve')]
         shelve_file_list = [filename.replace(SHELVE_FILE_EXTENSION, '') for filename in shelve_file_list]
         
         # Indexes shelf config with name
         self.shelve_config_dict = {}
         for shelve_file in shelve_file_list:
-            current_shelve = shelve.open(shelve_file + SHELVE_FILE_EXTENSION)
+            current_shelve = shelve.open(os.path.join(self.directory,shelve_file + SHELVE_FILE_EXTENSION))
             if current_shelve.has_key('config'):
                 self.shelve_config_dict[shelve_file]= current_shelve['config']
                 self._cbx_project_title.Append(shelve_file)
@@ -321,6 +326,12 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         if self._is_project_new==True:
             self.project_title = self._tc_io_new_project.GetValue()
             # Enable all controls
+            tempdir=os.path.join(self.directory,"tmp",self.project_title)
+        
+            if tempdir!=self._tempdir:
+                os.rename(self._tempdir, tempdir)
+                self._tempdir=tempdir
+                
             if self.project_title not in self._cbx_project_title.GetStrings():     
                 self._tc_data_dir.Enable()
                 self._tc_output_dir.Enable()
@@ -445,6 +456,15 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         """
         super(RandomSampler, self)._on_click_io_sel_data_dir(event)
         
+        if self._is_project_new==True:
+            self.project_title = self._tc_io_new_project.GetValue()
+            # Enable all controls
+            if self.project_title  in self._cbx_project_title.GetStrings():     
+                self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
+                self.project_title = ""
+                self._tc_io_new_project.SetValue("")
+                return
+        
         if len(self.project_title) == 0:
             self._show_error_message("Value Error!", "Enter a title for the project.")
             self._cbx_project_title.SetFocus() 
@@ -497,15 +517,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         for _,_, files in os.walk(self.dir_path):
             #for file in files:
             self.count += len(files)
-        self._tempdir="tmp\\"+self.project_title+"\\"
+        self._tempdir=os.path.join(self.directory,"tmp",self.project_title)
         if(os.path.exists(self._tempdir)):
             shutil.rmtree(self._tempdir)
-        try:
-            shutil.copytree(self.dir_path,self._tempdir)
-        except:
-            self._copy=False
-            self._show_error_message("Copy Error","Source folder could not be copied in temporary folder")
-            
+        os.makedirs(self._tempdir)
         wx.EndBusyCursor()
         #wx.Sleep(100)
         #msg_dialog.Destroy()
@@ -515,32 +530,33 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         count=1
         
         error_str=""
-        for root, _, files in os.walk(self._tempdir):
+        for root, _, files in os.walk(self.dir_path):
             for file_name in files:
-                dialog.Update(count)
-                count=count+1
                 #wx.CallAfter(self._statusbar.SetLabel,"abc")
                 
-                wx.MilliSleep(300)
                 complete_fileName=os.path.join(root, file_name)
                 fileName, fileExtension = os.path.splitext(complete_fileName)
                 if fileExtension==".pst":
-                    os.makedirs(fileName)
+                
+                    shutil.copy(complete_fileName, os.path.abspath(self._tempdir))
+                    pstTempFile=os.path.join(self._tempdir,os.path.basename(complete_fileName))
+                 
                     try:
-                        self.convert_pst(fileName+fileExtension, fileName)
+                        #os.chdir(self._tempdir)
+                        self.convert_pst(pstTempFile, self._tempdir)
                         
-                        for rootPST, _, filesPST in os.walk(fileName):
+                        for rootPST, _, filesPST in os.walk(self._tempdir):
                             for file_name_PST in filesPST:
                                 file_list_tmp.append(os.path.join(rootPST, file_name_PST))
-                        
-                    except:
+                    except Exception,e:
+                        print e
                         error_str+=file_name
-                        
-                    finally:
-                        os.remove(fileName+fileExtension)
-                    
                 else:
                     file_list_tmp.append(os.path.join(root, file_name))
+                    
+                dialog.Update(count)
+                count=count+1
+                wx.MilliSleep(300)
                 
                 
         dialog.Update(num_files)
@@ -549,7 +565,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.file_list=file_list_tmp
         
         if(error_str!=""):
-            fileName=os.getcwd()+"\\error.log"
+            fileName=os.path.join(os.getcwd(),"error.log")
             file_err=open(fileName,"a") 
             date=unicode(datetime.now())
             file_err.flush()
@@ -656,6 +672,15 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         """
         super(RandomSampler, self)._on_click_io_sel_output_dir(event) 
         
+        if self._is_project_new==True:
+            self.project_title = self._tc_io_new_project.GetValue()
+            # Enable all controls
+            if self.project_title  in self._cbx_project_title.GetStrings():     
+                self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
+                self.project_title = ""
+                self._tc_io_new_project.SetValue("")
+                return
+        
         if len(self.project_title) == 0:
             self._show_error_message("Value Error!", "Enter a title for the project.")
             self._cbx_project_title.SetFocus() 
@@ -700,9 +725,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         '''        
         #ToDo....NOT SAFE
         try:
-            subprocess.check_output(['readpst', '-o', temp, '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
+            subprocess.check_output(['readpst', '-o', os.path.abspath(temp), '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
         except Exception, e:
-            pass
+            print e
+            raise
     
         #print response
         for root, _, files in os.walk(temp):
@@ -902,7 +928,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         
 
     def _on_click_review_gen_report( self, event ):
-        
         if self._is_rt_updated:
             self._shelf_update_review_tab_state()
         
@@ -940,7 +965,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                     if fs[5] == 'Yes': 
                         privileged.append(fs)
                 html_body = self._gen_complete_html_report(samples_lst, responsive, privileged)
-
+            
+            
             # Saves into a file path 
             self._save_html_report(html_body, file_name)
             
@@ -956,30 +982,35 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Stores into a file 
         '''
         
-        with open(file_name, "w") as hw: 
-            hw.write(
-            """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-            <html>
-            <head>
-                <title>Document Sample Review Report</title>
-            </head>
-            <body style="font-family:verdana,helvetica;font-size:9pt">
-            <h2>Document Sample Review Report</h2>
-            
-            Report overview: 
-            
-            <br/><br/>
-            """)
-            hw.write(self._gen_specifications_html())
+        try:
+            with open(file_name, "w") as hw: 
+                hw.write(unicode(
+                """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+                <html>
+                <head>
+                    <title>Document Sample Review Report</title>
+                </head>
+                <body style="font-family:verdana,helvetica;font-size:9pt">
+                <h2>Document Sample Review Report</h2>
+                
+                Report overview: 
+                
+                <br/><br/>
+                """))
+                
+                hw.write(unicode(self._gen_specifications_html()))
+    
+                hw.write(unicode(html_body))
+    
+                hw.write(unicode(
+                """
+                <hr/>
+                <p>Report is generated on: %s</p>
+                </body>
+                </html>""" % datetime.now().strftime("%A, %d. %B %Y %I:%M%p")))
+        except Exception, e:
+            print e
 
-            hw.write(html_body)
-
-            hw.write(
-            """
-            <hr/>
-            <p>Report is generated on: %s</p>
-            </body>
-            </html>""" % datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
 
     def _gen_specifications_html(self): 
         
@@ -1191,7 +1222,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         state file located in the application directory  
         '''
         # Creates the data shelf if not exists 
-        self.shelf = shelve.open(self.project_title+SHELVE_FILE_EXTENSION,writeback=TRUE) # open -- file may get suffix added by low-level
+        self.shelf = shelve.open(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION),writeback=TRUE) # open -- file may get suffix added by low-level
         if self._is_project_new:
             self._cbx_project_title.Append(self.project_title)
             self._cbx_project_title.SetValue(self.project_title)
@@ -1239,7 +1270,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             if os.path.isdir(self._tempdir)==False:
                     self._show_error_message("Read Error","Temporary Folder corresponding to missing, Project will be deleted")
                     self.shelf.close()
-                    os.remove(self.project_title+SHELVE_FILE_EXTENSION)
+                    os.remove(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION))
                     self.project_title=""
                     self._cbx_project_title.Clear()
                     self.get_shelve_files()
@@ -1249,7 +1280,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 if os.path.isdir(self.dir_path)==False:
                     self._show_error_message("Read Error","Input Folder is missing, Project will be deleted")
                     self.shelf.close()
-                    os.remove(self.project_title+SHELVE_FILE_EXTENSION)
+                    os.remove(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION))
                     self.project_title=""
                     self._cbx_project_title.Clear()
                     self.get_shelve_files()
@@ -1310,9 +1341,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         self.shelf['samples'] = self.sampled_files = [] # need to reset the samples   
         self.shelf['isSampleCreated']=False
         self._is_samples_created=False
-        ##self._btn_out_go_to_review.Enable(False)
         self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
-        #self._btn_out_go_to_review.SetLabel("Please Create Samples")
         self.shelf.sync()
         
      
@@ -1328,7 +1357,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         cfg._modified_date = datetime.now()
         cfg._current_page = 1
         self.shelf['config'] = cfg
-        self._shelf_has_cfg = True 
+        self._shelf_has_cfg = True
+        self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) ) 
         self.shelf.sync()
 
         self._shelf_update_samples()
@@ -1594,9 +1624,13 @@ def main():
     '''
     The main function call 
     '''
+    
+    
     ex = wx.App()
     RandomSampler(None)
+    #os.chdir(directory)
     ex.MainLoop()    
+
 
 
 if __name__ == '__main__':
