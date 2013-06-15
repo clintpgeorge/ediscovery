@@ -69,10 +69,12 @@ def copy_with_dialog(lcp, file_paths, output_dir_path, size, dialog, in_file_pre
     current_copy = 0
     status = ''
     for src_file_path in file_paths:
-        s_fp = os.path.relpath(src_file_path, lcp)#src_file_path[len(lcp):] # ignores LCP from path   
-        dest_dp, _ = os.path.split(s_fp) # to preserve source files directory structure 
-        dest_dir_path = os.path.join(output_dir_path, dest_dp)
-
+        #s_fp = os.path.relpath(src_file_path, lcp)#src_file_path[len(lcp):] # ignores LCP from path   
+        #dest_dp, _ = os.path.split(s_fp) # to preserve source files directory structure 
+        dest_dir_path = output_dir_path#os.path.join(output_dir_path, dest_dp)
+        #print output_dir_path
+        #print dest_dp
+        #print s_fp
         if not os.path.exists(dest_dir_path):
             os.makedirs(dest_dir_path)
         
@@ -90,11 +92,18 @@ def copy_with_dialog(lcp, file_paths, output_dir_path, size, dialog, in_file_pre
         # This will update the UI, putting this thread on wait for 8 millisecs,
         # This is a thread safe method
         # python does not have true threading, only timeslicing
-        wx.CallAfter(dialog.Update, int(100*current_copy/size))
-        wx.MilliSleep(8)
-        if (src_file_path == file_paths[len(file_paths) -1]):
-            wx.CallAfter(dialog.Update, 100)
-            return status
+        try:
+            #wx.MutexGuiEnter()
+            dialog.Update(int(100*current_copy/size))
+            wx.CallAfter(dialog.Update, int(100*current_copy/size))
+            wx.MilliSleep(8)
+            if (src_file_path == file_paths[len(file_paths) -1]):
+                wx.CallAfter(dialog.Update, 100)
+                dialog.Update(100)
+                return status
+        finally:
+            #wx.MutexGuiLeave()
+            pass
             
 
 def get_destination_file_path(input_dir_path, src_file_path, output_dir_path):
@@ -102,7 +111,6 @@ def get_destination_file_path(input_dir_path, src_file_path, output_dir_path):
     Gets the copied file's path based on the same logic 
     we used to copy files into the destination folder 
     '''
-    
     s_fp = os.path.relpath(src_file_path, input_dir_path) # ignores LCP from path   
     dest_file_path = os.path.join(output_dir_path, s_fp)
     
