@@ -27,7 +27,7 @@ from _winreg import OpenKey, CloseKey, QueryValueEx, HKEY_LOCAL_MACHINE
 from pickle import TRUE, FALSE
 from multiprocessing import Event
 import shutil
-from test.test_mutants import Parent
+#from test.test_mutants import Parent
 from wx._misc import Sleep
 from _pyio import open
 
@@ -428,6 +428,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         '''
         
         self._tc_preview.SetValue('')
+        
         if not self._is_samples_created and self._prior_page_status < 3:
             self._show_error_message("Review Error!", "Please create the sample before go to review.")
             return 
@@ -706,7 +707,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Total size of copy, Handle to dialog
         '''
         wx.BeginBusyCursor()
-        copy_with_dialog(self._tempdir, self.sampled_files,
+        copy_with_dialog(self.dir_path,self._tempdir, self.sampled_files,
                                      self.output_dir_path, total_size, dialog)
         finish_copy_event  = wx.PyCommandEvent(wx.EVT_COMMAND_SET_FOCUS.typeId)
         self.GetEventHandler().ProcessEvent(finish_copy_event)
@@ -791,7 +792,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self.shelf.sync()
             self.Enable(True)
             self.SetStatusText('%d samples (from %d files) are created to the output folder.' % (len(self.sampled_files), len(self.file_list)))
-        
+                
         else :
             self.SetStatusText('Sample creation is cancelled.')
         
@@ -1358,6 +1359,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         cfg._current_page = 1
         self.shelf['config'] = cfg
         self._shelf_has_cfg = True
+        self._is_samples_created=False
         self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) ) 
         self.shelf.sync()
 
@@ -1624,8 +1626,7 @@ def main():
     '''
     The main function call 
     '''
-    
-    
+    sys.stderr=open('error.log','a')
     ex = wx.App()
     RandomSampler(None)
     #os.chdir(directory)
