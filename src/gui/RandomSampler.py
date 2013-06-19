@@ -28,7 +28,6 @@ from pickle import TRUE, FALSE
 from multiprocessing import Event
 import shutil
 #from test.test_mutants import Parent
-from wx._misc import Sleep
 from _pyio import open
 
 
@@ -51,7 +50,6 @@ confidence interval.
 """
 DEFAULT_TAGS = ["Responsive/Non-Responsive[Default]", "Privileged/Non-Privileged[Default]"]
 
-
 def get_IrfanView_path():
     '''
     Gets IrfanView path
@@ -71,7 +69,7 @@ def get_IrfanView_path():
         except WindowsError:
             pass
     return None
- 
+
 '''
 To generate HTML reports 
 '''
@@ -125,7 +123,6 @@ class LoadDialog ( wx.Dialog ):
         
         _fgsizer_dialog.Add( self._st_ld_label, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
         
-        
         self.SetSizer( _fgsizer_dialog )
         self.Layout()
         
@@ -169,10 +166,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         app_icon = wx.Icon(os.path.join('res','uflaw.ico'), wx.BITMAP_TYPE_ICO, 32, 32)
         self.SetIcon(app_icon)
         
-        # Getting default viewer path
-        self.DEFAULT_VIEWER_OPTIONS = {'IrfanView': get_IrfanView_path}
-        self.viewer_executable_location = self.get_default_fileviewer_path()
-        
         
         #setup default values for project
         self.shelf = None
@@ -190,7 +183,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
     
         
         # Load default tags
-        self._add_default_tags()
+        #self._add_default_tags()
         self.ADDITIONAL_TAGS = []
         
 
@@ -215,12 +208,11 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         # Sets up the application state
         self.get_shelve_files()
         
-        
         # setup review tag
         self._lc_review = TaggingControl( self._panel_review_tag, self)
 
         # Hide panel for dynamic tags
-        self.nb_config_sampler.RemovePage(2);
+        #self.nb_config_sampler.RemovePage(2);
         self.GetSizer().Layout()
         
         self._st_new_project_title.Show(False)
@@ -233,19 +225,23 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         '''
         Adds shelve files in cutrrent directory
         '''
-        # Gets all shelves in the current directory
-        current_dir = self.directory
-        shelve_file_list = [filename for filename in os.listdir(current_dir) if filename.endswith('.shelve')]
-        shelve_file_list = [filename.replace(SHELVE_FILE_EXTENSION, '') for filename in shelve_file_list]
         
-        # Indexes shelf config with name
-        self.shelve_config_dict = {}
-        for shelve_file in shelve_file_list:
-            current_shelve = shelve.open(os.path.join(self.directory,shelve_file + SHELVE_FILE_EXTENSION))
-            if current_shelve.has_key('config'):
-                self.shelve_config_dict[shelve_file]= current_shelve['config']
-                self._cbx_project_title.Append(shelve_file)
-            current_shelve.close()
+        try:
+            # Gets all shelves in the current directory
+            current_dir = self.directory
+            shelve_file_list = [filename for filename in os.listdir(current_dir) if filename.endswith('.shelve')]
+            shelve_file_list = [filename.replace(SHELVE_FILE_EXTENSION, '') for filename in shelve_file_list]
+            
+            # Indexes shelf config with name
+            self.shelve_config_dict = {}
+            for shelve_file in shelve_file_list:
+                current_shelve = shelve.open(os.path.join(self.directory,shelve_file + SHELVE_FILE_EXTENSION))
+                if current_shelve.has_key('config'):
+                    self.shelve_config_dict[shelve_file]= current_shelve['config']
+                    self._cbx_project_title.Append(shelve_file)
+                current_shelve.close()
+        except Exception,e:
+            self.error(e)
 
     def _on_appln_close( self, event ):
         '''
@@ -253,15 +249,20 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Nothing
         Returns: Nothing
         '''
-        self._on_close()
+        try:
+            self._on_close()
+        except Exception,e:
+            self.error(e)
     
     def _on_mitem_about( self, event ):
-        super(RandomSampler, self)._on_mitem_about(event) 
         
-
-        dlg = wx.MessageDialog(self, ABOUT_TEXT, "About Random Sampler", wx.OK)
-        dlg.ShowModal() # Shows it
-        dlg.Destroy() # finally destroy it when finished.
+        try:
+            super(RandomSampler, self)._on_mitem_about(event) 
+            dlg = wx.MessageDialog(self, ABOUT_TEXT, "About Random Sampler", wx.OK)
+            dlg.ShowModal() # Shows it
+            dlg.Destroy() # finally destroy it when finished.
+        except Exception,e:
+            self.error(e)
     
     def _on_mitem_help( self, event ):
         '''
@@ -269,7 +270,20 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Nothing
         Returns: Nothing
         '''
-        super(RandomSampler, self)._on_mitem_help(event) 
+        
+        try:
+            super(RandomSampler, self)._on_mitem_help(event) 
+            file_path="HELP.txt"
+            try:
+                with open(file_path,'r') as content:
+                    print_message=content.read()
+            except Exception,e:
+                print_message="Help file is missing or currently cannot be opened"
+            dialog=HelpDialog(None)
+            dialog._tc_help.SetValue(print_message)#wx.TextCtrl( self, wx.ID_ANY, print_message, wx.Point( -1,1 ), wx.DefaultSize, wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
+            dialog.Show()
+        except Exception,e:
+            self.error(e)
     
     def _on_mitem_exit( self, event ):
         '''
@@ -277,7 +291,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Nothing
         Returns: Nothing
         '''
-        self._on_close()
+        try:
+            self._on_close()
+        except Exception,e:
+            self.error(e)
     
     def _on_nb_page_changed( self, event ):
         '''
@@ -287,52 +304,21 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         
         
         '''
-        
-        selected_page = event.Selection
-        if selected_page < self._current_page:
-            self._current_page = selected_page
-        
-        self.nb_config_sampler.ChangeSelection(self._current_page)
+        try:
+            selected_page = event.Selection
+            if selected_page < self._current_page:
+                self._current_page = selected_page
+            
+            self.nb_config_sampler.ChangeSelection(self._current_page)
+        except Exception,e:
+            self.error(e)
         
     def _on_update_project_name(self, event):
-        self.project_title = self._cbx_project_title.GetValue()
-        # Enable all controls
-        if self.project_title not in self._cbx_project_title.GetStrings() or self.project_title == '':     
-            self._cbx_project_title.Enable()   
-            self._tc_data_dir.Enable()
-            self._tc_output_dir.Enable()
-            self._btn_io_sel_data_dir.Enable()
-            self._btn_io_sel_output_dir.Enable()
-            self._is_project_loaded = False
-        elif self._is_project_loaded == False :
-            self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
-            self.project_title = ""
-            self._cbx_project_title.SetValue("")
-        else :
-            self._shelf_application_setup()
-            self._is_project_loaded = True
-                
-    def _on_set_existing_project(self, event):
-        '''
-        Shows info for existing loaded project
-        '''
-        self.project_title = self._cbx_project_title.GetValue()
-        self._shelf_application_setup()
-        self._is_project_loaded = True
-        
-    def _on_click_io_next( self, event ):
-        
-        # set project title
-        if self._is_project_new==True:
-            self.project_title = self._tc_io_new_project.GetValue()
+        try:
+            self.project_title = self._cbx_project_title.GetValue()
             # Enable all controls
-            tempdir=os.path.join(self.directory,"tmp",self.project_title)
-        
-            if tempdir!=self._tempdir:
-                os.rename(self._tempdir, tempdir)
-                self._tempdir=tempdir
-                
-            if self.project_title not in self._cbx_project_title.GetStrings():     
+            if self.project_title not in self._cbx_project_title.GetStrings() or self.project_title == '':     
+                self._cbx_project_title.Enable()   
                 self._tc_data_dir.Enable()
                 self._tc_output_dir.Enable()
                 self._btn_io_sel_data_dir.Enable()
@@ -342,260 +328,308 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
                 self.project_title = ""
                 self._cbx_project_title.SetValue("")
-                return
-        else:
+            else :
+                self._shelf_application_setup()
+                self._is_project_loaded = True
+        except Exception,e:
+            self.error(e)
+                
+    def _on_set_existing_project(self, event):
+        '''
+        Shows info for existing loaded project
+        '''
+        try:
             self.project_title = self._cbx_project_title.GetValue()
-        # validations
-        if len(self.project_title) == 0:
-            self._show_error_message("Value Error!", "Enter a title for the project.")
-            self._cbx_project_title.SetFocus() 
-            return
-        elif self.dir_path == '' or self.output_dir_path == '':
-            self._show_error_message("Value Error!", "Please chose Source Document Folder and Sampled Output Folder.")
-            self._tc_data_dir.SetFocus()
-            return
-        elif self._tc_data_dir.GetValue().strip() == self._tc_output_dir.GetValue().strip():
-            self._show_error_message("Value Error!", "Sampled Output Folder cannot be the same as Source Document Folder. Please chose a different folder.")
-            self._tc_output_dir.SetFocus()
-            return 
-        elif len(self.file_list) == 0:
-            self._show_error_message("Value Error!", "The Source document Folder does not have any files to sample.")
-            self._tc_data_dir.SetFocus()
-            return 
-    
-        if os.path.exists(self.output_dir_path)==False:
-            os.makedirs(self.output_dir_path)
-        
-        if self._is_project_loaded is False:
             self._shelf_application_setup()
-        #self._cbx_project_title.Disable()
+            self._is_project_loaded = True
+        except Exception,e:
+            self.error(e)
         
-        if self._is_io_updated:
-            self._shelf_update_io_tab_state()
-            self._is_io_updated = False # updates the global         
+    def _on_click_io_next( self, event ):
         
-
-        if self._is_io_updated or not self._shelf_has_samples:    
-            # Generates samples based on initial configurations
-            self._generate_file_samples()
+        try:
+            # set project title
+            if self._is_project_new==True:
+                self.project_title = self._tc_io_new_project.GetValue()
+                # Enable all controls
+                tempdir=os.path.join(self.directory,"tmp",self.project_title)
+            
+                if tempdir!=self._tempdir:
+                    os.rename(self._tempdir, tempdir)
+                    self._tempdir=tempdir
+                    
+                if self.project_title not in self._cbx_project_title.GetStrings():     
+                    self._tc_data_dir.Enable()
+                    self._tc_output_dir.Enable()
+                    self._btn_io_sel_data_dir.Enable()
+                    self._btn_io_sel_output_dir.Enable()
+                    self._is_project_loaded = False
+                elif self._is_project_loaded == False :
+                    self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
+                    self.project_title = ""
+                    self._cbx_project_title.SetValue("")
+                    return
+            else:
+                self.project_title = self._cbx_project_title.GetValue()
+            # validations
+            if len(self.project_title) == 0:
+                self._show_error_message("Value Error!", "Enter a title for the project.")
+                self._cbx_project_title.SetFocus() 
+                return
+            elif self.dir_path == '' or self.output_dir_path == '':
+                self._show_error_message("Value Error!", "Please chose Source Document Folder and Sampled Output Folder.")
+                self._tc_data_dir.SetFocus()
+                return
+            elif self._tc_data_dir.GetValue().strip() == self._tc_output_dir.GetValue().strip():
+                self._show_error_message("Value Error!", "Sampled Output Folder cannot be the same as Source Document Folder. Please chose a different folder.")
+                self._tc_output_dir.SetFocus()
+                return 
+            elif len(self.file_list) == 0:
+                self._show_error_message("Value Error!", "The Source document Folder does not have any files to sample.")
+                self._tc_data_dir.SetFocus()
+                return 
         
-        self._current_page = 1
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        self.SetStatusText('')
+            if os.path.exists(self.output_dir_path)==False:
+                os.makedirs(self.output_dir_path)
+            
+            if self._is_project_loaded is False:
+                self._shelf_application_setup()
+            #self._cbx_project_title.Disable()
+            
+            if self._is_io_updated:
+                self._shelf_update_io_tab_state()
+                self._is_io_updated = False # updates the global         
+            
+    
+            if self._is_io_updated or not self._shelf_has_samples:    
+                # Generates samples based on initial configurations
+                self._generate_file_samples()
+            
+            self._current_page = 1
+            self.nb_config_sampler.ChangeSelection(self._current_page)
+            self.SetStatusText('')
+        except Exception,e:
+            self.error(e)
 
     def _on_click_cl_goback( self, event ):
-        self._current_page = 0
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        self.SetStatusText('')
+        try:
+            self._current_page = 0
+            self.nb_config_sampler.ChangeSelection(self._current_page)
+            self.SetStatusText('')
+        except Exception,e:
+            self.error(e)
     
     def _on_click_cl_next( self, event ):
         # Stores the configurations into a file
-        if self._is_ct_updated:
-            self._shelf_update_confidence_tab_state()        
-            self._is_ct_updated = False
+        try:
+            if self._is_ct_updated:
+                self._shelf_update_confidence_tab_state()        
+                self._is_ct_updated = False
+            
+            self._current_page = 2
+            #self._shelf_update_tags_state() remove
+            self.nb_config_sampler.ChangeSelection(self._current_page)
+            self.SetStatusText('')
+        except Exception,e:
+            self.error(e)
         
-        self._current_page = 2
-        self._shelf_update_tags_state()
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        self.SetStatusText('')
-    
-#    def _on_click_tag_next(self, event):
-#        
-#        self._current_page = 3
-#        if self._is_tags_updated:
-#            self._shelf_update_tags_state()
-#            self._is_tags_updated = False
-#            
-#        self.nb_config_sampler.ChangeSelection(self._current_page)
-#        self.SetStatusText('')
-        
-    
-#    def _on_click_tag_goback(self, event):
-#        
-#        self._current_page = 1
-#        self.nb_config_sampler.ChangeSelection(self._current_page)
-#        self.SetStatusText('') 
-#        
-    
     def _on_click_out_goback( self, event ):
-        self._current_page = 1
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        self.SetStatusText('')
+        try:
+            self._current_page = 1
+            self.nb_config_sampler.ChangeSelection(self._current_page)
+            self.SetStatusText('')
+        except Exception,e:
+            self.error(e)
     
     def _on_click_out_go_to_review( self, event ):
         '''
         TODO: need to fix an error in application state update 
         '''
-        
-        self._tc_preview.SetValue('')
-        
-        if not self._is_samples_created and self._prior_page_status < 3:
-            self._show_error_message("Review Error!", "Please create the sample before go to review.")
-            return 
-        
-        if self._is_samples_created and self._prior_page_status >= 3:
-            self._shelf_update_samples()
-        elif self._is_samples_created:
-            self._shelf_update_sample_tab_state()
+        try:
+            self._tc_preview.SetValue('')
             
-        # Sets up the review tab 
-        
-        self._lc_review._setup_review_tab(self.sampled_files)
-        
-        # changes the tab selection 
-
-        self._current_page = 3
-        self.nb_config_sampler.ChangeSelection(self._current_page)
-        self.SetStatusText('')
-
+            if not self._is_samples_created and self._prior_page_status < 3:
+                self._show_error_message("Review Error!", "Please create the sample before go to review.")
+                return 
+            
+            if self._is_samples_created and self._prior_page_status >= 3:
+                self._shelf_update_samples()
+            elif self._is_samples_created:
+                self._shelf_update_sample_tab_state()
+                
+            # Sets up the review tab 
+            
+            self._lc_review._setup_review_tab(self.sampled_files)
+            
+            # changes the tab selection 
     
+            self._current_page = 3
+            self.nb_config_sampler.ChangeSelection(self._current_page)
+            self.SetStatusText('')
+        except Exception,e:
+            self.error(e)
+  
     def _on_click_io_sel_data_dir( self, event ):
         """
         Select the data folder
         Arguments: Event of item selected
         Returns: Nothing
         """
-        super(RandomSampler, self)._on_click_io_sel_data_dir(event)
         
-        if self._is_project_new==True:
-            self.project_title = self._tc_io_new_project.GetValue()
-            # Enable all controls
-            if self.project_title  in self._cbx_project_title.GetStrings():     
-                self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
-                self.project_title = ""
-                self._tc_io_new_project.SetValue("")
+        try:
+            super(RandomSampler, self)._on_click_io_sel_data_dir(event)
+            
+            if self._is_project_new==True:
+                self.project_title = self._tc_io_new_project.GetValue()
+                # Enable all controls
+                if self.project_title  in self._cbx_project_title.GetStrings():     
+                    self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
+                    self.project_title = ""
+                    self._tc_io_new_project.SetValue("")
+                    return
+            
+            if len(self.project_title) == 0:
+                self._show_error_message("Value Error!", "Enter a title for the project.")
+                self._cbx_project_title.SetFocus() 
                 return
-        
-        if len(self.project_title) == 0:
-            self._show_error_message("Value Error!", "Enter a title for the project.")
-            self._cbx_project_title.SetFocus() 
-            return
-        
-        self._shelf_has_samples = False
-        
-        dlg = wx.DirDialog(self, "Choose the input folder to sample", self.dir_path, wx.DD_DIR_MUST_EXIST)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.dir_path = dlg.GetPath()
-            self.count=0
-            self._copy=True
-            msg_dialog=LoadDialog(None,-1)
-            msg_dialog.Show()
-            msg_dialog.Update()
-            self.generate_files_preprocess()
-            #thread=start_thread(self.generate_files_preprocess)
-            #thread.join()
-            msg_dialog.Destroy()
-            if(self._copy==False):
-                return 
             
-            self.SetStatusText("The selected data folder is %s" % self.dir_path)
-            message_dialog = wx.ProgressDialog(
-                                                'Loading Files', 
-                                                'Loading source documents. Please wait for a few minutes.', 
-                                                parent = self, maximum=self.count)
-            self.generate_files(message_dialog,self.count)
-            #thread = start_thread(self.generate_files,message_dialog)
-            message_dialog.ShowModal()
-            #thread.join()
-            message_dialog.Destroy()
+            self._shelf_has_samples = False
             
-        dlg.Destroy()
-        
-        self._tc_data_dir.SetValue(self.dir_path)
-        self._tc_out_data_dir.SetValue(self.dir_path)
-        self._tc_project_title.SetValue(self.project_title)
-        
-        self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
-        self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
-        self._is_io_updated = True
+            dlg = wx.DirDialog(self, "Choose the input folder to sample", self.dir_path, wx.DD_DIR_MUST_EXIST)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.dir_path = dlg.GetPath()
+                self.count=0
+                self._copy=True
+                msg_dialog=LoadDialog(None,-1)
+                msg_dialog.Show()
+                msg_dialog.Update()
+                self.generate_files_preprocess()
+                #thread=start_thread(self.generate_files_preprocess)
+                #thread.join()
+                msg_dialog.Destroy()
+                if(self._copy==False):
+                    return 
+                
+                self.SetStatusText("The selected data folder is %s" % self.dir_path)
+                message_dialog = wx.ProgressDialog(
+                                                    'Loading Files', 
+                                                    'Loading source documents. Please wait for a few minutes.', 
+                                                    parent = self, maximum=self.count)
+                self.generate_files(message_dialog,self.count)
+                #thread = start_thread(self.generate_files,message_dialog)
+                message_dialog.ShowModal()
+                #thread.join()
+                message_dialog.Destroy()
+                
+                self._tc_data_dir.SetValue(self.dir_path)
+                self._tc_out_data_dir.SetValue(self.dir_path)
+                self._tc_project_title.SetValue(self.project_title)
+                
+                self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+                self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+                self._is_io_updated = True
+            else:
+                self.SetStatusText("")
+            dlg.Destroy()
+            
+            
+        except Exception,e:
+            self.error(e)
         
     def generate_files_preprocess(self):
-        #self.Refresh()
-        #msg_dialog=LoadDialog(None,-1)
-        #msg_dialog.Show()
-        wx.BeginBusyCursor()
-        self.count = 0
-        for _,_, files in os.walk(self.dir_path):
-            #for file in files:
-            self.count += len(files)
-        self._tempdir=os.path.join(self.directory,"tmp",self.project_title)
-        if(os.path.exists(self._tempdir)):
-            shutil.rmtree(self._tempdir)
-        os.makedirs(self._tempdir)
-        wx.EndBusyCursor()
-        #wx.Sleep(100)
-        #msg_dialog.Destroy()
-        
+        try:
+            wx.BeginBusyCursor()
+            self.count = 0
+            for _,_, files in os.walk(self.dir_path):
+                #for file in files:
+                self.count += len(files)
+            self._tempdir=os.path.join(self.directory,"tmp",self.project_title)
+            if(os.path.exists(self._tempdir)):
+                shutil.rmtree(self._tempdir)
+            os.makedirs(self._tempdir)
+            wx.EndBusyCursor()
+        except Exception,e:
+            self.error(e)
+   
     def generate_files(self,dialog,num_files):
-        file_list_tmp=[]
-        count=1
-        
-        error_str=""
-        for root, _, files in os.walk(self.dir_path):
-            for file_name in files:
-                #wx.CallAfter(self._statusbar.SetLabel,"abc")
-                
-                complete_fileName=os.path.join(root, file_name)
-                fileName, fileExtension = os.path.splitext(complete_fileName)
-                if fileExtension==".pst":
-                
-                    shutil.copy(complete_fileName, os.path.abspath(self._tempdir))
-                    pstTempFile=os.path.join(self._tempdir,os.path.basename(complete_fileName))
-                 
-                    try:
-                        #os.chdir(self._tempdir)
-                        self.convert_pst(pstTempFile, self._tempdir)
-                        
-                        for rootPST, _, filesPST in os.walk(self._tempdir):
-                            for file_name_PST in filesPST:
-                                file_list_tmp.append(os.path.join(rootPST, file_name_PST))
-                    except Exception,e:
-                        print e
-                        error_str+=file_name
-                else:
-                    file_list_tmp.append(os.path.join(root, file_name))
-                    
-                dialog.Update(count)
-                count=count+1
-                wx.MilliSleep(300)
-                
-                
-        dialog.Update(num_files)
-        
-        #self.do_load(message_dialog)
-        self.file_list=file_list_tmp
-        
-        if(error_str!=""):
-            fileName=os.path.join(os.getcwd(),"error.log")
-            file_err=open(fileName,"a") 
-            date=unicode(datetime.now())
-            file_err.flush()
-            file_err.write(date+"=>")
-            file_err.write("Could not read "+ error_str+"\n")
+        try:
+            file_list_tmp=[]
+            count=1
             
-            self._show_error_message("Copy Error","Source PST files could not be processed, for more information please check " + fileName)
-            file_err.close()
-    
+            error_str=""
+            for root, _, files in os.walk(self.dir_path):
+                for file_name in files:
+                    #wx.CallAfter(self._statusbar.SetLabel,"abc")
+                    
+                    complete_fileName=os.path.join(root, file_name)
+                    fileName, fileExtension = os.path.splitext(complete_fileName)
+                    if fileExtension==".pst":
+                        pstTemp=os.path.join(self._tempdir,os.path.basename(fileName))
+                        os.mkdir(pstTemp)
+                        
+                        shutil.copy(complete_fileName, os.path.abspath(pstTemp))
+                        abc=os.path.basename(complete_fileName)
+                        pstTempFile=os.path.join(pstTemp,abc)
+
+                        try:
+                            
+                            #os.chdir(self._tempdir)
+                            self.convert_pst(pstTempFile, pstTemp)
+                            
+                            for rootPST, _, filesPST in os.walk(pstTemp):
+                                for file_name_PST in filesPST:
+                                    file_list_tmp.append(os.path.join(rootPST, file_name_PST))
+                        except Exception,e:
+                            print e
+                            error_str+=file_name
+                        #finally:
+                            ##os.remove(os.path.join(pstTemp,file_name+fileExtension))
+                    else:
+                        file_list_tmp.append(os.path.join(root, file_name))
+                        
+                    dialog.Update(count)
+                    count=count+1
+                    wx.MilliSleep(300)
+                    
+                    
+            dialog.Update(num_files)
+            
+            self.file_list=file_list_tmp
+            
+            if(error_str!=""):
+                fileName=os.path.join(os.getcwd(),"error.log")
+                file_err=open(fileName,"a") 
+                date=unicode(datetime.now())
+                file_err.flush()
+                file_err.write(date+"=>")
+                file_err.write("Could not read "+ error_str+"\n")
+                
+                self._show_error_message("Copy Error","Source PST files could not be processed, for more information please check " + fileName)
+                file_err.close()
+        except Exception,e:
+            self.error(e)
+        
     def _generate_file_samples(self):
         '''
         This function generates file sample based on the 
         class variables such as file_list, confidence_val, 
         and precision_val and sets the sample status label     
         '''
-        
-        # Generate samples
-        self.sampled_files = random_sampler(self.file_list, self.confidence_val, self.precision_val, self.SEED)
-
-        # Set status text 
-        
-        status_text = '%d sample documents will be selected' % len(self.sampled_files)
-        self._st_num_samples.SetLabel(status_text)
-        self._st_out_num_samples.SetLabel(status_text)
-        self._st_num_samples.Show()
-        self._st_out_num_samples.Show()
-        
-        self._is_ct_updated = True # it's a passive change 
+        try:
+            # Generate samples
+            self.sampled_files = random_sampler(self.file_list, self.confidence_val, self.precision_val, self.SEED)
     
+            # Set status text 
+            
+            status_text = '%d sample documents will be selected' % len(self.sampled_files)
+            self._st_num_samples.SetLabel(status_text)
+            self._st_out_num_samples.SetLabel(status_text)
+            self._st_num_samples.Show()
+            self._st_out_num_samples.Show()
+            
+            self._is_ct_updated = True # it's a passive change 
+        except Exception,e:
+            self.error(e)
         
     def _on_precision_changed(self, event):
         '''
@@ -612,7 +646,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             
         
         super(RandomSampler, self)._on_precision_changed(event)
-        
         # Maybe intermittently null string, escaping 
         try:
             # Checks for positive values 
@@ -630,8 +663,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             return None 
         
         self._generate_file_samples()
-        
-    
+            
     def get_precision_as_float(self):
         '''
         Converts precision to float
@@ -645,7 +677,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self.precision_val = float(int(self._tc_confidence_interval.GetValue())
                                        ) / 100.0 
             
-        
     def _on_confidence_changed(self, event):
         '''
         Triggers an event and updates the sample list on confidence - aka 
@@ -653,72 +684,70 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Event of new confidence
         Returns: Nothing
         '''
+        try:
         
+            super(RandomSampler, self)._on_confidence_changed(event)
+            
+            self._tc_out_confidence_levels.SetValue(self._cbx_confidence_levels.GetValue())
+            self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()) / Decimal('100')
+            self.SetStatusText('Confidence level is changed as ' + self._cbx_confidence_levels.GetValue())
+            self._is_ct_updated = True # for the confidence tab updates
+    
+            self._generate_file_samples()
+        except Exception,e:
+            self.error(e)
         
-        super(RandomSampler, self)._on_confidence_changed(event)
-        
-        self._tc_out_confidence_levels.SetValue(self._cbx_confidence_levels.GetValue())
-        self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()) / Decimal('100')
-        self.SetStatusText('Confidence level is changed as ' + self._cbx_confidence_levels.GetValue())
-        self._is_ct_updated = True # for the confidence tab updates
-
-        self._generate_file_samples()
-        
-   
     def _on_click_io_sel_output_dir( self, event ):
         """ 
         Selects the output folder 
         Arguments: Nothing
         Returns: Nothing
         """
-        super(RandomSampler, self)._on_click_io_sel_output_dir(event) 
-        
-        if self._is_project_new==True:
-            self.project_title = self._tc_io_new_project.GetValue()
-            # Enable all controls
-            if self.project_title  in self._cbx_project_title.GetStrings():     
-                self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
-                self.project_title = ""
-                self._tc_io_new_project.SetValue("")
-                return
-        
-        if len(self.project_title) == 0:
-            self._show_error_message("Value Error!", "Enter a title for the project.")
-            self._cbx_project_title.SetFocus() 
-            return
-        
-        dlg = wx.DirDialog(self, "Choose the output folder to save",
-                           self.output_dir_path, wx.DD_DIR_MUST_EXIST)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.output_dir_path = dlg.GetPath()
-        dlg.Destroy()
-        
-        self._tc_output_dir.SetValue(self.output_dir_path)
-        self._tc_out_output_dir.SetValue(self.output_dir_path)
-        self._tc_project_title.SetValue(self.project_title)
-        self.SetStatusText("The selected output folder is %s" % self.output_dir_path)
-        self._is_io_updated = True
+        try:
+            super(RandomSampler, self)._on_click_io_sel_output_dir(event) 
             
-
-    
+            if self._is_project_new==True:
+                self.project_title = self._tc_io_new_project.GetValue()
+                # Enable all controls
+                if self.project_title  in self._cbx_project_title.GetStrings():     
+                    self._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
+                    self.project_title = ""
+                    self._tc_io_new_project.SetValue("")
+                    return
+            
+            if len(self.project_title) == 0:
+                self._show_error_message("Value Error!", "Enter a title for the project.")
+                self._cbx_project_title.SetFocus() 
+                return
+            
+            dlg = wx.DirDialog(self, "Choose the output folder to save",
+                               self.output_dir_path, wx.DD_DIR_MUST_EXIST)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.output_dir_path = dlg.GetPath()
+            dlg.Destroy()
+            
+            self._tc_output_dir.SetValue(self.output_dir_path)
+            self._tc_out_output_dir.SetValue(self.output_dir_path)
+            self._tc_project_title.SetValue(self.project_title)
+            self.SetStatusText("The selected output folder is %s" % self.output_dir_path)
+            self._is_io_updated = True
+        except Exception,e:
+            self.error(e)
+              
     def do_copy(self, total_size, dialog):
         '''
         Thread to handle copy
         Arguments: Total size of copy, Handle to dialog
         '''
-        wx.BeginBusyCursor()
-        copy_with_dialog(self.dir_path,self._tempdir, self.sampled_files,
-                                     self.output_dir_path, total_size, dialog)
-        finish_copy_event  = wx.PyCommandEvent(wx.EVT_COMMAND_SET_FOCUS.typeId)
-        self.GetEventHandler().ProcessEvent(finish_copy_event)
-        wx.EndBusyCursor()
-
-        
-    def do_load(self, dialog):
-        
-        self.file_list = find_files_in_folder(self._tempdir)
-        self.Refresh()
-        dialog.Close()
+        try:
+            wx.BeginBusyCursor()
+            copy_with_dialog(self.dir_path,self._tempdir, self.sampled_files,
+                                         self.output_dir_path, total_size, dialog)
+            finish_copy_event  = wx.PyCommandEvent(wx.EVT_COMMAND_SET_FOCUS.typeId)
+            self.GetEventHandler().ProcessEvent(finish_copy_event)
+            wx.EndBusyCursor()
+        except Exception,e:
+            self.error(e)        
         
     def convert_pst(self, pstfilename,temp):
         '''
@@ -727,17 +756,18 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         #ToDo....NOT SAFE
         try:
             subprocess.check_output(['readpst', '-o', os.path.abspath(temp), '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
+        
+        
+            #print response
+            for root, _, files in os.walk(temp):
+                for file_name in files:
+                    filename=os.path.join(root, file_name)
+                    _, fileExtension = os.path.splitext(filename)
+                    if fileExtension!="":
+                        os.remove(filename)
         except Exception, e:
             print e
-            raise
-    
-        #print response
-        for root, _, files in os.walk(temp):
-            for file_name in files:
-                filename=os.path.join(root, file_name)
-                _, fileExtension = os.path.splitext(filename)
-                if fileExtension!="":
-                    os.remove(filename)
+            self.error(e)
     
     def _on_click_copy_files( self, event ):
         '''
@@ -745,135 +775,90 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Nothing
         Returns: Nothing
         '''
-        super(RandomSampler, self)._on_click_copy_files(event)
-          
-        # Check if path exists
-        if (not os.path.exists(self.dir_path) or
-        not os.path.exists(self.output_dir_path)):
-            self._show_error_message("Value Error!", "Please enter a valid Source Document Folder and Sampled Output Folder.")
-            return 
         
-        # Get total file size
-        total_file_size = 0
         try:
-            for x in map(os.path.getsize, self.sampled_files):
-                total_file_size += long(x)
-        
-            
-            total_diskspace = free_space(self.output_dir_path)
-            if (total_diskspace < total_file_size):
-                
-                msg = "Producing the sample will take {} space. Space on your drive ({}) is insufficient.".format( print_total_file_size, convert_size(total_diskspace))
-                self._show_error_message("Error - Not Enough Space", msg)
+            super(RandomSampler, self)._on_click_copy_files(event)
+              
+            # Check if path exists
+            if (not os.path.exists(self.dir_path) or
+            not os.path.exists(self.output_dir_path)):
+                self._show_error_message("Value Error!", "Please enter a valid Source Document Folder and Sampled Output Folder.")
                 return 
-        
-        except OSError as anyExp:
-            self._show_error_message("Error creating samples", "There was an error reading some files! Please check that you have access to the files.")
-
             
-        #Show status of copy
-        if total_file_size >= 0:
-    
-            progress_dialog = wx.ProgressDialog(
-                                                'Creating samples', 
-                                                'Please wait for a few minutes...', 
-                                                parent = self)
+            # Get total file size
+            total_file_size = 0
+            try:
+                for x in map(os.path.getsize, self.sampled_files):
+                    total_file_size += long(x)
             
-            # Runs copy on a different thread
-            thread = start_thread(self.do_copy, total_file_size, progress_dialog)
-            progress_dialog.ShowModal()
-            thread.join()
-            #progress_dialog.Show(False)
-            #self._btn_out_go_to_review.Enable()
-            self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
-            #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
-            self.shelf['isSampleCreated']=True
-            self._is_samples_created=True
-            self.shelf.sync()
-            self.Enable(True)
-            self.SetStatusText('%d samples (from %d files) are created to the output folder.' % (len(self.sampled_files), len(self.file_list)))
                 
-        else :
-            self.SetStatusText('Sample creation is cancelled.')
+                total_diskspace = free_space(self.output_dir_path)
+                if (total_diskspace < total_file_size):
+                    
+                    msg = "Producing the sample will take {} space. Space on your drive ({}) is insufficient.".format( total_file_size, convert_size(total_diskspace))
+                    self._show_error_message("Error - Not Enough Space", msg)
+                    return 
+            
+            except OSError as anyExp:
+                self._show_error_message("Error creating samples", "There was an error reading some files! Please check that you have access to the files.")
+                return
+    
+                
+            #Show status of copy
+            if total_file_size >= 0:
         
-        
+                progress_dialog = wx.ProgressDialog(
+                                                    'Creating samples', 
+                                                    'Please wait for a few minutes...', 
+                                                    parent = self)
+                
+                # Runs copy on a different thread
+                thread = start_thread(self.do_copy, total_file_size, progress_dialog)
+                progress_dialog.ShowModal()
+                thread.join()
+                #progress_dialog.Show(False)
+                #self._btn_out_go_to_review.Enable()
+                self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
+                #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
+                self.shelf['isSampleCreated']=True
+                self._is_samples_created=True
+                self.shelf.sync()
+                self.Enable(True)
+                self.SetStatusText('%d samples (from %d files) are created to the output folder.' % (len(self.sampled_files), len(self.file_list)))
+                    
+            else :
+                self.SetStatusText('Sample creation is cancelled.')
+        except Exception, e:
+            self.error(e)
+     
+    #Check            
     def _add_default_tags(self):
         '''
         Adds the default tags to the listbox of tags
         '''
-        
-        for tag in DEFAULT_TAGS:
-            self._lbx_tag.Append(tag)
-            
-    def _on_btn_new_tag(self, event):
-        '''
-        Adds a new tag to the listbox of tags
-        '''
-        tag_name = wx.GetTextFromUser('Enter name of new tag', 'New Tag')
-        if tag_name != '':
-            self._lbx_tag.Append(tag_name)
-        self._is_io_updated = True
-        
-    def _on_btn_delete_tag(self, event):
-        '''
-        Deletes a tag from listbox of tags
-        '''
-        selection = self._lbx_tag.GetSelection()
-             
-        # Do not modify if original tag
-        if selection in xrange(len(DEFAULT_TAGS)):
-            return
-        if selection != -1:
-            self._lbx_tag.Delete(selection)
-        self._is_io_updated = True
-        
-        
-    def _on_btn_rename_tag(self, event):
-        '''
-        Renames the non-default tags from the listbox of tags
-        '''
-        selection = self._lbx_tag.GetSelection()
-        tag_name = self._lbx_tag.GetString(selection)
-        
-        # Do not modify if original tag
-        if tag_name in DEFAULT_TAGS:
-            return
-        renamed = wx.GetTextFromUser('Enter new name of Tag', 'Rename Tag', tag_name)
-        if renamed != '':
-            self._lbx_tag.Delete(selection)
-            self._lbx_tag.Insert(renamed, selection)
-        self._is_io_updated = True
-        
-    def load_shelf_tags(self):
-        '''
-        Adds the tags from self to 
-        '''
-    
-#    def setup_file_tagger(self):
-#        '''
-#        Sets up the list showing all the tags in the interface
-#        '''
-#        # id + name + default_tags + additional_tags
-#        num_colums = 2 + len(DEFAULT_TAGS) + len(self.ADDITIONAL_TAGS)
-#        self.file_tagger = FileTagger(self._panel_review, num_colums, self.file_list)    
-           
-    #********************************************* Review Tab Handling *******************************************************  
-     
-            
+        try:
+            for tag in DEFAULT_TAGS:
+                self._lbx_tag.Append(tag)
+        except Exception,e:
+            self.error(e)
+         
     def _on_rbx_responsive_updated( self, event ):
         '''
         Handles the selected document responsive check box 
         check and uncheck events 
          
         '''
-        responsive_status = self._rbx_responsive.GetStringSelection() 
-        if responsive_status == 'Yes': 
-            self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
-        elif responsive_status == 'No': 
-            self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
-        elif responsive_status == 'Unknown': 
-            self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
-        self._is_rt_updated = True 
+        try:
+            responsive_status = self._rbx_responsive.GetStringSelection() 
+            if responsive_status == 'Yes': 
+                self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
+            elif responsive_status == 'No': 
+                self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
+            elif responsive_status == 'Unknown': 
+                self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
+            self._is_rt_updated = True
+        except Exception,e:
+            self.error(e) 
     
     def _on_rbx_privileged_updated( self, event ):
         '''
@@ -881,43 +866,47 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         check and uncheck events 
          
         '''
-        
-        privileged_status = self._rbx_privileged.GetStringSelection() 
-        if privileged_status == 'Yes': 
-            self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
-        elif privileged_status == 'No': 
-            self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
-        elif privileged_status == 'Unknown': 
-            self._lc_review.SetStringItem(self.selected_doc_id, 3, '')
-        self._is_rt_updated = True  
-
+        try:
+            privileged_status = self._rbx_privileged.GetStringSelection() 
+            if privileged_status == 'Yes': 
+                self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
+            elif privileged_status == 'No': 
+                self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
+            elif privileged_status == 'Unknown': 
+                self._lc_review.SetStringItem(self.selected_doc_id, 3, '')
+            self._is_rt_updated = True
+        except Exception,e:
+            self.error(e)  
 
     def _on_click_clear_all_doc_tags( self, event ):
         '''
         Clear all assigned document tags from the list control 
         '''
-        
-        for i in range(0, len(self.sampled_files)):
-            self._lc_review.SetStringItem(i, 2, '')
-            self._lc_review.SetStringItem(i, 3, '')       
-        
-        self._rbx_responsive.SetStringSelection('Unknown')    
-        self._rbx_privileged.SetStringSelection('Unknown')  
+        try:
+            for i in range(0, len(self.sampled_files)):
+                self._lc_review.SetStringItem(i, 2, '')
+                self._lc_review.SetStringItem(i, 3, '')       
             
-
-        self._is_rt_updated = True
-        
+            self._rbx_responsive.SetStringSelection('Unknown')    
+            self._rbx_privileged.SetStringSelection('Unknown')  
+                
     
+            self._is_rt_updated = True
+        except Exception,e:
+            self.error(e)
+            
     def _on_click_review_goback( self, event ):
         '''
         Handles the review tab GoBack button event 
         '''
-        
-        if self._is_rt_updated:
-            self._shelf_update_review_tab_state()
-        
-        self._current_page = 2
-        self.nb_config_sampler.ChangeSelection(self._current_page)
+        try:
+            if self._is_rt_updated:
+                self._shelf_update_review_tab_state()
+            
+            self._current_page = 2
+            self.nb_config_sampler.ChangeSelection(self._current_page)
+        except Exception,e:
+            self.error(e)
     
     def _on_click_review_exit( self, event ):
         '''
@@ -925,9 +914,11 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Nothing
         Returns: Nothing
         '''
-        self._on_close()
+        try:
+            self._on_close()
+        except Exception,e:
+            self.error(e)
         
-
     def _on_click_review_gen_report( self, event ):
         if self._is_rt_updated:
             self._shelf_update_review_tab_state()
@@ -973,11 +964,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             
             # Open the HTML report in the default web browser 
             webbrowser.open(file_name)
-        except:
+        except Exception,e:
             # Report generation failed 
-            None 
-            
-        
+            self.error(e)
+                    
     def _save_html_report(self, html_body, file_name):
         '''
         Stores into a file 
@@ -1011,125 +1001,128 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 </html>""" % datetime.now().strftime("%A, %d. %B %Y %I:%M%p")))
         except Exception, e:
             print e
-
+            self.error(e)
 
     def _gen_specifications_html(self): 
-        
-        hrow = TableRow(cells=['Sampler Specifications', 'Entries'], bgcolor='#6E6E6E')
-        setting_table = Table(header_row=hrow, border=0)
-
-        config_cell = TableCell("Source document folder", bgcolor = '#CEF6F5', align = 'left')
-        setting_cell = TableCell(self.dir_path, bgcolor = '#CEF6F5', align = 'left')
-        setting_table.rows.append([config_cell, setting_cell])
-        
-        config_cell = TableCell("Sampled output folder", bgcolor = '#CEF6F5', align = 'left')
-        setting_cell = TableCell(self.output_dir_path, bgcolor = '#CEF6F5', align = 'left')
-        setting_table.rows.append([config_cell, setting_cell])
-        
-        config_cell = TableCell("Confidence level (%)", bgcolor = '#CEF6F5', align = 'left')
-        setting_cell = TableCell(self.confidence_val*100, bgcolor = '#CEF6F5', align = 'right')
-        setting_table.rows.append([config_cell, setting_cell])
-        
-        config_cell = TableCell("Confidence interval (%)", bgcolor = '#CEF6F5', align = 'left')
-        setting_cell = TableCell(self.precision_val*100, bgcolor = '#CEF6F5', align = 'right')
-        setting_table.rows.append([config_cell, setting_cell])
-        
-        config_cell = TableCell("Total documents in the source document folder", bgcolor = '#CEF6F5', align = 'left')
-        setting_cell = TableCell(len(self.file_list), bgcolor = '#CEF6F5', align = 'right')
-        setting_table.rows.append([config_cell, setting_cell])
-        
-        config_cell = TableCell("The sample size", bgcolor = '#CEF6F5', align = 'left')
-        setting_cell = TableCell(len(self.sampled_files), bgcolor = '#CEF6F5', align = 'right')
-        setting_table.rows.append([config_cell, setting_cell])
-        
-        return str(setting_table)
+        try:
+            hrow = TableRow(cells=['Sampler Specifications', 'Entries'], bgcolor='#6E6E6E')
+            setting_table = Table(header_row=hrow, border=0)
+    
+            config_cell = TableCell("Source document folder", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(self.dir_path, bgcolor = '#CEF6F5', align = 'left')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("Sampled output folder", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(self.output_dir_path, bgcolor = '#CEF6F5', align = 'left')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("Confidence level (%)", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(self.confidence_val*100, bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("Confidence interval (%)", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(self.precision_val*100, bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("Total documents in the source document folder", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(len(self.file_list), bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("The sample size", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(len(self.sampled_files), bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            return str(setting_table)
+        except Exception,e:
+            self.error(e)
         
     def _gen_complete_html_report(self, samples, responsive, privileged):
-        
-        # Generate HTML tags for all documents 
-        hrow = TableRow(cells=['#', 'File Name', 'Responsive', 'Privileged'], bgcolor='#6E6E6E')
-        all_table = Table(header_row=hrow)
-        for fs in samples:
+        try:
+            # Generate HTML tags for all documents 
+            hrow = TableRow(cells=['#', 'File Name', 'Responsive', 'Privileged'], bgcolor='#6E6E6E')
+            all_table = Table(header_row=hrow)
+            for fs in samples:
+                
+                rc_colr = resp_colors[rstatus(fs[4])]
+                pc_colr = priv_colors[rstatus(fs[5])]
+                r_colr = row_colors[row_status(fs[4], fs[5])]
+                num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+                file_name = link(fs[1], os.path.join(fs[3], fs[1]))
+                fn_cell = TableCell(file_name, bgcolor=r_colr)
+                resp_cell = TableCell(fs[4], bgcolor=rc_colr, align='center')
+                priv_cell = TableCell(fs[5], bgcolor=pc_colr, align='center')
+                
+                all_table.rows.append([num_cell, fn_cell, resp_cell, priv_cell])
             
-            rc_colr = resp_colors[rstatus(fs[4])]
-            pc_colr = priv_colors[rstatus(fs[5])]
-            r_colr = row_colors[row_status(fs[4], fs[5])]
-            num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
-            file_name = link(fs[1], os.path.join(fs[3], fs[1]))
-            fn_cell = TableCell(file_name, bgcolor=r_colr)
-            resp_cell = TableCell(fs[4], bgcolor=rc_colr, align='center')
-            priv_cell = TableCell(fs[5], bgcolor=pc_colr, align='center')
+            html_body = """
+            %s 
+    
+            %s 
+    
+            <hr/>
+            <h3>Complete Sample</h3>
+            %s 
+            <br/>
+            """ % (self._gen_responsive_html_report(responsive), self._gen_privileged_html_report(privileged), str(all_table))
             
-            all_table.rows.append([num_cell, fn_cell, resp_cell, priv_cell])
-        
-        html_body = """
-        %s 
-
-        %s 
-
-        <hr/>
-        <h3>Complete Sample</h3>
-        %s 
-        <br/>
-        """ % (self._gen_responsive_html_report(responsive), self._gen_privileged_html_report(privileged), str(all_table))
-        
-        return html_body
-       
+            return html_body
+        except Exception,e:
+            self.error(e)
        
     def _gen_responsive_html_report(self, responsive):
         '''
         Generate HTML tags for responsive documents 
         '''
-        
-        if len(responsive) == 0: return ''
-        hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
-        resp_table = Table(header_row=hrow)
-        for fs in responsive:
-            r_colr = resp_colors['Yes']
-            num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
-            file_name = link(fs[1], os.path.join(fs[3], fs[1]))
-            fn_cell = TableCell(file_name, bgcolor=r_colr)
-            resp_table.rows.append([num_cell, fn_cell])
+        try:
+            if len(responsive) == 0: return ''
+            hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
+            resp_table = Table(header_row=hrow)
+            for fs in responsive:
+                r_colr = resp_colors['Yes']
+                num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+                file_name = link(fs[1], os.path.join(fs[3], fs[1]))
+                fn_cell = TableCell(file_name, bgcolor=r_colr)
+                resp_table.rows.append([num_cell, fn_cell])
+                
+            html_body = """
+            <hr/>
+            <h3>Responsive Documents</h3>
+            %s 
+            <br/>
+            """ % str(resp_table)
             
-        html_body = """
-        <hr/>
-        <h3>Responsive Documents</h3>
-        %s 
-        <br/>
-        """ % str(resp_table)
-        
-        return html_body
-    
-    
+            return html_body
+        except Exception,e:
+            self.error(e)
+      
     def _gen_privileged_html_report(self, privileged):
         '''
         Generate HTML tags for privileged documents 
         '''
-        
-        if len(privileged) == 0: return ''
-        
-        hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
-        priv_table = Table(header_row=hrow)
-        for fs in privileged:
-            r_colr = priv_colors['Yes']
-            num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
-            file_name = link(fs[1], os.path.join(fs[3], fs[1]))
-            fn_cell = TableCell(file_name, bgcolor=r_colr)
-            priv_table.rows.append([num_cell, fn_cell])
+        try:
+            if len(privileged) == 0: return ''
             
-        html_body = """
-        <hr/>
-        <h3>Privileged Documents</h3>
-        %s 
-        <br/>
-        """ % str(priv_table)
-        
-        return html_body
-       
+            hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
+            priv_table = Table(header_row=hrow)
+            for fs in privileged:
+                r_colr = priv_colors['Yes']
+                num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
+                file_name = link(fs[1], os.path.join(fs[3], fs[1]))
+                fn_cell = TableCell(file_name, bgcolor=r_colr)
+                priv_table.rows.append([num_cell, fn_cell])
+                
+            html_body = """
+            <hr/>
+            <h3>Privileged Documents</h3>
+            %s 
+            <br/>
+            """ % str(priv_table)
+            
+            return html_body
+        except Exception,e:
+            self.error(e)
         
     #********************************************* END Review Tab Handling *******************************************************  
-
-        
 
     def _on_click_out_exit( self, event ):
         '''
@@ -1137,7 +1130,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Nothing
         Returns: Nothing
         '''
-        self._on_close()   
+        try:
+            self._on_close()
+        except Exception,e:
+            self.error(e)   
    
     def _on_close(self):
         '''
@@ -1145,40 +1141,44 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Nothing
         Returns: Nothing
         '''
-        
-        dlg = wx.MessageDialog(self,
-                               "Do you really want to close this application?",
-                               "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
-        if dlg.ShowModal() == wx.ID_OK:
-            
-            # Handles the shelf 
-            if self.shelf is not None:
-                if self._is_rt_updated:
-                    self._shelf_update_review_tab_state()
-                self.shelf.close()
-            
-            self.Destroy()
+        try:
+            dlg = wx.MessageDialog(self,
+                                   "Do you really want to close this application?",
+                                   "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
+            if dlg.ShowModal() == wx.ID_OK:
+                
+                # Handles the shelf 
+                if self.shelf is not None:
+                    if self._is_rt_updated:
+                        self._shelf_update_review_tab_state()
+                    self.shelf.close()
+                
+                self.Destroy()
+        except Exception,e:
+            self.error(e)
 
     def _show_error_message(self, _header, _message):
         '''
         Shows error messages in a pop up 
         '''
-        
-        dlg = wx.MessageDialog(self, _message, _header, wx.OK | wx.ICON_ERROR)
-        dlg.ShowModal()
-
+        try:
+            dlg = wx.MessageDialog(self, _message, _header, wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+        except Exception,e:
+            self.error(e)
 
     def _load_cbx_confidence_levels(self):
         '''
         Loads the supported confidence levels 
         '''
-        
-        confidence_levels = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
-        confidence_levels.sort(reverse=True)
-        self._cbx_confidence_levels.Clear()
-        for cl in confidence_levels:
-            self._cbx_confidence_levels.Append(cl)
-
+        try:
+            confidence_levels = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
+            confidence_levels.sort(reverse=True)
+            self._cbx_confidence_levels.Clear()
+            for cl in confidence_levels:
+                self._cbx_confidence_levels.Append(cl)
+        except Exception,e:
+            self.error(e)
 
     def _init_confidence(self):
         '''
@@ -1186,26 +1186,29 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: None
         Returns: None
         '''
-        self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
-        items = self._cbx_confidence_levels.GetItems()
-        index = -1
         try:
-            index = items.index(str(DEFAULT_CONFIDENCE_LEVEL))
-            self._cbx_confidence_levels.SetSelection(index)
-        except ValueError:
-            self._cbx_confidence_levels.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
-        
-        self._tc_out_confidence_levels.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
-        
-        # Set default confidence interval 
-        self.precision_val = DEFAULT_CONFIDENCE_INTERVAL / 100
-        str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
-        self._tc_confidence_interval.ChangeValue(str_precision)
-        self._tc_out_confidence_interval.ChangeValue(str_precision)
-
-        # Hides the status messages 
-        self._st_num_samples.Show(False)
-        self._st_out_num_samples.Show(False)
+            self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
+            items = self._cbx_confidence_levels.GetItems()
+            index = -1
+            try:
+                index = items.index(str(DEFAULT_CONFIDENCE_LEVEL))
+                self._cbx_confidence_levels.SetSelection(index)
+            except ValueError:
+                self._cbx_confidence_levels.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
+            
+            self._tc_out_confidence_levels.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
+            
+            # Set default confidence interval 
+            self.precision_val = DEFAULT_CONFIDENCE_INTERVAL / 100
+            str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
+            self._tc_confidence_interval.ChangeValue(str_precision)
+            self._tc_out_confidence_interval.ChangeValue(str_precision)
+    
+            # Hides the status messages 
+            self._st_num_samples.Show(False)
+            self._st_out_num_samples.Show(False)
+        except Exception,e:
+            self.error(e)
 
     def _init_controls(self):
         '''
@@ -1214,8 +1217,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         '''
 
         # for the confidence tab 
-        self._init_confidence()
-
+        try:
+            self._init_confidence()
+        except Exception,e:
+            self.error(e)
 
     def _shelf_application_setup(self):
         '''
@@ -1223,341 +1228,358 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         state file located in the application directory  
         '''
         # Creates the data shelf if not exists 
-        self.shelf = shelve.open(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION),writeback=TRUE) # open -- file may get suffix added by low-level
-        if self._is_project_new:
-            self._cbx_project_title.Append(self.project_title)
-            self._cbx_project_title.SetValue(self.project_title)
-            self._chk_io_new_project.SetValue(False)
-            self._is_project_new=False
-            self._tc_io_new_project.Disable()
-            self._tc_io_new_project.SetValue("Title of new project...")
-            self._cbx_project_title.Enable()
-            self._is_samples_created=False
-            ##self._btn_out_go_to_review.Enable(False)
-            self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
-            #self._btn_out_go_to_review.SetLabel("Please Create Samples")
+        try:
+            self.shelf = shelve.open(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION),writeback=TRUE) # open -- file may get suffix added by low-level
+            if self._is_project_new:
+                self._cbx_project_title.Append(self.project_title)
+                self._cbx_project_title.SetValue(self.project_title)
+                self._chk_io_new_project.SetValue(False)
+                self._is_project_new=False
+                self._tc_io_new_project.Disable()
+                self._tc_io_new_project.SetValue("Title of new project...")
+                self._cbx_project_title.Enable()
+                self._is_samples_created=False
+                ##self._btn_out_go_to_review.Enable(False)
+                self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
+                #self._btn_out_go_to_review.SetLabel("Please Create Samples")
+                
+                
+    
+            self._shelf_has_cfg = False 
+            self._shelf_has_samples = False
+            if self.shelf.has_key('config'):
+                self._shelf_has_cfg = True 
+                if self.shelf.has_key('samples'):
+                    self._shelf_has_samples = True
+                    if self.shelf['isSampleCreated']:
+                        self._is_samples_created = True
+                        #self._btn_out_go_to_review.Enable()
+                        self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
+                        #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
+                    else:
+                        self._is_samples_created = False
+                        #self._btn_out_go_to_review.Enable(False)
+                        self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
+                        #self._btn_out_go_to_review.SetLabel("Please Create Samples")
             
-            
-
-        self._shelf_has_cfg = False 
-        self._shelf_has_samples = False
-        if self.shelf.has_key('config'):
-            self._shelf_has_cfg = True 
-            if self.shelf.has_key('samples'):
-                self._shelf_has_samples = True
-                if self.shelf['isSampleCreated']:
-                    self._is_samples_created = True
-                    #self._btn_out_go_to_review.Enable()
-                    self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
-                    #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
+            # Loads the the application state from the shelf 
+            if self._shelf_has_cfg:
+                
+                cfg = self.shelf['config']
+                self.dir_path = cfg._data_folder 
+                self.output_dir_path = cfg._output_folder 
+                self.precision_val = cfg._confidence_interval
+                self.confidence_val = cfg._confidence_level
+                self._prior_page_status = cfg._current_page
+                self._tempdir=cfg._tempdir
+                
+                #print os.getcwd()
+                if os.path.isdir(self._tempdir)==False:
+                        self._show_error_message("Read Error","Temporary Folder corresponding to missing, Project will be deleted")
+                        self.shelf.close()
+                        os.remove(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION))
+                        self.project_title=""
+                        self._cbx_project_title.Clear()
+                        self.get_shelve_files()
+                        self._cbx_project_title.SetValue(self.project_title)
+                        return
                 else:
-                    self._is_samples_created = False
-                    #self._btn_out_go_to_review.Enable(False)
-                    self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
-                    #self._btn_out_go_to_review.SetLabel("Please Create Samples")
+                    if os.path.isdir(self.dir_path)==False:
+                        self._show_error_message("Read Error","Input Folder is missing, Project will be deleted")
+                        self.shelf.close()
+                        os.remove(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION))
+                        self.project_title=""
+                        self._cbx_project_title.Clear()
+                        self.get_shelve_files()
+                        self._cbx_project_title.SetValue(self.project_title)
+                        return
+                        
+                self.file_list = self.shelf['file_list'] 
+                self.ADDITIONAL_TAGS = self.shelf['additional_tags']
+    
+                # for the I/O tab 
+                self._tc_data_dir.SetValue(self.dir_path)
+                self._tc_output_dir.SetValue(self.output_dir_path)
+                self._tc_out_data_dir.SetValue(self.dir_path)
+                self._tc_out_output_dir.SetValue(self.output_dir_path)
+                self._tc_project_title.SetValue(self.project_title)
+                self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+                self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+                
+                # for confidence interval 
+                str_confidence_level = str(self.confidence_val * Decimal('100'))
+                str_precision = str(int(self.precision_val * 100))
+                self._cbx_confidence_levels.SetValue(str_confidence_level)
+                self._tc_confidence_interval.ChangeValue(str_precision)
+                self._tc_out_confidence_levels.ChangeValue(str_confidence_level)
+                self._tc_out_confidence_interval.ChangeValue(str_precision)
+                 
         
-        # Loads the the application state from the shelf 
-        if self._shelf_has_cfg:
-            
-            cfg = self.shelf['config']
-            self.dir_path = cfg._data_folder 
-            self.output_dir_path = cfg._output_folder 
-            self.precision_val = cfg._confidence_interval
-            self.confidence_val = cfg._confidence_level
-            self._prior_page_status = cfg._current_page
-            self._tempdir=cfg._tempdir
-            
-            #print os.getcwd()
-            if os.path.isdir(self._tempdir)==False:
-                    self._show_error_message("Read Error","Temporary Folder corresponding to missing, Project will be deleted")
-                    self.shelf.close()
-                    os.remove(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION))
-                    self.project_title=""
-                    self._cbx_project_title.Clear()
-                    self.get_shelve_files()
-                    self._cbx_project_title.SetValue(self.project_title)
-                    return
+                
+            # Creates the data shelf for the first time 
             else:
-                if os.path.isdir(self.dir_path)==False:
-                    self._show_error_message("Read Error","Input Folder is missing, Project will be deleted")
-                    self.shelf.close()
-                    os.remove(os.path.join(self.directory,self.project_title+SHELVE_FILE_EXTENSION))
-                    self.project_title=""
-                    self._cbx_project_title.Clear()
-                    self.get_shelve_files()
-                    self._cbx_project_title.SetValue(self.project_title)
-                    return
-                    
-            self.file_list = self.shelf['file_list'] 
-            self.ADDITIONAL_TAGS = self.shelf['additional_tags']
-
-            # for the I/O tab 
-            self._tc_data_dir.SetValue(self.dir_path)
-            self._tc_output_dir.SetValue(self.output_dir_path)
-            self._tc_out_data_dir.SetValue(self.dir_path)
-            self._tc_out_output_dir.SetValue(self.output_dir_path)
-            self._tc_project_title.SetValue(self.project_title)
-            self._st_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
-            self._st_out_num_data_dir_files.SetLabel('%d documents' % len(self.file_list))
+                # Initializes the necessary controls 
+                self._init_controls()
+                #if self._is_pst_project==False:
+                #    self._tempdir=self.dir_path
+                self.shelf['file_list'] = self.file_list
+                self.shelf['additional_tags'] = []
+                self.shelf['config'] = RSConfig(self.dir_path, self.output_dir_path, self.precision_val, self.confidence_val, self._tempdir) 
+                self.shelf.sync()
             
-            # for confidence interval 
-            str_confidence_level = str(self.confidence_val * Decimal('100'))
-            str_precision = str(int(self.precision_val * 100))
-            self._cbx_confidence_levels.SetValue(str_confidence_level)
-            self._tc_confidence_interval.ChangeValue(str_precision)
-            self._tc_out_confidence_levels.ChangeValue(str_confidence_level)
-            self._tc_out_confidence_interval.ChangeValue(str_precision)
-             
-    
-            
-        # Creates the data shelf for the first time 
-        else:
-            # Initializes the necessary controls 
-            self._init_controls()
-            #if self._is_pst_project==False:
-            #    self._tempdir=self.dir_path
-            self.shelf['file_list'] = self.file_list
-            self.shelf['additional_tags'] = []
-            self.shelf['config'] = RSConfig(self.dir_path, self.output_dir_path, self.precision_val, self.confidence_val, self._tempdir) 
+            if self._shelf_has_samples:
+                self._shelf_load_file_samples()
+                
             self.shelf.sync()
-        
-        if self._shelf_has_samples:
-            self._shelf_load_file_samples()
-            
-        self.shelf.sync()
-        
-    
+        except Exception,e:
+            self.error(e)
+         
     def _shelf_update_io_tab_state(self):
         '''
         Updates the data folder and output folder 
         into the shelf
         '''    
-        cfg = self.shelf['config']
-        cfg._data_folder = self.dir_path
-        cfg._output_folder = self.output_dir_path
-        cfg._modified_date = datetime.now()
-        cfg._current_page = 0 
-        self.shelf['config'] = cfg
-        self.shelf['file_list'] = self.file_list
-        self.shelf['samples'] = self.sampled_files = [] # need to reset the samples   
-        self.shelf['isSampleCreated']=False
-        self._is_samples_created=False
-        self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
-        self.shelf.sync()
-        
-     
-    
+        try:
+            cfg = self.shelf['config']
+            cfg._data_folder = self.dir_path
+            cfg._output_folder = self.output_dir_path
+            cfg._modified_date = datetime.now()
+            cfg._current_page = 0 
+            self.shelf['config'] = cfg
+            self.shelf['file_list'] = self.file_list
+            self.shelf['samples'] = self.sampled_files = [] # need to reset the samples   
+            self.shelf['isSampleCreated']=False
+            self._is_samples_created=False
+            self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
+            self.shelf.sync()
+        except Exception,e:
+            self.error(e)
+         
     def _shelf_update_confidence_tab_state(self):
         '''
         Updates the confidence level and interval  
         into the shelf
         '''    
-        cfg = self.shelf['config']
-        cfg._confidence_level = self.confidence_val
-        cfg._confidence_interval = self.precision_val
-        cfg._modified_date = datetime.now()
-        cfg._current_page = 1
-        self.shelf['config'] = cfg
-        self._shelf_has_cfg = True
-        self._is_samples_created=False
-        self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) ) 
-        self.shelf.sync()
-
-        self._shelf_update_samples()
-        
-    def _shelf_update_tags_state(self):
-        '''
-        Updates the additional tags added to shelf
-        '''
-        
-        cfg = self.shelf['config']
-        cfg._modified_date = datetime.now()
-        cfg._current_page = 2
-        self.shelf['config'] = cfg
-        self.shelf['additiional_tags'] = self.ADDITIONAL_TAGS
-         
-        self.shelf.sync()
-        
-
+        try:
+            cfg = self.shelf['config']
+            cfg._confidence_level = self.confidence_val
+            cfg._confidence_interval = self.precision_val
+            cfg._modified_date = datetime.now()
+            cfg._current_page = 1
+            self.shelf['config'] = cfg
+            self._shelf_has_cfg = True
+            self._is_samples_created=False
+            self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) ) 
+            self.shelf.sync()
+    
+            self._shelf_update_samples()
+        except Exception,e:
+            self.error(e)
 
     def _shelf_update_samples(self):
         '''
         Update the shelf with new samples 
         '''
-        file_id = 0 
-        samples_lst = []       
-        for src_file_path in self.sampled_files:
-            src_dir, file_name = os.path.split(src_file_path)
-            dest_file_path = get_destination_file_path(self.dir_path, src_file_path, self.output_dir_path)
-            dest_dir, _ = os.path.split(dest_file_path) # gets destination directory 
+        try:
+            file_id = 0 
+            samples_lst = []       
+            for src_file_path in self.sampled_files:
+                src_dir, file_name = os.path.split(src_file_path)
+                dest_file_path = get_destination_file_path(self.dir_path,self._tempdir, src_file_path, self.output_dir_path)
+                dest_dir, _ = os.path.split(dest_file_path) # gets destination directory 
+                
+                fs = [file_id, file_name, src_dir, dest_dir, '', '']   
+                samples_lst.append(fs) # adds every file into the samples dictionary 
+                file_id += 1
             
-            fs = [file_id, file_name, src_dir, dest_dir, '', '']   
-            samples_lst.append(fs) # adds every file into the samples dictionary 
-            file_id += 1
-        
-        self.shelf['samples'] = samples_lst 
-        self.shelf.sync()
-        self._shelf_has_samples = True 
+            self.shelf['samples'] = samples_lst 
+            self.shelf.sync()
+            self._shelf_has_samples = True
+        except Exception,e:
+            self.error(e) 
 
+    #check
 
     def _shelf_update_sample_tab_state(self):
-        cfg = self.shelf['config']
-        cfg._modified_date = datetime.now()
-        cfg._current_page = 3
-        self.shelf['config'] = cfg
-        self.shelf.sync()
-
-        
+        try:
+            cfg = self.shelf['config']
+            cfg._modified_date = datetime.now()
+            cfg._current_page = 3
+            self.shelf['config'] = cfg
+            self.shelf.sync()
+        except Exception,e:
+            self.error(e)
 
     def _shelf_update_review_tab_state(self):
         '''
         This function update the state of the review tab 
         '''
-        samples_lst = self.shelf['samples']
-        cfg = self.shelf['config']
+        try:
+            samples_lst = self.shelf['samples']
+            cfg = self.shelf['config']
+            
+            cfg._modified_date = datetime.now()
+            cfg._current_page = 4
+    
+            for file_id in range(0, len(samples_lst)):
+                responsive = self._lc_review.GetItem(file_id, 2)
+                privileged = self._lc_review.GetItem(file_id, 3)
+                samples_lst[file_id][4] = responsive.Text
+                samples_lst[file_id][5] = privileged.Text
+            
+            self.shelf['samples'] = samples_lst
+            self.shelf['config'] = cfg
+            self.shelf.sync()
+        except Exception:
+            self.error(e)
         
-        cfg._modified_date = datetime.now()
-        cfg._current_page = 4
-
-        for file_id in range(0, len(samples_lst)):
-            responsive = self._lc_review.GetItem(file_id, 2)
-            privileged = self._lc_review.GetItem(file_id, 3)
-            samples_lst[file_id][4] = responsive.Text
-            samples_lst[file_id][5] = privileged.Text
-        
-        self.shelf['samples'] = samples_lst
-        self.shelf['config'] = cfg
-        self.shelf.sync()
-        
-
     def _shelf_load_file_samples(self):
         '''
         This function loads already saved file samples in the shelf      
         '''
-        
-        # Loads samples 
-        self.sampled_files = []
-        
-        samples_lst = self.shelf['samples']
-        if len(samples_lst) == 0:
-            self._shelf_has_samples = False 
-            return 
-        
-        for fs in samples_lst: 
-            self.sampled_files.append(os.path.join(fs[2], fs[1]))
-        
-        # Set status text 
-        
-        status_text = '%d sample documents will be selected' % len(self.sampled_files)
-        self._st_num_samples.SetLabel(status_text)
-        self._st_out_num_samples.SetLabel(status_text)
-        self._st_num_samples.Show()
-        self._st_out_num_samples.Show()
+        try:
+            # Loads samples 
+            self.sampled_files = []
+            
+            samples_lst = self.shelf['samples']
+            if len(samples_lst) == 0:
+                self._shelf_has_samples = False 
+                return 
+            
+            for fs in samples_lst: 
+                self.sampled_files.append(os.path.join(fs[2], fs[1]))
+            
+            # Set status text 
+            
+            status_text = '%d sample documents will be selected' % len(self.sampled_files)
+            self._st_num_samples.SetLabel(status_text)
+            self._st_out_num_samples.SetLabel(status_text)
+            self._st_num_samples.Show()
+            self._st_out_num_samples.Show()
+        except Exception:
+            self.error(e)
 
-    
     def _shelf_update_doc_tags_state(self, file_id, is_responsive, is_privileged, other_tags):
         '''
         Updates the given document sample' tags 
         '''
-        
-        # Gets the file dictionary 
-        fs = self.shelf['samples'][file_id]
-        fs[4] = is_responsive
-        fs[5] = is_privileged
-        fs[6] = other_tags
-        self.shelf.sync()
-        
-
-    
+        try:
+            # Gets the file dictionary 
+            fs = self.shelf['samples'][file_id]
+            fs[4] = is_responsive
+            fs[5] = is_privileged
+            fs[6] = other_tags
+            self.shelf.sync()
+        except Exception:
+            self.error(e)
+            
     def _shelf_get_doc_state(self, file_id):
         '''
         Gets the file sample dictionary from 
         the application state 
         '''
-        fs = self.shelf['samples'][file_id]
-        return fs 
+        try:
+            fs = self.shelf['samples'][file_id]
+            return fs
+        except Exception,e:
+            self.error(e)
     
     def _on_copy_enable_review(self, event):
-        self._is_samples_created = True
-        #self._btn_out_go_to_review.Enable()
-        self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
-        #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
-        
-    
+        try:
+            self._is_samples_created = True
+            self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT )) 
+        except Exception,e:
+            self.error(e)
+            
     def on_right_click_menu(self, event):
         '''
         Displays context menu on right-click 
         ''' 
-        self.PopupMenu(self.menu_open)
-    
+        try:
+            self.PopupMenu(self.menu_open)
+        except Exception,e:
+            self.error(e)
+            
     def on_popup_open_file_viewer(self, event):
         '''
         Opens irfanview with file as argument
         '''
         
-        
-        dest_file_path = self.get_selection_file_name()
-        if self.viewer_executable_location is None:
-            self._show_error_message("File Open Error!", "Could not open file with " + DEFAULT_FILE_VIEWER + ". Check if "  + DEFAULT_FILE_VIEWER + " is installed.")
         try:
-            subprocess.call([self.viewer_executable_location, dest_file_path])
-            
-            file_name = os.path.basename(dest_file_path)
-            responsive_status = self._rbx_responsive.GetStringSelection()
-            privileged_status = self._rbx_privileged.GetStringSelection()
-            self.make_tag_popup(file_name,responsive_status, privileged_status)
-        except:
-            self._show_error_message("File Open Error!", "Could not open file with " + DEFAULT_FILE_VIEWER + ". Check if "  + DEFAULT_FILE_VIEWER + " can open this file.")
+            dest_file_path = self.get_selection_file_name()
+            if self.viewer_executable_location is None:
+                self._show_error_message("File Open Error!", "Could not open file with " + DEFAULT_FILE_VIEWER + ". Check if "  + DEFAULT_FILE_VIEWER + " is installed.")
+            try:
+                subprocess.call([self.viewer_executable_location, dest_file_path])
+                
+                file_name = os.path.basename(dest_file_path)
+                responsive_status = self._rbx_responsive.GetStringSelection()
+                privileged_status = self._rbx_privileged.GetStringSelection()
+                self.make_tag_popup(file_name,responsive_status, privileged_status)
+            except Exception,e:
+                self._show_error_message("File Open Error!", "Could not open file with " + DEFAULT_FILE_VIEWER + ". Check if "  + DEFAULT_FILE_VIEWER + " can open this file.")
+        except Exception,e:
+            self.error(e)
             
         
     def on_popup_open_file_other(self, event):
         '''
         Lets user choose application for viewing file
         '''
-        dest_file_path = self.get_selection_file_name()
-        wildcard = "All executables (*.exe)|*.exe| All files (*.*)|*.*"
-        
-        
-        program_dialog = wx.FileDialog(self,
-                                     message = "Choose an Application to open with",
-                                     wildcard = wildcard,
-                                     style=wx.OPEN | wx.CHANGE_DIR
-                                     )
-        if program_dialog.ShowModal() == wx.ID_OK:
-            executable_path = program_dialog.GetPath()
-            try: 
-                subprocess.call([executable_path, dest_file_path])
-                file_name = os.path.basename(dest_file_path)
-                responsive_status = self._rbx_responsive.GetStringSelection()
-                privileged_status = self._rbx_privileged.GetStringSelection()
-                self.make_tag_popup(file_name,responsive_status, privileged_status)
-            except:
-                self._show_error_message("File Open Error!", "Could not open the selected file with the Application.")
+        try:
+            dest_file_path = self.get_selection_file_name()
+            wildcard = "All executables (*.exe)|*.exe| All files (*.*)|*.*"
+            
+            
+            program_dialog = wx.FileDialog(self,
+                                         message = "Choose an Application to open with",
+                                         wildcard = wildcard,
+                                         style=wx.OPEN | wx.CHANGE_DIR
+                                         )
+            if program_dialog.ShowModal() == wx.ID_OK:
+                executable_path = program_dialog.GetPath()
+                try: 
+                    subprocess.call([executable_path, dest_file_path])
+                    file_name = os.path.basename(dest_file_path)
+                    responsive_status = self._rbx_responsive.GetStringSelection()
+                    privileged_status = self._rbx_privileged.GetStringSelection()
+                    self.make_tag_popup(file_name,responsive_status, privileged_status)
+                except Exception,e:
+                    self._show_error_message("File Open Error!", "Could not open the selected file with the Application.")
+        except Exception,e:
+            self.error(e)
             
     
     def on_popup_open_folder(self, event):
         '''
         Opens folder containing file
         '''
-        dest_file_path = self.get_selection_file_name()
-        
-        
-        selected_doc_folder = os.path.dirname(dest_file_path)
-        try: 
-            webbrowser.open_new(selected_doc_folder)
-        except:
-            self._show_error_message("Folder Open Error!", "Please check that you have access to this folder")
+        try:
+            dest_file_path = self.get_selection_file_name()
             
+            selected_doc_folder = os.path.dirname(dest_file_path)
+    
+            try: 
+                webbrowser.open_new(selected_doc_folder)
+            except Exception,e:
+                self._show_error_message("Folder Open Error!", "Please check that you have access to this folder")
+        except Exception,e:
+            self.error(e)
     
     def get_selection_file_name(self):
         '''
         Gets selected file path from review list control
         '''
-        self.selected_doc_id = self._lc_review.GetFocusedItem()
-        selected_doc_name = self._lc_review.GetItem(self.selected_doc_id, 1)
-        src_file_path = self.sampled_files[self.selected_doc_id]
-        dest_file_path = get_destination_file_path(self.dir_path, src_file_path, self.output_dir_path)
-        return dest_file_path
+        try:
+            self.selected_doc_id = self._lc_review.GetFocusedItem()
+    
+            selected_doc_name = self._lc_review.GetItem(self.selected_doc_id, 1)
+            src_file_path = self.sampled_files[self.selected_doc_id]
+            dest_file_path = get_destination_file_path(self.dir_path,self._tempdir, src_file_path, self.output_dir_path)
+            
+            return dest_file_path
+        except Exception,e:
+            self.error(e)
      
     
     def get_default_fileviewer_path(self):
@@ -1568,70 +1590,104 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         return self.DEFAULT_VIEWER_OPTIONS[DEFAULT_FILE_VIEWER]()
     
     def _on_click_io_clear(self,event):
-        super(RandomSampler, self)._on_click_io_clear(event)
-        self.clear()
+        try:
+            super(RandomSampler, self)._on_click_io_clear(event)
+            self.clear()
+        except Exception,e:
+            self.error(e)
         
     def clear(self):
-        if self._is_project_new==True:
-            self._tc_io_new_project.SetValue("")
-        else:
-            self._cbx_project_title.SetSelection(-1)
-        self._tc_data_dir.SetValue("")
-        self._tc_output_dir.SetValue("")
-        self.dir_path=""
-        self.output_dir_path=""
-        self.project_title=""
-        self._st_num_data_dir_files.SetLabel('0 documents')
+        try:
+            if self._is_project_new==True:
+                self._tc_io_new_project.SetValue("")
+            else:
+                self._cbx_project_title.SetSelection(-1)
+            self._tc_data_dir.SetValue("")
+            self._tc_output_dir.SetValue("")
+            self.dir_path=""
+            self.output_dir_path=""
+            self.project_title=""
+            self._st_num_data_dir_files.SetLabel('0 documents')
+        except Exception,e:
+            self.error(e)
             
     def _on_click_license(self,event):
-        super(RandomSampler, self)._on_click_license(event)
-        file_path="LICENSE.txt"
-        with open(file_path,'r') as content:
-            print_message=content.read()
-        dialog=LicenseDialog(None)
-        dialog._tc_license.SetValue(print_message)#wx.TextCtrl( self, wx.ID_ANY, print_message, wx.Point( -1,1 ), wx.DefaultSize, wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
-        dialog.Show()
+        try:
+            super(RandomSampler, self)._on_click_license(event)
+            file_path="LICENSE.txt"
+            with open(file_path,'r') as content:
+                print_message=content.read()
+            dialog=LicenseDialog(None)
+            dialog._tc_license.SetValue(print_message)#wx.TextCtrl( self, wx.ID_ANY, print_message, wx.Point( -1,1 ), wx.DefaultSize, wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
+            dialog.Show()
+        except Exception,e:
+            self.error(e)
     
     def _on_click_help(self,event):
-        super(RandomSampler, self)._on_click_help(event)
-        file_path="HELP.txt"
-        with open(file_path,'r') as content:
-            print_message=content.read()
-        dialog=HelpDialog(None)
-        dialog._tc_help.SetValue(print_message)#wx.TextCtrl( self, wx.ID_ANY, print_message, wx.Point( -1,1 ), wx.DefaultSize, wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
-        dialog.Show()
+        try:
+            super(RandomSampler, self)._on_click_help(event)
+            file_path="HELP.txt"
+            with open(file_path,'r') as content:
+                print_message=content.read()
+            dialog=HelpDialog(None)
+            dialog._tc_help.SetValue(print_message)#wx.TextCtrl( self, wx.ID_ANY, print_message, wx.Point( -1,1 ), wx.DefaultSize, wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
+            dialog.Show()
+        except Exception,e:
+            self.error(e)
         
     def _on_click_io_sel_new_project(self,event):
-        super(RandomSampler, self)._on_click_io_sel_new_project(event)
-        self.clear()
-        if self._chk_io_new_project.Value==True:
-            self._st_new_project_title.Show(True)
-            self._is_project_new=True
-            self._tc_io_new_project.Enable()
-            self._tc_io_new_project.SetValue("")
-            self._cbx_project_title.Disable()
-            self._cbx_project_title.SetSelection(-1)
-        else:
-            self._st_new_project_title.Show(False)
-            self._is_project_new=False
-            self._tc_io_new_project.Disable()
-            self._tc_io_new_project.SetValue("Title of new project...")
-            self._cbx_project_title.Enable()
+        try:
+            super(RandomSampler, self)._on_click_io_sel_new_project(event)
+            self.clear()
+            if self._chk_io_new_project.Value==True:
+                self._st_new_project_title.Show(True)
+                self._is_project_new=True
+                self._tc_io_new_project.Enable()
+                self._tc_io_new_project.SetValue("")
+                self._cbx_project_title.Disable()
+                self._cbx_project_title.SetSelection(-1)
+            else:
+                self._st_new_project_title.Show(False)
+                self._is_project_new=False
+                self._tc_io_new_project.Disable()
+                self._tc_io_new_project.SetValue("Title of new project...")
+                self._cbx_project_title.Enable()
+        except Exception,e :
+            self.error(e)
+     
             
     def _update_project_new_name(self,event):
-        super(RandomSampler, self)._update_project_new_name(event)
-        self.project_title=self._tc_io_new_project.Value
+        try:
+            super(RandomSampler, self)._update_project_new_name(event)
+            self.project_title=self._tc_io_new_project.Value
+        except Exception,e:
+            self.error(e)
+
+    def error(self,error):
+        with open(os.path.join(os.path.expanduser('~'),"E-Discovery Random Sampler","error.log"),'a') as fl:
+            fl.write(unicode(error) + u'\n')
+            self._show_error_message("Error","Check Log file and report the error to the admin")
+        
 
 def main():
     '''
     The main function call 
     '''
-    sys.stderr=open('error.log','a')
-    ex = wx.App()
-    RandomSampler(None)
-    #os.chdir(directory)
-    ex.MainLoop()    
+    2/0
+    try:
 
+        ex = wx.App()
+        RandomSampler(None)
+        
+        #os.chdir(directory)
+        ex.MainLoop()
+    except Exception, e:
+        with open(os.path.join(os.path.expanduser('~'),"E-Discovery Random Sampler","error.log"),'a') as fl:
+            fl.write(unicode(e) + u'\n')
+
+            
+#            print >>fl, str(e)
+    
 
 
 if __name__ == '__main__':

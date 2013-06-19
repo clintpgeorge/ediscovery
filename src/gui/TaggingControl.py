@@ -11,6 +11,7 @@ from file_utils import get_destination_file_path
 
 class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
     def __init__(self, parent, rs):
+        
         wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size( 420,200 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
         ListCtrlAutoWidthMixin.__init__(self)
         self.random_sampler = rs
@@ -58,12 +59,11 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         rs = self.random_sampler
         rs.selected_doc_id = self.GetFocusedItem()
-        
         if rs.selected_doc_id < 0: return 
         
         responsive = self.GetItem(rs.selected_doc_id, 2)
         privileged = self.GetItem(rs.selected_doc_id, 3)
-        
+
         # Handles the document tags check boxes 
         
         if responsive.Text == 'Yes':
@@ -81,7 +81,6 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
             rs._rbx_privileged.SetStringSelection('Unknown')
         
         # Shows the tags panel 
-        
         rs._panel_doc_tags.Show()
         rs._panel_doc_tags.GetParent().GetSizer().Layout()
         
@@ -91,7 +90,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         try:
             
             src_file_path = rs.sampled_files[rs.selected_doc_id]
-            file_path = get_destination_file_path(rs._tempdir, src_file_path, rs.output_dir_path)
+            file_path = get_destination_file_path(rs.dir_path,rs._tempdir, src_file_path, rs.output_dir_path)
             _, fileExtension = os.path.splitext(file_path)
             if fileExtension=="" or fileExtension==".txt":
                 with open(file_path,'r') as content:
@@ -99,6 +98,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
                 is_message_opened = True
         except Exception as anyException:
             is_message_opned = False;
+            
         if is_message_opened:
             rs._tc_preview.SetValue(str(print_message))
         else:
@@ -120,7 +120,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         responsive = self.GetItem(rs.selected_doc_id, 2)
         privileged = self.GetItem(rs.selected_doc_id, 3)
         src_file_path = rs.sampled_files[rs.selected_doc_id]
-        dest_file_path = get_destination_file_path(rs._tempdir, src_file_path, rs.output_dir_path)
+        dest_file_path = get_destination_file_path(rs.dir_path,rs._tempdir, src_file_path, rs.output_dir_path)
         #print rs._tempdir+"\n"
         
         _, file_name = os.path.split(src_file_path)
@@ -128,7 +128,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         responsive_status = rs._rbx_responsive.GetStringSelection()
         privileged_status = rs._rbx_privileged.GetStringSelection()
 
-        #print dest_file_path     
+   
         if os.path.exists(dest_file_path):
                   
             try:

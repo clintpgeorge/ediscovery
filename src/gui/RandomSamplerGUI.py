@@ -230,67 +230,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_confidence.SetSizer( bsizer_confidence )
 		self._panel_confidence.Layout()
 		bsizer_confidence.Fit( self._panel_confidence )
-		self.nb_config_sampler.AddPage( self._panel_confidence, u"Confidence", True )
-		self._panel_tags = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self._panel_tags.Hide()
-		
-		bsizer_tags = wx.BoxSizer( wx.VERTICAL )
-		
-		sbsizer_tags = wx.StaticBoxSizer( wx.StaticBox( self._panel_tags, wx.ID_ANY, u"Add or Remove tags" ), wx.VERTICAL )
-		
-		gbsizer_confidence1 = wx.GridBagSizer( 2, 5 )
-		gbsizer_confidence1.SetFlexibleDirection( wx.BOTH )
-		gbsizer_confidence1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self._st_header3 = wx.StaticText( self._panel_tags, wx.ID_ANY, u"Add or remove tags to the project by clicking Add/Delete in the list below.", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
-		self._st_header3.Wrap( -1 )
-		self._st_header3.SetFont( wx.Font( 8, 70, 90, 91, False, wx.EmptyString ) )
-		self._st_header3.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
-		self._st_header3.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
-		
-		gbsizer_confidence1.Add( self._st_header3, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 3 ), wx.ALL, 5 )
-		
-		self._sl_header3 = wx.StaticLine( self._panel_tags, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		gbsizer_confidence1.Add( self._sl_header3, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 6 ), wx.EXPAND |wx.ALL, 5 )
-		
-		_lbx_tagChoices = []
-		self._lbx_tag = wx.ListBox( self._panel_tags, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, _lbx_tagChoices, 0 )
-		gbsizer_confidence1.Add( self._lbx_tag, wx.GBPosition( 2, 0 ), wx.GBSpan( 5, 3 ), wx.ALL|wx.EXPAND, 5 )
-		
-		self._sl_tailer3 = wx.StaticLine( self._panel_tags, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		gbsizer_confidence1.Add( self._sl_tailer3, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 6 ), wx.ALL|wx.EXPAND, 5 )
-		
-		_bsizer_tag_buttons = wx.BoxSizer( wx.HORIZONTAL )
-		
-		self._btn_tag_goback = wx.Button( self._panel_tags, wx.ID_ANY, u"Go Back", wx.DefaultPosition, wx.DefaultSize, 0 )
-		_bsizer_tag_buttons.Add( self._btn_tag_goback, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
-		
-		self._btn_tag_next = wx.Button( self._panel_tags, wx.ID_ANY, u"Next ( Create sample )", wx.DefaultPosition, wx.DefaultSize, 0 )
-		_bsizer_tag_buttons.Add( self._btn_tag_next, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
-		
-		
-		gbsizer_confidence1.Add( _bsizer_tag_buttons, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 3 ), wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 5 )
-		
-		self._btn_new_tag = wx.Button( self._panel_tags, wx.ID_ANY, u"NEW", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_confidence1.Add( self._btn_new_tag, wx.GBPosition( 2, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_rename_tag = wx.Button( self._panel_tags, wx.ID_ANY, u"RENAME", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_confidence1.Add( self._btn_rename_tag, wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_delete_tag = wx.Button( self._panel_tags, wx.ID_ANY, u"DELETE", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_confidence1.Add( self._btn_delete_tag, wx.GBPosition( 4, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		
-		sbsizer_tags.Add( gbsizer_confidence1, 0, wx.ALL|wx.EXPAND, 10 )
-		
-		
-		bsizer_tags.Add( sbsizer_tags, 1, wx.ALL|wx.EXPAND, 5 )
-		
-		
-		self._panel_tags.SetSizer( bsizer_tags )
-		self._panel_tags.Layout()
-		bsizer_tags.Fit( self._panel_tags )
-		self.nb_config_sampler.AddPage( self._panel_tags, u"Tags", False )
+		self.nb_config_sampler.AddPage( self._panel_confidence, u"Confidence", False )
 		self._panel_create_sample = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		sbsizer_sampler = wx.StaticBoxSizer( wx.StaticBox( self._panel_create_sample, wx.ID_ANY, u"Sampler" ), wx.VERTICAL )
 		
@@ -509,7 +449,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", False )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", True )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -536,7 +476,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self.Bind( wx.EVT_CLOSE, self._on_appln_close )
 		self.Bind( wx.EVT_MENU, self._on_mitem_about, id = self._mitem_about.GetId() )
 		self.Bind( wx.EVT_MENU, self._on_click_license, id = self._mitem_license .GetId() )
-		self.Bind( wx.EVT_MENU, self._on_click_help, id = self._mitem_help.GetId() )
+		self.Bind( wx.EVT_MENU, self._on_mitem_help, id = self._mitem_help.GetId() )
 		self.Bind( wx.EVT_MENU, self._on_mitem_exit, id = self._mitem_exit.GetId() )
 		self.nb_config_sampler.Bind( wx.EVT_NOTEBOOK_PAGE_CHANGED, self._on_nb_page_changed )
 		self._cbx_project_title.Bind( wx.EVT_COMBOBOX, self._on_set_existing_project )
@@ -551,11 +491,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._tc_confidence_interval.Bind( wx.EVT_KILL_FOCUS, self._on_precision_changed )
 		self._btn_cl_goback.Bind( wx.EVT_BUTTON, self._on_click_cl_goback )
 		self._btn_cl_next.Bind( wx.EVT_BUTTON, self._on_click_cl_next )
-		self._btn_tag_goback.Bind( wx.EVT_BUTTON, self._on_click_tag_goback )
-		self._btn_tag_next.Bind( wx.EVT_BUTTON, self._on_click_tag_next )
-		self._btn_new_tag.Bind( wx.EVT_BUTTON, self._on_btn_new_tag )
-		self._btn_rename_tag.Bind( wx.EVT_BUTTON, self._on_btn_rename_tag )
-		self._btn_delete_tag.Bind( wx.EVT_BUTTON, self._on_btn_delete_tag )
 		self._btn_copy_files.Bind( wx.EVT_BUTTON, self._on_click_copy_files )
 		self._btn_out_go_to_review.Bind( wx.EVT_BUTTON, self._on_click_out_go_to_review )
 		self._btn_out_goback.Bind( wx.EVT_BUTTON, self._on_click_out_goback )
@@ -583,7 +518,7 @@ class RandomSamplerGUI ( wx.Frame ):
 	def _on_click_license( self, event ):
 		event.Skip()
 	
-	def _on_click_help( self, event ):
+	def _on_mitem_help( self, event ):
 		event.Skip()
 	
 	def _on_mitem_exit( self, event ):
@@ -626,21 +561,6 @@ class RandomSamplerGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_click_cl_next( self, event ):
-		event.Skip()
-	
-	def _on_click_tag_goback( self, event ):
-		event.Skip()
-	
-	def _on_click_tag_next( self, event ):
-		event.Skip()
-	
-	def _on_btn_new_tag( self, event ):
-		event.Skip()
-	
-	def _on_btn_rename_tag( self, event ):
-		event.Skip()
-	
-	def _on_btn_delete_tag( self, event ):
 		event.Skip()
 	
 	def _on_click_copy_files( self, event ):
@@ -798,3 +718,4 @@ class HelpDialog ( wx.Dialog ):
 	def __del__( self ):
 		pass
 	
+
