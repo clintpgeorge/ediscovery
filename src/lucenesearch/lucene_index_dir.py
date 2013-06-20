@@ -44,6 +44,7 @@ class MetadataType:
     EMAIL_CC = 'email_cc' 
     EMAIL_BCC = 'email_bcc'
     EMAIL_DATE = 'email_date'  
+    ALL = 'all'
     
     _types = ['file_name', 'file_path', 
               'email_to', 
@@ -98,8 +99,8 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
         file_path = os.path.join(root, file_name)
         
         # parses the emails in plain text format 
-        receiver, sender, cc, subject, message_text, bcc,date = parse_plain_text_email(file_path)
-        
+        receiver, sender, cc, subject, message_text, bcc, date = parse_plain_text_email(file_path)
+
         doc = Document()
         doc.add(Field(MetadataType.FILE_ID, str(idx), Field.Store.YES, Field.Index.NOT_ANALYZED))
         doc.add(Field(MetadataType.FILE_NAME, file_name, Field.Store.YES, Field.Index.NOT_ANALYZED, Field.TermVector.YES))
@@ -117,6 +118,10 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
             doc.add(Field(MetadataType.EMAIL_BODY, message_text, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES))
         else:
             logging.error("[%d] file: %s - no contents found.", idx, file_name)
+            
+        # Adds all documents fields as a separate index so that we can search through them 
+        all_text = receiver + ' ' + sender + ' ' + cc + ' ' + bcc + ' ' + subject + ' ' + message_text  
+        doc.add(Field(MetadataType.ALL, all_text, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES))
 
         writer.addDocument(doc)
         logging.info("[%d] file: %s - added to index.", idx, file_name)
@@ -214,6 +219,9 @@ def search_lucene_index(index_dir, query_model, limit):
         limit - the number of records to be retrieved 
     Return: 
         rows - the returned document details 
+        
+    TODO: 
+        1. Search in all fields if the user hasn't selected any particular item 
     
     '''
     store = SimpleFSDirectory(File(index_dir))
