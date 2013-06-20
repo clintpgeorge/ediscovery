@@ -22,7 +22,9 @@ from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS,\
     COLUMN_NUMBER_OF_RATING
 from collections import OrderedDict
 from utils.utils_file import read_config, load_file_paths_index, nexists
-from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, load_lsi_variables
+from tm.process_query import load_lda_variables, load_dictionary, \
+    search_lda_model, load_lsi_variables, get_lda_query_td, \
+    compute_topic_similarities
 from const import SEARCH_RESULTS_LIMIT
 from index_data import index_data
 
@@ -438,12 +440,7 @@ class SMARTeR (SMARTeRGUI):
         self._current_page = event.Selection
         self._notebook.ChangeSelection(self._current_page)
 
-        
 
-        
-        
-        
-        
         
     
     def _create_persistent_shelves(self, items):
@@ -740,18 +737,41 @@ class SMARTeR (SMARTeRGUI):
         
         ''' 
         
-        # step 1: highly rated documents 
+        # step 1: gets highly rated documents 
+        
         rating_cut_off = 5
-        rel_docs = []  
+        selected_docs = []  
+        excluded_docs = []
         
         for shelf_file_name in self._shelve_file_names:
             sd = shelve.open(shelf_file_name)
             for k in sd.keys():
                 row = sd[k]
                 if int(row[-1]) > rating_cut_off:
-                    rel_docs.append(row)
-                    print row 
+                    selected_docs.append(row) 
+                else: 
+                    excluded_docs.append(row) 
             sd.close()
+            
+        # step 2: combine all email bodies to a single document 
+        # row index 5 is for the body field 
+        
+        bag_of_words = ''
+        for sdoc in selected_docs:
+            bag_of_words += sdoc[5]
+        
+        bag_of_words_td = get_lda_query_td(bag_of_words, self.lda_dictionary, self.lda_mdl)
+        
+        # step 3: compute the distances between all other documents 
+        # in the excluded list
+        
+        excluded_docs = compute_topic_similarities(bag_of_words, excluded_docs, self.lda_dictionary, self.lda_mdl)
+        
+        
+               
+        
+        
+        
             
         
         

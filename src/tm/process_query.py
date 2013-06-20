@@ -14,6 +14,10 @@ Created By: Clint P. George
 
 
 import logging, gensim
+import numpy as np
+
+def cos(v1, v2):
+    return np.dot(v1, v2) / (np.sqrt(np.dot(v1, v1)) * np.sqrt(np.dot(v2, v2)))
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -50,6 +54,70 @@ def load_lda_variables(lda_mdl_file, lda_index_file):
 
     return (lda, index)
 
+def get_lda_query_td(doc_text, lda_dictionary, lda_mdl):
+    '''Tokenize the input query and returns its topic 
+    distributions using the learned LDA model
+    
+    Returns:
+        topic distribution 
+    Arguments:
+        doc_text - the document in text format 
+        lda_dictionary - the dictionary object 
+        lda_mdl - the LDA model object 
+    
+    '''
+    # process the query 
+    
+    query_vec = lda_dictionary.doc2bow(doc_text.lower().split())
+    
+    if len(query_vec) == 0: 
+        logging.exception('Query words are not in the dictionary. Exiting topic search!')
+        return [] 
+    else: 
+        logging.info('%d query words are in the dictionary.', len(query_vec))
+    
+    query_td = lda_mdl[query_vec]
+    
+    return query_td
+
+
+def compute_topic_similarities(doc_text, src_docs, lda_dictionary, lda_mdl):
+    '''Tokenize the input query and returns its topic 
+    distributions using the learned LDA model
+    
+    Returns:
+        topic distribution 
+    Arguments:
+        doc_text - the document in text format 
+        lda_dictionary - the dictionary object 
+        lda_mdl - the LDA model object 
+    
+    '''
+    # process the query 
+    
+    query_vec = lda_dictionary.doc2bow(doc_text.lower().split())
+    
+    if len(query_vec) == 0: 
+        logging.exception('Query words are not in the dictionary. Exiting topic search!')
+        return [] 
+    else: 
+        logging.info('%d query words are in the dictionary.', len(query_vec))
+    
+    query_td = lda_mdl[query_vec]    
+    
+    dest_docs = []
+    for sdoc in src_docs:
+        sdoc_text = sdoc[5]
+        sdoc_vec = lda_dictionary.doc2bow(sdoc_text.lower().split())
+        sdoc_td = lda_mdl[sdoc_vec]
+        cosine_dist = cos(query_td, sdoc_td)
+        sdoc.append(cosine_dist)
+        print sdoc 
+        dest_docs.append(sdoc)
+        
+    return dest_docs
+
+    
 
 def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_path_index, limit):
     '''Tokenize the input query and finds topically 
