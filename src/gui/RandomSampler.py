@@ -1673,7 +1673,6 @@ def main():
     '''
     The main function call 
     '''
-    2/0
     try:
 
         ex = wx.App()
