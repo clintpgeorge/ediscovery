@@ -9,6 +9,7 @@ the Postgres db
 Created by: Clint P. George
 Created On: Jan 12, 2013   
 
+@deprecated: June 21, 2013 
 '''
 
 import email

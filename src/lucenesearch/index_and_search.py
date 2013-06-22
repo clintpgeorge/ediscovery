@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+'''
+@note: to be removed 
+'''
+
 
 import argparse
 from lucenesearch.lucene_index import lucene_index

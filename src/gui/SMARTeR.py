@@ -38,6 +38,7 @@ present_chunk = 0
 
 # Constants 
 SHELVE_DIR_NAME = 'shelf'
+USER_RATINGS_CUT_OFF = 5 # TODO: this needs to be learned 
 
 ###########################################################################
 
@@ -250,7 +251,7 @@ class Rating (RatingControl):
 
 
 ###########################################################################
-# # Class Prefereces 
+# # Class Preferences 
 ###########################################################################
 
 class Preferences (PreferencesDialog):
@@ -331,7 +332,9 @@ class SMARTeR (SMARTeRGUI):
         
         self._build_query_results_panel()
         self._populate_metadata_fields()
-        self._reset_defaults_indexing_preferences()        
+        self._reset_defaults_indexing_preferences()    
+        
+        self._lda_num_topics = self._num_topics     
         
         self.Center()
         self.Show(True)
@@ -549,6 +552,7 @@ class SMARTeR (SMARTeRGUI):
         path_index_file = self.mdl_cfg['CORPUS']['path_index_file']
         lda_mdl_file = self.mdl_cfg['LDA']['lda_model_file']
         lda_cos_index_file = self.mdl_cfg['LDA']['lda_cos_index_file']
+        lda_num_topics = self.mdl_cfg['LDA']['num_topics']
 #        lsi_mdl_file = self.mdl_cfg['LSI']['lsi_model_file']
 #        lsi_cos_index_file = self.mdl_cfg['LSI']['lsi_cos_index_file']
         
@@ -564,6 +568,7 @@ class SMARTeR (SMARTeRGUI):
             # loads LDA model details 
             if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
                 self.lda_mdl, self.lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
+                self._lda_num_topics = int(lda_num_topics)
                 self._is_tm_index_available = True  
                 self._tc_available_mdl.AppendText('[LDA] ')    
                     
@@ -655,7 +660,7 @@ class SMARTeR (SMARTeRGUI):
         
         for l in filteredQuery:
             res = re.split(':', l )
-            # print res 
+            print res 
             if len(res) > 1:
                 fields.append(res[0])
                 queries.append(res[1])
@@ -733,13 +738,16 @@ class SMARTeR (SMARTeRGUI):
     
     def _on_click_update_results( self, event ):
         '''
-        Here we use topic modeling results to get similar documents 
+        This function incorporates the user ratings into 
+        the ranked list. Here, we combine the highly rated 
+        documents, represent it in topic modeling space, 
+        and search for similar documents.  
         
         ''' 
         
         # step 1: gets highly rated documents 
         
-        rating_cut_off = 5
+        
         selected_docs = []  
         excluded_docs = []
         
@@ -747,7 +755,7 @@ class SMARTeR (SMARTeRGUI):
             sd = shelve.open(shelf_file_name)
             for k in sd.keys():
                 row = sd[k]
-                if int(row[-1]) > rating_cut_off:
+                if int(row[-1]) > USER_RATINGS_CUT_OFF:
                     selected_docs.append(row) 
                 else: 
                     excluded_docs.append(row) 
@@ -760,15 +768,16 @@ class SMARTeR (SMARTeRGUI):
         for sdoc in selected_docs:
             bag_of_words += sdoc[5]
         
-        bag_of_words_td = get_lda_query_td(bag_of_words, self.lda_dictionary, self.lda_mdl)
+        # bag_of_words_td = get_lda_query_td(bag_of_words, self.lda_dictionary, self.lda_mdl)
         
-        # step 3: compute the distances between all other documents 
-        # in the excluded list
+        # step 3: compute the distances between bag_of_words and 
+        # all other documents 
         
-        excluded_docs = compute_topic_similarities(bag_of_words, excluded_docs, self.lda_dictionary, self.lda_mdl)
+        excluded_docs = compute_topic_similarities(bag_of_words, selected_docs + excluded_docs, self.lda_dictionary, self.lda_mdl, self._lda_num_topics)
         
         
-               
+        # TODO: need to figure out a good way to combine topic modeling 
+        #       similarity score and lucene scores      
         
         
         
@@ -778,35 +787,7 @@ class SMARTeR (SMARTeRGUI):
         
     
     
-    
-    def _combine_lucene_tm_results(self, fs_results, ts_results):
-        
-        num_metadata_types = len(MetadataType._types)
-        default_lowest_score = -99999
-        
-        def get_tm_score(file_id, ts_results):
-            '''
-            TODO: Need to improve this logic. It'd be 
-            good if we can keep the scores in a dictionary. 
-            Otherwise, this function will be in efficient 
-            '''
-            
-            for ts_row in ts_results:
-                if ts_row[num_metadata_types] == file_id:
-                    return ts_row[num_metadata_types + 1]
-                
-            return default_lowest_score    
-        
-        
-        rows = [] 
-        
-        for fs_row in fs_results:
-            tm_score = get_tm_score(fs_row[num_metadata_types], ts_results)
-            fs_row[num_metadata_types + 1] = tm_score
-            rows.append(fs_row) 
-            print fs_row
-        
-        return rows 
+
         
     
       
@@ -843,7 +824,35 @@ class SMARTeR (SMARTeRGUI):
         
         
 
-
+    
+    def _combine_lucene_tm_results(self, fs_results, ts_results):
+        
+        num_metadata_types = len(MetadataType._types)
+        default_lowest_score = -99999
+        
+        def get_tm_score(file_id, ts_results):
+            '''
+            TODO: Need to improve this logic. It'd be 
+            good if we can keep the scores in a dictionary. 
+            Otherwise, this function will be in efficient 
+            '''
+            
+            for ts_row in ts_results:
+                if ts_row[num_metadata_types] == file_id:
+                    return ts_row[num_metadata_types + 1]
+                
+            return default_lowest_score    
+        
+        
+        rows = [] 
+        
+        for fs_row in fs_results:
+            tm_score = get_tm_score(fs_row[num_metadata_types], ts_results)
+            fs_row[num_metadata_types + 1] = tm_score
+            rows.append(fs_row) 
+            print fs_row
+        
+        return rows 
         
 def main():
     '''

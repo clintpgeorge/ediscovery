@@ -66,7 +66,7 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
         None 
 
     TODO: 
-        1. Need to handle dates 
+        1. Need to handle dates -- done ?? 
         2. Need to handle general meta data of files (e.g. last modified date, modified by, owner, etc)
     '''
     

@@ -13,7 +13,7 @@ import sys
 import argparse
 import logging 
 import ConfigParser
-from urlparse import urlparse
+# from urlparse import urlparse
 from lucenesearch.lucene_index_dir import index_plain_text_emails
 from preprocess.lucene_enron_create_corpus import build_lda_corpus
 from tm.lda_estimation import run_lda_estimation
@@ -67,7 +67,7 @@ def index_data(data_folder, output_folder, project_name, num_topics=DEFAULT_NUM_
     if not os.path.exists(lucene_folder): os.makedirs(lucene_folder)
     path_index_file_name = os.path.join(project_folder, project_name + '.path.index')
     
-    index_plain_text_emails(data_folder, path_index_file_name, lucene_folder)
+    # index_plain_text_emails(data_folder, path_index_file_name, lucene_folder)
     
     config.add_section('LUCENE')
     config.set('LUCENE', 'lucene_index_dir', lucene_folder)

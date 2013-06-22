@@ -9,6 +9,7 @@ and create an LDA corpus from them.
 Created by: Clint P. George
 Created On: Jan 29, 2013   
 
+@deprecated: June 21, 2013 
 '''
 
 import psycopg2

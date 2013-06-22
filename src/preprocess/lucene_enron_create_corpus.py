@@ -14,11 +14,15 @@ import os
 import logging
 from gensim import corpora
 from lucene import SimpleFSDirectory, File, initVM, Version, IndexReader
-from utils.utils_email import load_en_stopwords
+from utils.utils_email import load_en_stopwords, whitespace_tokenize
 from lucenesearch.lucene_index_dir import MetadataType 
 
 
 def store_file_paths_index(index_reader, paths_index_file): 
+    '''Stores the file paths into a text file 
+    
+    '''
+    
     with open(paths_index_file, 'w') as fw: 
         for i in range(0, index_reader.maxDoc()):
             doc = index_reader.document(i)
@@ -45,7 +49,7 @@ def process_index_doc(doc):
             logging.error('%s does not have any contents.', os.path.join(file_path, file_name))
             tokens = []
         else:
-            tokens = body_text.split()
+            tokens = whitespace_tokenize(body_text)
     return tokens
 
 def create_dictionary(en_sw_file, index_reader, dictionary_file, MIN_FREQUENCY, MIN_WORD_LENGTH):

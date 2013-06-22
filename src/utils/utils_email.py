@@ -80,6 +80,15 @@ def punkt_word_tokenizer(text):
     return tokens
 
 
+def whitespace_tokenize(doc_text):
+    '''
+    This function will tokenize the given 
+    document text into tokens  based on whitespace 
+    
+    '''
+    return doc_text.lower().split()
+
+
 def load_en_stopwords(filename):
     '''Loads English stop-words from a given file 
     

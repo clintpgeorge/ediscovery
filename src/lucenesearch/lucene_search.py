@@ -6,6 +6,7 @@ This script searches over the lucene index for a search term
 Created On: Jan 28, 2013 
 Created By: Abhiram J 
   
+@deprecated: June 21, 2013 
 '''
 import logging
 import lucene

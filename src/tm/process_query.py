@@ -15,11 +15,26 @@ Created By: Clint P. George
 
 import logging, gensim
 import numpy as np
+from scipy.spatial.distance import cosine
+from utils.utils_email import whitespace_tokenize
 
-def cos(v1, v2):
-    return np.dot(v1, v2) / (np.sqrt(np.dot(v1, v1)) * np.sqrt(np.dot(v2, v2)))
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+
+def sparse_to_dense(length, tuples_list):
+    dense_vec = np.zeros(length)
+    for idx, value in tuples_list:
+        dense_vec[idx] = value
+    return dense_vec
+
+
+#def cos(v1, v2):
+#    return np.dot(v1, v2) / (np.sqrt(np.dot(v1, v1)) * np.sqrt(np.dot(v2, v2)))
+
+
+
+    
+
 
 
 def load_dictionary(dictionary_file):
@@ -68,7 +83,7 @@ def get_lda_query_td(doc_text, lda_dictionary, lda_mdl):
     '''
     # process the query 
     
-    query_vec = lda_dictionary.doc2bow(doc_text.lower().split())
+    query_vec = lda_dictionary.doc2bow(whitespace_tokenize(doc_text))
     
     if len(query_vec) == 0: 
         logging.exception('Query words are not in the dictionary. Exiting topic search!')
@@ -81,9 +96,10 @@ def get_lda_query_td(doc_text, lda_dictionary, lda_mdl):
     return query_td
 
 
-def compute_topic_similarities(doc_text, src_docs, lda_dictionary, lda_mdl):
-    '''Tokenize the input query and returns its topic 
-    distributions using the learned LDA model
+def compute_topic_similarities(doc_text, src_docs, lda_dictionary, lda_mdl, lda_num_topics):
+    '''Tokenize the document and finds document similarities between
+    the given document and the documents listed, based on topic modeling 
+    and cosine distance 
     
     Returns:
         topic distribution 
@@ -91,28 +107,30 @@ def compute_topic_similarities(doc_text, src_docs, lda_dictionary, lda_mdl):
         doc_text - the document in text format 
         lda_dictionary - the dictionary object 
         lda_mdl - the LDA model object 
+        lda_num_topics - the number topics in the LDA model 
     
     '''
     # process the query 
     
-    query_vec = lda_dictionary.doc2bow(doc_text.lower().split())
+    query_vec = lda_dictionary.doc2bow(whitespace_tokenize(doc_text))
+    query_td = lda_mdl[query_vec]
+    qtd_vec = sparse_to_dense(lda_num_topics, query_td)
     
-    if len(query_vec) == 0: 
-        logging.exception('Query words are not in the dictionary. Exiting topic search!')
-        return [] 
-    else: 
-        logging.info('%d query words are in the dictionary.', len(query_vec))
-    
-    query_td = lda_mdl[query_vec]    
+    print 'Query:', ' '.join(whitespace_tokenize(doc_text))
+    print 'Number of vocabulary tokens:', len(query_vec)
+    print 'Query vector:', query_vec
+    print 'Query td:', query_td
+    print 'doc_name, cosine, rating, doc_td'
     
     dest_docs = []
     for sdoc in src_docs:
         sdoc_text = sdoc[5]
-        sdoc_vec = lda_dictionary.doc2bow(sdoc_text.lower().split())
+        sdoc_vec = lda_dictionary.doc2bow(whitespace_tokenize(sdoc_text))
         sdoc_td = lda_mdl[sdoc_vec]
-        cosine_dist = cos(query_td, sdoc_td)
-        sdoc.append(cosine_dist)
-        print sdoc 
+        std_vec = sparse_to_dense(lda_num_topics, sdoc_td)
+        cosine_dist = cosine(qtd_vec, std_vec) # ranges from -1 to 1 
+        sdoc.append(cosine_dist) # append the cosine distance to the end 
+        print sdoc[1], cosine_dist, sdoc[-2], sdoc_td # file_id, cosine, user rating, doc topic distribution 
         dest_docs.append(sdoc)
         
     return dest_docs
@@ -139,7 +157,7 @@ def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_pa
 
     # process the query 
     
-    query_vec = lda_dictionary.doc2bow(query_text.lower().split())
+    query_vec = lda_dictionary.doc2bow(whitespace_tokenize(query_text))
     
     if len(query_vec) == 0: 
         logging.exception('Query words are not in the dictionary. Exiting topic search!')
@@ -209,7 +227,7 @@ def search_lsi_model(query, dictionary, lsi, index, files_info, limit=5):
 
     # process the query 
     
-    query_vec = dictionary.doc2bow(query.lower().split())
+    query_vec = dictionary.doc2bow(whitespace_tokenize(query))
     if len(query_vec) == 0: 
         logging.exception('Query words are not in the dictionary. Exiting topic search!')
         return [] 

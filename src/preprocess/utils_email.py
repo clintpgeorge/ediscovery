@@ -8,6 +8,8 @@ processing the enron email dataset
 Created by: Clint P. George
 Created On: Jan 29, 2013   
 
+@deprecated: June 21, 2013
+@note: Please use utils.utils_email instead 
 '''
 
 import re 
