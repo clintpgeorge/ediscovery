@@ -84,5 +84,19 @@ The following are some useful ***git*** commands
 
 - Topic modeling is performed using the package Gensim -- http://radimrehurek.com/gensim/ 
 
+
+**Development environment setup**
+Please follow the following steps in the order given below for setting up development environment, The executables can be found in the software folder(Coming Soon)
+-Install Python27
+-Install sciPy, NumPy, wxPython, pywin32, Py2exe
+-Install wxFormBuilder
+-Delete files boot_common.py, and boot_common.pyc from C:\Python27\Lib\site-packages\py2exe. Add the boot_common.py from the software folder to the given path, compile it using the following code in python CLI
+ import py_compile
+ py_compile.compile('boot_common.py')
+**for SMATeR **
+- Install both Visual Studio Express 2008 and 2010
+- Run the script ez_setup.py
+- Using the following command install gensim, JCC and lucene
+  easy_install <file_name>.egg
 --------------------------------------
 
