@@ -359,14 +359,14 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_review.SetFlexibleDirection( wx.BOTH )
 		gbsizer_review.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self.m_staticText33 = wx.StaticText( self._panel_review, wx.ID_ANY, u"Documents to be Reviewed", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText33 = wx.StaticText( self._panel_review, wx.ID_ANY, u"Documents to be Reviewed\nDouble click on a file to open it", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText33.Wrap( -1 )
 		self.m_staticText33.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
-		gbsizer_review.Add( self.m_staticText33, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALL, 5 )
+		gbsizer_review.Add( self.m_staticText33, wx.GBPosition( 2, 0 ), wx.GBSpan( 2, 1 ), wx.ALIGN_BOTTOM|wx.ALL, 5 )
 		
 		self._btn_review_clear_all_tags = wx.Button( self._panel_review, wx.ID_ANY, u"Clear All Tags", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_review.Add( self._btn_review_clear_all_tags, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.LEFT|wx.RIGHT, 5 )
+		gbsizer_review.Add( self._btn_review_clear_all_tags, wx.GBPosition( 2, 1 ), wx.GBSpan( 2, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.LEFT|wx.RIGHT, 5 )
 		
 		self._panel_doc_tags = wx.Panel( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_doc_tags = wx.BoxSizer( wx.VERTICAL )
@@ -398,7 +398,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_review.Add( bsizer_review_buttons, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 2 ), wx.EXPAND, 5 )
 		
-		self.m_staticText21 = wx.StaticText( self._panel_review, wx.ID_ANY, u"This tab shows the documents samples produced based on your sampler specifications. ", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText21 = wx.StaticText( self._panel_review, wx.ID_ANY, u"This tab shows the document sample based on your sampler specifications.", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText21.Wrap( -1 )
 		self.m_staticText21.SetFont( wx.Font( 8, 70, 90, 90, False, wx.EmptyString ) )
 		self.m_staticText21.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
@@ -409,9 +409,9 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_review.Add( self._sl_header3, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 12 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._panel_review_tag = wx.Panel( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self._panel_review_tag.SetMinSize( wx.Size( 350,200 ) )
+		self._panel_review_tag.SetMinSize( wx.Size( 400,200 ) )
 		
-		gbsizer_review.Add( self._panel_review_tag, wx.GBPosition( 3, 0 ), wx.GBSpan( 3, 4 ), wx.EXPAND, 5 )
+		gbsizer_review.Add( self._panel_review_tag, wx.GBPosition( 4, 0 ), wx.GBSpan( 3, 4 ), wx.EXPAND, 5 )
 		
 		self._tc_preview = wx.TextCtrl( self._panel_review, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
 		self._tc_preview.SetMinSize( wx.Size( 320,230 ) )

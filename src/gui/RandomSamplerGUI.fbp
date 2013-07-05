@@ -414,7 +414,7 @@
                         <object class="notebookpage" expanded="0">
                             <property name="bitmap"></property>
                             <property name="label">Data and Ouput</property>
-                            <property name="select">1</property>
+                            <property name="select">0</property>
                             <object class="wxPanel" expanded="0">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
@@ -4876,7 +4876,7 @@
                         <object class="notebookpage" expanded="0">
                             <property name="bitmap"></property>
                             <property name="label">Document Review</property>
-                            <property name="select">0</property>
+                            <property name="select">1</property>
                             <object class="wxPanel" expanded="0">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
@@ -4980,7 +4980,7 @@
                                                 <property name="column">0</property>
                                                 <property name="flag">wxALIGN_BOTTOM|wxALL</property>
                                                 <property name="row">2</property>
-                                                <property name="rowspan">1</property>
+                                                <property name="rowspan">2</property>
                                                 <object class="wxStaticText" expanded="0">
                                                     <property name="BottomDockable">1</property>
                                                     <property name="LeftDockable">1</property>
@@ -5009,7 +5009,7 @@
                                                     <property name="gripper">0</property>
                                                     <property name="hidden">0</property>
                                                     <property name="id">wxID_ANY</property>
-                                                    <property name="label">Documents to be Reviewed</property>
+                                                    <property name="label">Documents to be Reviewed&#x0A;Double click on a file to open it</property>
                                                     <property name="max_size"></property>
                                                     <property name="maximize_button">0</property>
                                                     <property name="maximum_size"></property>
@@ -5066,7 +5066,7 @@
                                                 <property name="column">1</property>
                                                 <property name="flag">wxALIGN_BOTTOM|wxALIGN_RIGHT|wxLEFT|wxRIGHT</property>
                                                 <property name="row">2</property>
-                                                <property name="rowspan">1</property>
+                                                <property name="rowspan">2</property>
                                                 <object class="wxButton" expanded="0">
                                                     <property name="BottomDockable">1</property>
                                                     <property name="LeftDockable">1</property>
@@ -5645,7 +5645,7 @@
                                                     <property name="gripper">0</property>
                                                     <property name="hidden">0</property>
                                                     <property name="id">wxID_ANY</property>
-                                                    <property name="label">This tab shows the documents samples produced based on your sampler specifications. </property>
+                                                    <property name="label">This tab shows the document sample based on your sampler specifications.</property>
                                                     <property name="max_size"></property>
                                                     <property name="maximize_button">0</property>
                                                     <property name="maximum_size"></property>
@@ -5785,7 +5785,7 @@
                                                 <property name="colspan">4</property>
                                                 <property name="column">0</property>
                                                 <property name="flag">wxEXPAND</property>
-                                                <property name="row">3</property>
+                                                <property name="row">4</property>
                                                 <property name="rowspan">3</property>
                                                 <object class="wxPanel" expanded="0">
                                                     <property name="BottomDockable">1</property>
@@ -5820,7 +5820,7 @@
                                                     <property name="maximum_size"></property>
                                                     <property name="min_size"></property>
                                                     <property name="minimize_button">0</property>
-                                                    <property name="minimum_size">350,200</property>
+                                                    <property name="minimum_size">400,200</property>
                                                     <property name="moveable">1</property>
                                                     <property name="name">_panel_review_tag</property>
                                                     <property name="pane_border">1</property>
