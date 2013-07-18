@@ -66,7 +66,7 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
         None 
 
     TODO: 
-        1. Need to handle dates -- done ?? 
+        1. Need to handle dates 
         2. Need to handle general meta data of files (e.g. last modified date, modified by, owner, etc)
     '''
     
@@ -97,7 +97,7 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
     for ft in file_tuples: 
         idx, root, file_name = ft
         file_path = os.path.join(root, file_name)
-        
+        logging.info("[%d] file: %s - waiting to add to index.", idx, file_name)
         # parses the emails in plain text format 
         receiver, sender, cc, subject, message_text, bcc, date = parse_plain_text_email(file_path)
 
@@ -141,7 +141,7 @@ def test_search(index_dir):
     searcher = IndexSearcher(store, True)
     parser = QueryParser(Version.LUCENE_CURRENT, "keywords", STD_ANALYZER)
     parser.setDefaultOperator(QueryParser.Operator.AND)
-    query = parser.parse('message_subject:"misc"')
+    query = parser.parse('email_subject:Training')
     start = datetime.datetime.now()
     scoreDocs = searcher.search(query, 50).scoreDocs
     duration = datetime.datetime.now() - start
@@ -151,6 +151,7 @@ def test_search(index_dir):
     
     for scoreDoc in scoreDocs:
         doc = searcher.doc(scoreDoc.doc)
+        print scoreDoc.score
         table = dict((field.name(), field.stringValue())
                      for field in doc.getFields())
         print table
@@ -245,8 +246,17 @@ def search_lucene_index(index_dir, query_model, limit):
             else: 
                 row.append('')
         row.append(str(table.get(MetadataType.FILE_ID,'empty'))) # the unique file id of a file 
+        row.append(scoreDoc.score)
         row.append('')
+        
         rows.append(row)
     
     return rows
 
+def main():
+    print "Hello"
+    test_search("C:\\Users\\Sahil\\Output\\Project1\\lucene")
+
+if __name__ == '__main__':
+    
+    main()

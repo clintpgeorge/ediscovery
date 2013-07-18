@@ -73,12 +73,11 @@ def punkt_word_tokenizer(text):
     
     '''
 
-    text = ' '.join(text.split()) # removes newline, tab, and white space        
+    text = ' '.join(text.lower().split()) # removes newline, tab, and white space        
     tokens = tokenizer.tokenize(text)
     tokens = [cleanup(w) for w in tokens]
     tokens = [w for w in tokens if w not in REMOVE_LIST]
     return tokens
-
 
 def whitespace_tokenize(doc_text):
     '''
@@ -129,8 +128,10 @@ def parse_plain_text_email(file_path, tokenize = True):
             email_text = fp.read()
             email_text = email_text.encode('UTF-8') # encodes to UNICODE 
             fp.close()
+            print body_charset
         except UnicodeError:
-            raise
+            #raise
+            pass
         else: break
 
     if len(email_text) > 0: 
@@ -144,16 +145,29 @@ def parse_plain_text_email(file_path, tokenize = True):
         subject = xstr(msg['subject'])
         date = xstr(msg['date'])
         body_text = msg.get_payload()
+        
         if tokenize:
-            body_text = ' '.join(punkt_word_tokenizer(body_text.lower()))
+            tokens = punkt_word_tokenizer(body_text)
+            if body_charset == 'ISO-8859-1':
+                body_text = ''
+                for ch in tokens:
+                    try:
+                        token = ch.decode('ascii')
+                        body_text += ' ' + token
+                    except UnicodeDecodeError:
+                        pass
+            else:
+                body_text = u' '.join(tokens)
         else:
-            if msg.get_content_maintype() == 'multipart': #If message is multi part we only want the text version of the body, this walks the message and gets the body.
+            # If message is multi-part, we only want the text version of 
+            # the body, this walks the message and gets the body.
+            if msg.get_content_maintype() == 'multipart': 
                 for part in msg.walk():       
                     if part.get_content_type() == "text/plain":
                         body_text += part.get_payload(decode=True)
                     else:
                         continue
     
-    return (receiver, sender, cc, subject, body_text,bcc,date)
+    return (receiver, sender, cc, subject, body_text, bcc, date)
     
 

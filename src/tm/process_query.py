@@ -167,6 +167,8 @@ def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_pa
     
     query_td = lda_mdl[query_vec]
     
+    print 'Query distribution:', query_td
+    
     # querying based on cosine distance
     
     sims = lda_index[query_td] # perform a similarity query against the corpus

@@ -99,7 +99,7 @@ row_colors = {}
 row_colors['R'] = '#F8E0E6' 
 row_colors['NA'] = '#D8D8D8'
 
-class LoadDialog ( wx.Dialog ):
+class LoadDialog1 ( wx.Dialog ):
     
     def __init__( self, parent,id ):
         wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Loading File", pos = wx.DefaultPosition, size = wx.Size( 450,75 ), style = wx.DEFAULT_DIALOG_STYLE )
@@ -117,7 +117,7 @@ class LoadDialog ( wx.Dialog ):
         _fgsizer_dialog.Add( self._gif_ld_image, 0, wx.ALL, 5 )
         self._gif_ld_image.Play()
         
-        self._st_ld_label = wx.StaticText( self, wx.ID_ANY, u"Estimating the number of files. Please wait...\nNote-: 1000000 approximately takes 10 minutes to count\n\(Times may vary depending on processor used)", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self._st_ld_label = wx.StaticText( self, wx.ID_ANY, u"Estimating the number of files. Please wait...\nNote: 1000000 documents approximately take 10 minutes to count\n(Times may vary depending on processor used)", wx.DefaultPosition, wx.DefaultSize, 0 )
         self._st_ld_label.Wrap( -1 )
         self._st_ld_label.SetFont( wx.Font( 9, 74, 90, 90, False, "Tahoma" ) )
         
@@ -130,6 +130,47 @@ class LoadDialog ( wx.Dialog ):
     
     def __del__( self ):
         pass
+
+class LoadDialog ( wx.Dialog ):
+    
+    def __init__( self, parent,id ):
+        wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Loading File", pos = wx.DefaultPosition, size = wx.Size( 400,85 ), style = wx.DEFAULT_DIALOG_STYLE )
+        
+        self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+        self.SetFont( wx.Font( 8, 74, 93, 90, False, "Tahoma" ) )
+        
+        gbSizer = wx.GridBagSizer( 0, 0 )
+        gbSizer.SetFlexibleDirection( wx.BOTH )
+        gbSizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+        
+        gif_fname = os.path.join(APP_DIR,"hourglass1.gif")
+        gif = wx.animate.GIFAnimationCtrl(self, id, gif_fname, pos=(10, 10))
+        gif.GetPlayer().UseBackgroundColour(True)        
+        self._gif_ld_image = gif
+        gbSizer.Add( self._gif_ld_image, wx.GBPosition( 0, 0 ), wx.GBSpan( 2, 1 ), wx.ALL, 5 )
+        self._gif_ld_image.Play()
+        
+        
+        self.m_staticText24 = wx.StaticText( self, wx.ID_ANY, u"Estimating the number of files. Please wait...", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText24.Wrap( -1 )
+        gbSizer.Add( self.m_staticText24, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        self.m_staticText25 = wx.StaticText( self, wx.ID_ANY, u"Note: 1000000 documents approximately take 10 minutes to count\n(The time may vary depending on the system configuration)", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText25.Wrap( -1 )
+        self.m_staticText25.SetFont( wx.Font( 7, 74, 93, 90, False, "Tahoma" ) )
+        
+        gbSizer.Add( self.m_staticText25, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        
+        self.SetSizer( gbSizer )
+        self.Layout()
+        
+        self.Centre( wx.BOTH )
+    
+    def __del__( self ):
+        pass
+    
+
 
 class RSConfig: 
     '''
@@ -347,11 +388,15 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         
     def _on_click_io_next( self, event ):
         
-        try:
+        try:    
             # set project title
             if self._is_project_new==True:
                 self.project_title = self._tc_io_new_project.GetValue()
                 # Enable all controls
+                if len(self.project_title) == 0:
+                    self._show_error_message("Value Error!", "Enter a title for the project.")
+                    self._cbx_project_title.SetFocus() 
+                    return
                 tempdir=os.path.join(self.directory,"tmp",self.project_title)
                 if self._tempdir!=self.dir_path:
                     if tempdir!=self._tempdir:
@@ -373,6 +418,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             else:
                 self.project_title = self._cbx_project_title.GetValue()
             # validations
+            
             if len(self.project_title) == 0:
                 self._show_error_message("Value Error!", "Enter a title for the project.")
                 self._cbx_project_title.SetFocus() 
@@ -392,6 +438,18 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             
             if os.path.exists(self.output_dir_path)==False:
                 os.makedirs(self.output_dir_path)
+            try:
+                temp=tempfile.mktemp("", "", self.output_dir_path)
+                test_file=open(temp,"w")
+                test_file.close()
+                os.remove(temp)
+            except IOError,ioe:
+                self._show_error_message("Insufficient Permission", "The selected output directory might not have write permissions, Please choose another directory or provide sufficient privileges ")
+                self.output_dir_path = ""
+                self._tc_output_dir.SetValue("")
+                self._tc_out_output_dir.SetValue("")
+                return     
+            
             
             if self._is_project_loaded is False:
                 self._shelf_application_setup()
@@ -476,7 +534,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Event of item selected
         Returns: Nothing
         """
-        
+    
         try:
             super(RandomSampler, self)._on_click_io_sel_data_dir(event)
             
@@ -503,18 +561,34 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 msg_dialog=LoadDialog(None,-1)
                 msg_dialog.Show()
                 msg_dialog.Update()
-                file_count,pst_count=self.generate_files_preprocess()
+                file_count,pst_count,pst_size=self.generate_files_preprocess()
                 msg_dialog.Destroy()
-                
+               
                 num_files=file_count+pst_count#set progress maximum value of progress ar to total number of files
-                update_count=int(0.2*file_count)#update progess bar after ever 20% of ordinary files and PST files 
+                update_count=int(0.2*file_count)+1#update progess bar after ever 20% of ordinary files and PST files 
                 if(self._copy==False):
                     return 
+                wait_str=""
+                wait_time=(file_count*600/1000000)+(file_count*0.05/update_count)+(pst_count*0.05)+(pst_size*1200/1024)
+                wait_time=int(wait_time)
+                
+                if (wait_time<3600):
+                    minutes=int(wait_time/60)+1
+                    wait_str="File may take approximately "+ str(minutes) +" minutes"
+                else:
+                    hours=int(wait_time/3600)
+                    minutes=int((wait_time%3600)/60)+1
+                    wait_str="File may take approximately "+ str(hours) +" hours"
+                    if(minutes>0):
+                        wait_str+=" "+ str(minutes) +" minutes"
+                    
+                #exit()
+                wait_str+=" to load.\n(The time may vary depending on the system configuration)\n You may minimize the window while we load your documents."
                 
                 self.SetStatusText("The selected data folder is %s" % self.dir_path)
                 message_dialog = wx.ProgressDialog(
                                                     'Loading Files', 
-                                                    'Loading source documents. Please wait for a few minutes.', 
+                                                    'Loading source documents. '+wait_str, 
                                                     parent = self, maximum=num_files)
 
                 message_dialog.ShowModal()
@@ -539,6 +613,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         try:
             wx.BeginBusyCursor()
             pst_count=0
+            pst_size=0
             file_count=0
             for root, _, files in os.walk(self.dir_path):
                 for file_name in files:
@@ -546,6 +621,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                     _, fileExtension = os.path.splitext(complete_fileName)
                     if fileExtension==".pst":
                         pst_count+=1
+                        pst_size+=os.path.getsize(complete_fileName)
                     else:
                         file_count+=1
             if pst_count>0:
@@ -557,7 +633,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 self._tempdir=self.dir_path
             
             wx.EndBusyCursor()
-            return file_count,pst_count
+            pst_size=int(pst_size/(1024*1024))
+            return file_count,pst_count,pst_size
         except Exception,e:
             self.error(e)
    
@@ -588,11 +665,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                             for file_name_PST in filesPST:
                                 file_list_tmp.append(os.path.join(rootPST, file_name_PST))
                     except Exception,e:
-                        print e
                         error_str+=file_name
                     count=count+1
                     dialog.Update(count)
-                    wx.MilliSleep(300)
+                    wx.MilliSleep(50)
                 else:
                     
                     file_list_tmp.append(os.path.join(root, file_name))
@@ -601,18 +677,22 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                         count=count+file_count
                         file_count=0
                         dialog.Update(count)
-                        wx.MilliSleep(300)
+                        wx.MilliSleep(50)
         dialog.Update(num_files)
         
         self.file_list=file_list_tmp
         
         if(error_str!=""):
-            fileName=os.path.join(os.getcwd(),"error.log")
-            file_err=open(fileName,"a") 
-            date=unicode(datetime.now())
-            file_err.flush()
-            file_err.write(date+"=>")
-            file_err.write("Could not read "+ error_str+"\n")
+            try:
+                fileName=os.path.join(os.path.expanduser('~'),"E-Discovery Random Sampler","error.log")
+                file_err=open(fileName,"a") 
+                date=unicode(datetime.now())
+                file_err.flush()
+                file_err.write(date+u"=>")
+                file_err.write(u"Could not read "+ unicode(error_str)+u"\n")
+            except Exception,ex:
+                print ex
+    
             
             self._show_error_message("Copy Error","Source PST files could not be processed, for more information please check " + fileName)
             file_err.close()
@@ -732,6 +812,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                                self.output_dir_path, wx.DD_DIR_MUST_EXIST)
             if dlg.ShowModal() == wx.ID_OK:
                 self.output_dir_path = dlg.GetPath()
+                #test_file=os.path.join(self.output_dir_path,datetime.now())       
             dlg.Destroy()
             
             self._tc_output_dir.SetValue(self.output_dir_path)
@@ -773,7 +854,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                     if fileExtension!="":
                         os.remove(filename)
         except Exception, e:
-            print e
+            raise
             
     def _on_click_copy_files( self, event ):
         '''
@@ -786,7 +867,6 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             super(RandomSampler, self)._on_click_copy_files(event)
               
             # Check if path exists
-            print self.dir_path
             if (not os.path.exists(self.dir_path) or
             not os.path.exists(self.output_dir_path)):
                 self._show_error_message("Value Error!", "Please enter a valid Source Document Folder and Sampled Output Folder.")
