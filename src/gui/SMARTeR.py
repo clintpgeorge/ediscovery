@@ -341,8 +341,8 @@ class SMARTeR (SMARTeRGUI):
         
     def _reset_defaults_indexing_preferences(self):
         
-        self._num_topics = 50
-        self._num_passes = 1
+        self._num_topics = 200
+        self._num_passes = 30
         self._min_token_freq = 1 
         self._min_token_len = 2
         

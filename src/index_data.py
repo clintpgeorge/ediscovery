@@ -17,6 +17,7 @@ import ConfigParser
 from lucenesearch.lucene_index_dir import index_plain_text_emails
 from preprocess.lucene_enron_create_corpus import build_lda_corpus
 from tm.lda_estimation import run_lda_estimation
+from tm.lsi_estimation import run_lsi_estimation
 
 LUCENE_FOLDER_NAME = 'lucene'
 TM_FOLDER_NAME = 'tm' 
@@ -114,6 +115,27 @@ def index_data(data_folder, output_folder, project_name, num_topics=DEFAULT_NUM_
     config.set('LDA', 'num_passes', str(num_passes))    
     
     logging.info('================================================== END LDA ESTIMATION ==================================================')    
+    
+    
+    
+    logging.info('================================================== BEGIN LSI ESTIMATION ==================================================')
+
+    lsi_model_file = os.path.join(tm_folder, project_name + '.lsi')
+    lsi_beta_file = os.path.join(tm_folder, project_name + '.lsi.beta')
+    lsi_theta_file = os.path.join(tm_folder, project_name + '.lsi.theta')
+    lsi_cos_index_file = os.path.join(tm_folder, project_name + '.lsi.cos.index')
+    # LSI_NUM_TOPICS = 300
+    
+    run_lsi_estimation(dict_file, ldac_file, lsi_model_file, lsi_beta_file, lsi_theta_file, lsi_cos_index_file, num_topics)
+    
+    config.add_section('LSI')
+    config.set('LSI', 'lsi_model_file', lsi_model_file)
+    config.set('LSI', 'lsi_beta_file', lsi_beta_file)
+    config.set('LSI', 'lsi_theta_file', lsi_theta_file)
+    config.set('LSI', 'lsi_cos_index_file', lsi_cos_index_file)
+    config.set('LSI', 'lsi_num_topics', str(num_topics))
+    
+    logging.info('================================================== END LSI ESTIMATION ==================================================')    
     
     
     # Writing our configuration file to 'project.cfg'
