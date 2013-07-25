@@ -229,8 +229,37 @@ def prepare_roc_format(docs, positive_dir):
             tuple_list = (0, doc[1])
         results.append(tuple_list)
     return results
-     
 
+def plot_roc(roc_result,score_threshold):
+    #Example instance labels (first index) with the decision function , score (second index)
+#-- positive class should be +1 and negative 0.
+    roc = ROCData(roc_result)  #Create the ROC Object
+    roc.auc() #get the area under the curve
+    roc.plot(title='ROC Curve') #Create a plot of the ROC curve
+    roc.confusion_matrix(score_threshold, True)
+    print roc.evaluateMetrics(roc.confusion_matrix(score_threshold, True))
+
+def find_seed_document(docs, positive_dir):
+    for doc in docs:
+        if os.path.exists(os.path.join(positive_dir,doc[0]))==True:
+            return os.path.join(positive_dir,doc[0])
+    return ""
+
+def enhance_docs(docs,test_directory):
+    result_dict = dict()
+    result = []
+    for doc in docs:
+        result.append(doc)
+        result_dict[doc[0]] = True
+    
+    for _, _, files in os.walk(test_directory):
+        for file in files:
+            doc = []
+            if file not in result_dict:
+                doc.append(file)
+                doc.append(0)
+                result.append(doc)
+    return result        
 
      
 #===============================================================================
@@ -283,21 +312,15 @@ print query_words, fields
 #===============================================================================
 
 print "\nLucene Search:\n"
-
+ 
 docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs = normalize_lucene_score(docs)
 #responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
 #true_positives, true_negatives, false_positives, false_negatives, exceptions = eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 #enhanced_evaluation(positive_dir, negative_dir, true_positives, false_positives)
+docs = enhance_docs(docs,test_directory)
 roc_result = prepare_roc_format(docs,positive_dir)
-
-#Example instance labels (first index) with the decision function , score (second index)
-#-- positive class should be +1 and negative 0.
-roc = ROCData(roc_result)  #Create the ROC Object
-roc.auc() #get the area under the curve
-roc.plot(title='ROC Curve') #Create a plot of the ROC curve
-roc.confusion_matrix(score_threshold, True)
-print roc.evaluateMetrics(roc.confusion_matrix(score_threshold, True))
+plot_roc(roc_result, score_threshold)
 
 #===============================================================================
 # Here, we perform topic search based on a given query. 
@@ -308,31 +331,18 @@ print roc.evaluateMetrics(roc.confusion_matrix(score_threshold, True))
 print "\nTopic Search:\n"
 
 docs = search_tm(' '.join(query_words), limit, mdl_cfg)
+file_name=find_seed_document(docs, positive_dir)
 #responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 roc_result = prepare_roc_format(docs,positive_dir)    
-#Example instance labels (first index) with the decision function , score (second index)
-#-- positive class should be +1 and negative 0.
-roc = ROCData(roc_result)  #Create the ROC Object
-roc.auc() #get the area under the curve
-roc.plot(title='ROC Curve') #Create a plot of the ROC curve
-roc.confusion_matrix(score_threshold, True)
-print roc.evaluateMetrics(roc.confusion_matrix(score_threshold, True))
-    
+plot_roc(roc_result, score_threshold)
 print "\nLSI Search:\n"
 
 docs = search_lsi(' '.join(query_words), limit, mdl_cfg)
 #responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 roc_result = prepare_roc_format(docs,positive_dir)
-#Example instance labels (first index) with the decision function , score (second index)
-#-- positive class should be +1 and negative 0.
-roc = ROCData(roc_result)  #Create the ROC Object
-roc.auc() #get the area under the curve
-roc.plot(title='ROC Curve') #Create a plot of the ROC curve
-roc.confusion_matrix(score_threshold, True)
-print roc.evaluateMetrics(roc.confusion_matrix(score_threshold, True))
-    
+plot_roc(roc_result, score_threshold)    
 
 #===============================================================================
 # Here we consider a relevant document as a query and 
@@ -350,6 +360,7 @@ docs = search_tm(doc_text, limit, mdl_cfg)
 #responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 roc_result = prepare_roc_format(docs,positive_dir)
+plot_roc(roc_result, score_threshold)
     
 print "\nLSI Search  (using a document):\n"
 
@@ -357,14 +368,7 @@ docs = search_lsi(' '.join(query_words), limit, mdl_cfg)
 #responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 roc_result = prepare_roc_format(docs,positive_dir)
-#Example instance labels (first index) with the decision function , score (second index)
-#-- positive class should be +1 and negative 0.
-roc = ROCData(roc_result)  #Create the ROC Object
-roc.auc() #get the area under the curve
-roc.plot(title='ROC Curve') #Create a plot of the ROC curve
-roc.confusion_matrix(score_threshold, True)
-print roc.evaluateMetrics(roc.confusion_matrix(score_threshold, True))
-
+plot_roc(roc_result, score_threshold)
 
 
 
