@@ -139,7 +139,8 @@ def eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
     true_negatives = 0
     false_negatives = 0
     exceptions = 0
-    
+    print 
+    print "Responsive documents: type ([1] - true positive [0] - false positive) [file, score] "
     for doc in responsive_docs:
         if os.path.exists(os.path.join(positive_dir, doc[0])) == True:
             true_positives += 1
@@ -149,7 +150,7 @@ def eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
             print 0, doc
         else:
             exceptions += 1
-            
+    print   
     for doc in unresponsive_docs:
         if os.path.exists(os.path.join(positive_dir, doc[0])) == True:
             false_negatives += 1
@@ -163,8 +164,35 @@ def eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
     print "False Positive:", false_positives
     print "False Negative:", false_negatives
     print "Exceptions:", exceptions
+    print 
      
     return true_positives, true_negatives, false_positives, false_negatives, exceptions
+
+def enhanced_evaluation(positive_dir,negative_dir,true_positives,false_positives):
+    total_positives=0
+    total_negatives=0
+    for _, _, files in os.walk(positive_dir):
+        for _ in files:
+            total_positives+=1
+            
+    for _, _, files in os.walk(negative_dir):
+        for _ in files:
+            total_negatives+=1
+            
+    '''
+    Total Positives = True Positive + False Negative
+    Total Negatives = True Negative + False Positive
+    '''
+    
+    true_negatives = total_negatives - false_positives
+    false_negatives = total_positives - true_positives
+    
+    print "True Positive:", true_positives
+    print "Actual True Negative:", true_negatives
+    print "False Positive:", false_positives
+    print "Actual False Negative:", false_negatives
+    print 
+    
 
 def normalize_lucene_score(docs):
     max_val = docs[0][1]
@@ -224,7 +252,8 @@ print "\nLucene Search:\n"
 docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs = normalize_lucene_score(docs)
 responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
-eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+true_positives, true_negatives, false_positives, false_negatives, exceptions = eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+enhanced_evaluation(positive_dir, negative_dir, true_positives, false_positives)
 
 #===============================================================================
 # Here, we perform topic search based on a given query. 
@@ -271,4 +300,20 @@ docs = search_lsi(' '.join(query_words), limit, mdl_cfg)
 responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
 eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 
+#
+#
+#from PyROC.pyroc import random_mixture_model, ROCData
+#random_sample  = random_mixture_model()  # Generate a custom set randomly
+#print random_sample
+#
+##Example instance labels (first index) with the decision function , score (second index)
+##-- positive class should be +1 and negative 0.
+#roc = ROCData(random_sample)  #Create the ROC Object
+#roc.auc() #get the area under the curve
+#roc.plot(title='ROC Curve') #Create a plot of the ROC curve
+#
+#
+##threshold passed as parameter - the cutoff value. (0.5) 
+#roc.confusion_matrix(0.5, True)
+#
 
