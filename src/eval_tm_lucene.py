@@ -132,15 +132,13 @@ def load_tm(mdl_cfg):
     return lda_dictionary, lda_mdl, lda_index, lda_file_path_index
 
 
-
 def eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs):
     true_positives = 0
     false_positives = 0
     true_negatives = 0
     false_negatives = 0
     exceptions = 0
-    print 
-    print "Responsive documents: type ([1] - true positive [0] - false positive) [file, score] "
+    
     for doc in responsive_docs:
         if os.path.exists(os.path.join(positive_dir, doc[0])) == True:
             true_positives += 1
@@ -150,7 +148,7 @@ def eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
             print 0, doc
         else:
             exceptions += 1
-    print   
+            
     for doc in unresponsive_docs:
         if os.path.exists(os.path.join(positive_dir, doc[0])) == True:
             false_negatives += 1
@@ -164,10 +162,15 @@ def eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
     print "False Positive:", false_positives
     print "False Negative:", false_negatives
     print "Exceptions:", exceptions
-    print 
-     
+    
+    precision=float(true_positives)/(true_positives+false_positives)
+    recall=float(true_positives)/(true_positives+false_negatives)
+    accuracy=float(true_positives+true_negatives)/(true_positives+true_negatives+false_negatives+false_positives)
+    print "Precision "+ str(precision)
+    print "Recall "+ str(recall)
+    print "Accuracy "+ str(accuracy) 
     return true_positives, true_negatives, false_positives, false_negatives, exceptions
-
+     
 def enhanced_evaluation(positive_dir,negative_dir,true_positives,false_positives):
     total_positives=0
     total_negatives=0
@@ -191,7 +194,14 @@ def enhanced_evaluation(positive_dir,negative_dir,true_positives,false_positives
     print "Actual True Negative:", true_negatives
     print "False Positive:", false_positives
     print "Actual False Negative:", false_negatives
-    print 
+    
+    precision=float(true_positives)/(true_positives+false_positives)
+    recall=float(true_positives)/(true_positives+false_negatives)
+    accuracy=float(true_positives+true_negatives)/(true_positives+true_negatives+false_negatives+false_positives)
+        
+    print "Precision "+ str(precision)
+    print "Recall "+ str(recall)
+    print "Accuracy "+ str(accuracy)    
     
 
 def normalize_lucene_score(docs):
@@ -209,6 +219,16 @@ def classify_docs(docs, threshold):
         else:
             unresponsive.append(doc)
     return responsive, unresponsive
+
+def prepare_roc_format(docs,positive_dir):
+    result = []
+    for doc in docs:
+        if os.path.join(positive_dir,doc[0]):
+            tuple_list= 1, doc[1]
+        else:
+            tuple_list= 0, doc[1]
+        result.append(tuple_list)
+    return result
      
      
 #===============================================================================
@@ -220,14 +240,27 @@ def classify_docs(docs, threshold):
 
 # Initialize variables here 
 
-config_file = "gui/prepay.cfg" # configuration file, created using the SMARTeR GUI 
-query = "all:prepay:May;all:swap:May" # user query 
-test_directory = "F:\\Research\\datasets\\trec2010\\Enron\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+config_file = "gui/project201.cfg" # configuration file, created using the SMARTeR GUI 
+#201
+query = "all:pre-pay:May;all:swap:May"
+#202
+#"all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
+#203
+#query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
+#204
+#query = "all:retention:May;all:compliance:May;all:preserve:May;all:discard:May;all:destroy:May;all:delete:May;all:clean:May;all:eliminate:May;all:shred:May;all:schedule:May;all:period:May;all:documents:May;all:file:May;all:policy:May;all:e-mail:May"
+#205
+#query = "all:electricity:May;all:electric:May;all:loads:May;all:hydro:May;all:generator:May;all:power:May"
+#206 
+#query = "all:analyst:May;all:credit:May;all:rating:May;all:grade:May"
+#207     
+#query = "all:football:May;all:Eric Bass:May" 
+test_directory = "F:\\topicModelingDataSet\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
-score_threshold = 0.51 
-limit = 66
-file_name = os.path.join(positive_dir, '3.215566.LMCMQ2KZ2ZF0XP4KTVJ00MXWSPAVRGIYA.txt') # relevant document for a query 
+score_threshold = 0.51
+limit = 1000
+file_name = os.path.join(positive_dir, '3.268398.LL1NPOBL5XGYBSSMNJVQCF4TWXJQZ03WB.txt') 
 
 
 
@@ -251,9 +284,10 @@ print "\nLucene Search:\n"
 
 docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs = normalize_lucene_score(docs)
-responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
-true_positives, true_negatives, false_positives, false_negatives, exceptions = eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
-enhanced_evaluation(positive_dir, negative_dir, true_positives, false_positives)
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+#true_positives, true_negatives, false_positives, false_negatives, exceptions = eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+#enhanced_evaluation(positive_dir, negative_dir, true_positives, false_positives)
+roc_result = prepare_roc_format(docs,positive_dir)
 
 #===============================================================================
 # Here, we perform topic search based on a given query. 
@@ -264,17 +298,17 @@ enhanced_evaluation(positive_dir, negative_dir, true_positives, false_positives)
 print "\nTopic Search:\n"
 
 docs = search_tm(' '.join(query_words), limit, mdl_cfg)
-responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
-eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
-    
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+#eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+roc_result = prepare_roc_format(docs,positive_dir)    
     
     
 print "\nLSI Search:\n"
 
 docs = search_lsi(' '.join(query_words), limit, mdl_cfg)
-responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
-eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
-    
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+#eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+roc_result = prepare_roc_format(docs,positive_dir)
     
     
 
@@ -291,14 +325,16 @@ doc_text = u' '.join(doc_text.split())
 print "\nTopic Search (using a document):\n"
 
 docs = search_tm(doc_text, limit, mdl_cfg)
-responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
-eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+#eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+roc_result = prepare_roc_format(docs,positive_dir)
     
 print "\nLSI Search  (using a document):\n"
 
 docs = search_lsi(' '.join(query_words), limit, mdl_cfg)
-responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
-eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+#eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
+roc_result = prepare_roc_format(docs,positive_dir)
 
 #
 #
