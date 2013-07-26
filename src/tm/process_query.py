@@ -19,7 +19,7 @@ from scipy.spatial.distance import cosine
 from utils.utils_email import whitespace_tokenize
 
 
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.ERROR)
 
 def sparse_to_dense(length, tuples_list):
     dense_vec = np.zeros(length)
@@ -238,6 +238,8 @@ def search_lsi_model(query, dictionary, lsi, index, files_info, limit=5):
     
     
     query_td = lsi[query_vec]
+    
+    print 'Query distribution:', query_td
     
     # querying based on cosine distance
     

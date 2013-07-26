@@ -5,7 +5,7 @@ from lucenesearch.lucene_index_dir import search_lucene_index, get_indexed_file_
 
 from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables
 from utils.utils_file import read_config, load_file_paths_index, nexists
-from PyROC.pyroc import random_mixture_model, ROCData
+from PyROC.pyroc import ROCData, plot_multiple_roc
 
 def parse_query(query):
     
@@ -220,7 +220,7 @@ def classify_docs(docs, threshold):
             unresponsive.append(doc)
     return responsive, unresponsive
 
-def prepare_roc_format(docs, positive_dir):
+def convert_to_roc_format(docs, positive_dir):
     results = []
     for doc in docs:
         if os.path.exists(os.path.join(positive_dir, doc[0])):
@@ -230,14 +230,46 @@ def prepare_roc_format(docs, positive_dir):
         results.append(tuple_list)
     return results
 
-def plot_roc(roc_result,score_threshold):
+def plot_roc_and_print_metrics(roc_result, roc_title='ROC Curve', file_name='ROC_plot.png', score_threshold=0.5):
     #Example instance labels (first index) with the decision function , score (second index)
-#-- positive class should be +1 and negative 0.
+    #-- positive class should be +1 and negative 0.
+
     roc = ROCData(roc_result)  #Create the ROC Object
     roc.auc() #get the area under the curve
-    roc.plot(title='ROC Curve') #Create a plot of the ROC curve
+    roc.plot(title=roc_title, file_name=file_name) #Create a plot of the ROC curve
+    
+    # prints confusion matrix 
     roc.confusion_matrix(score_threshold, True)
-    print roc.evaluateMetrics(roc.confusion_matrix(score_threshold, True))
+    
+    # prints the evaluation metrics 
+    roc.evaluateMetrics(roc.confusion_matrix(score_threshold), do_print=True)
+
+
+def plot_results_rocs(results, labels, file_name, img_title): 
+    
+    roc_data_list = [ROCData(result) for result in results]
+    plot_multiple_roc(roc_data_list, title=img_title, labels=labels, include_baseline=True, file_name=file_name)
+    
+    return roc_data_list
+
+
+def print_results_eval_metrics(roc_data_list, labels, score_thresholds):
+    
+    for i, roc_data in enumerate(roc_data_list):
+        print '----------------------------------------------------------------------------------'
+        print labels[i]
+        print 
+        print 'AUC:', roc_data.auc()
+        print 
+        
+        # prints confusion matrix 
+        roc_data.confusion_matrix(score_thresholds[i], True)
+        
+        # prints the evaluation metrics 
+        roc_data.evaluateMetrics(roc_data.confusion_matrix(score_thresholds[i]), do_print=True)
+        print '----------------------------------------------------------------------------------'
+    
+
 
 def find_seed_document(docs, positive_dir):
     for doc in docs:
@@ -245,20 +277,23 @@ def find_seed_document(docs, positive_dir):
             return os.path.join(positive_dir,doc[0])
     return ""
 
-def enhance_docs(docs,test_directory):
+def append_negative_docs(docs, test_directory):
+    '''
+    Used only for Lucene 
+    '''
+    
     result_dict = dict()
     result = []
+    
     for doc in docs:
         result.append(doc)
         result_dict[doc[0]] = True
     
     for _, _, files in os.walk(test_directory):
-        for file in files:
-            doc = []
-            if file not in result_dict:
-                doc.append(file)
-                doc.append(0)
-                result.append(doc)
+        for file_name in files:
+            if file_name not in result_dict:
+                result.append([file_name, 0.0])
+                
     return result        
 
      
@@ -269,9 +304,11 @@ def enhance_docs(docs,test_directory):
 # '''
 #===============================================================================
 
-# Initialize variables here 
+# ************************************************************************************
+# ****** DO ALL HARD-CODINGS HERE ****************************************************
+# ************************************************************************************
 
-config_file = "gui/project201.cfg" # configuration file, created using the SMARTeR GUI 
+config_file = "gui/prepay.cfg" # configuration file, created using the SMARTeR GUI 
 #201
 query = "all:pre-pay:May;all:swap:May"
 #202
@@ -286,24 +323,47 @@ query = "all:pre-pay:May;all:swap:May"
 #query = "all:analyst:May;all:credit:May;all:rating:May;all:grade:May"
 #207     
 #query = "all:football:May;all:Eric Bass:May" 
-test_directory = "F:\\topicModelingDataSet\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+
+## ***** BEGIN change the following each query *********
+
+query_id = 201 
+test_directory = "F:\\Research\\datasets\\trec2010\\Enron\\201" # "F:\\topicModelingDataSet\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
-score_threshold = 0.51
-limit = 1000
-file_name = os.path.join(positive_dir, '3.268398.LL1NPOBL5XGYBSSMNJVQCF4TWXJQZ03WB.txt') 
+seed_doc_name = os.path.join(positive_dir, '3.215566.LMCMQ2KZ2ZF0XP4KTVJ00MXWSPAVRGIYA.txt') # query specific seed document 
 
+## ***** END change this each query *********
+
+limit = 1000
+img_extension  = '.png'
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc']
+rocs_img_title = 'Query %s: ROCs of different methods' % query_id 
+rocs_file_name = '%s_ROC_plots' % query_id + img_extension
+roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
+score_thresholds = [0.51, 0.51, 0.51, 0.51, 0.63]
+
+# ************************************************************************************
 
 
 
 #===============================================================================
-# Reads the configuration file and parses the user query  
+# Reads the configuration file 
+# Parses the user query  
+# Combines the query with a seed 
 #===============================================================================
 
 mdl_cfg = read_config(config_file)
 query_words, fields, clauses = parse_query(query)
-
 print query_words, fields
+
+query_text = ' '.join(query_words)
+
+with open(seed_doc_name) as fp:
+    seed_doc_text = fp.read()
+seed_doc_text = u' '.join(seed_doc_text.split() + query_words) 
+
+print query_text
+print seed_doc_text
 
 
 #===============================================================================
@@ -315,12 +375,12 @@ print "\nLucene Search:\n"
  
 docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs = normalize_lucene_score(docs)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[0])
 #true_positives, true_negatives, false_positives, false_negatives, exceptions = eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 #enhanced_evaluation(positive_dir, negative_dir, true_positives, false_positives)
-docs = enhance_docs(docs,test_directory)
-roc_result = prepare_roc_format(docs,positive_dir)
-plot_roc(roc_result, score_threshold)
+docs = append_negative_docs(docs, test_directory)
+r1 = convert_to_roc_format(docs,positive_dir)
+# plot_roc_and_print_metrics(r1, roc_labels[0], roc_file_names[0] + img_extension, score_thresholds[0])
 
 #===============================================================================
 # Here, we perform topic search based on a given query. 
@@ -328,21 +388,24 @@ plot_roc(roc_result, score_threshold)
 #===============================================================================
 
     
-print "\nTopic Search:\n"
+print "\nLDA Search:\n"
 
-docs = search_tm(' '.join(query_words), limit, mdl_cfg)
+docs = search_tm(query_text, limit, mdl_cfg)
 file_name=find_seed_document(docs, positive_dir)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[1])
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
-roc_result = prepare_roc_format(docs,positive_dir)    
-plot_roc(roc_result, score_threshold)
+r2 = convert_to_roc_format(docs, positive_dir)    
+# plot_roc_and_print_metrics(r2, roc_labels[1], roc_file_names[1] + img_extension, score_thresholds[1])
+
+
 print "\nLSI Search:\n"
 
-docs = search_lsi(' '.join(query_words), limit, mdl_cfg)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+docs = search_lsi(query_text, limit, mdl_cfg)
+print len(docs)
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[2])
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
-roc_result = prepare_roc_format(docs,positive_dir)
-plot_roc(roc_result, score_threshold)    
+r3 = convert_to_roc_format(docs, positive_dir)
+# plot_roc_and_print_metrics(r3, roc_labels[2], roc_file_names[2] + img_extension, score_thresholds[2])
 
 #===============================================================================
 # Here we consider a relevant document as a query and 
@@ -350,26 +413,35 @@ plot_roc(roc_result, score_threshold)
 #===============================================================================
 
 
-with open(file_name) as fp:
-    doc_text = fp.read()
-doc_text = u' '.join(doc_text.split())
 
-print "\nTopic Search (using a document):\n"
+print "\nLDA Search (using a seed doc):\n"
 
-docs = search_tm(doc_text, limit, mdl_cfg)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+docs = search_tm(seed_doc_text, limit, mdl_cfg)
+print len(docs)
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[3])
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
-roc_result = prepare_roc_format(docs,positive_dir)
-plot_roc(roc_result, score_threshold)
+r4 = convert_to_roc_format(docs, positive_dir)
+# plot_roc_and_print_metrics(r4, roc_labels[3], roc_file_names[3] + img_extension, score_thresholds[3])
     
-print "\nLSI Search  (using a document):\n"
+    
 
-docs = search_lsi(' '.join(query_words), limit, mdl_cfg)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_threshold)
+print "\nLSI Search  (using a seed doc):\n"
+
+docs = search_lsi(seed_doc_text, limit, mdl_cfg)
+print len(docs)
+#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[4])
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
-roc_result = prepare_roc_format(docs,positive_dir)
-plot_roc(roc_result, score_threshold)
+r5 = convert_to_roc_format(docs, positive_dir)
+#print [t for t in r5 if t[0] == 0]
+#print [t for t in r5 if t[0] == 1]
+#plot_roc_and_print_metrics(r5, roc_labels[4], roc_file_names[4] + img_extension, score_thresholds[4])
 
+
+
+results_list = [r1, r2, r3, r4, r5]
+roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
+print 
+print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
 
 
 

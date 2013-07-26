@@ -26,8 +26,8 @@ except:
 
 
 def random_mixture_model(pos_mu=.6,pos_sigma=.1,neg_mu=.4,neg_sigma=.1,size=200):
-	pos = [(1,random.gauss(pos_mu,pos_sigma),) for x in xrange(size/2)]
-	neg = [(0,random.gauss(neg_mu,neg_sigma),) for x in xrange(size/2)]
+	pos = [(1,random.gauss(pos_mu,pos_sigma),) for _ in xrange(size/2)]
+	neg = [(0,random.gauss(neg_mu,neg_sigma),) for _ in xrange(size/2)]
 	return pos+neg
 
 
@@ -56,7 +56,7 @@ def plot_multiple_rocs_separate(rocList,title='', labels = None, equal_aspect = 
 
 
 def _remove_duplicate_styles(rocList):
- 	""" Checks for duplicate linestyles and replaces duplicates with a random one."""
+	""" Checks for duplicate line styles and replaces duplicates with a random one."""
 	pref_styles = ['cx-','mx-','yx-','gx-','bx-','rx-']
 	points = 'ov^>+xd'
 	colors = 'bgrcmy'
@@ -84,7 +84,7 @@ def _remove_duplicate_styles(rocList):
 						
 
 
-def plot_multiple_roc(rocList,title='',labels=None, include_baseline=False, equal_aspect=True):
+def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, equal_aspect=True, file_name='ROC_plots.png'):
 	""" Plots multiple ROC curves on the same chart. 
 		Parameters:
 			rocList: the list of ROCData objects
@@ -102,8 +102,8 @@ def plot_multiple_roc(rocList,title='',labels=None, include_baseline=False, equa
 	if equal_aspect:
 		cax = pylab.gca()
 		cax.set_aspect('equal')
-	pylab.xlabel("1 - Specificity")
-	pylab.ylabel("Sensitivity")
+	pylab.xlabel('1 - Specificity (True Negative Rate)')
+	pylab.ylabel('Sensitivity (Recall)')
 	pylab.title(title)
 	if not labels:
 		labels = [ '' for x in rocList]
@@ -111,12 +111,13 @@ def plot_multiple_roc(rocList,title='',labels=None, include_baseline=False, equa
 	for ix, r in enumerate(rocList):
 		pylab.plot([x[0] for x in r.derived_points], [y[1] for y in r.derived_points], r.linestyle, linewidth=1, label=labels[ix])
 	if include_baseline:
-		pylab.plot([0.0,1.0], [0.0, 1.0], 'k-', label= 'random')
+		pylab.plot([0.0,1.0], [0.0, 1.0], 'k-', label= 'Random')
 	if labels:
 		pylab.legend(loc='lower right')
 		
-	pylab.show()
-
+	pylab.savefig(file_name, dpi=300, bbox_inches='tight', pad_inches=0.1)
+	# pylab.show()
+		
 
 def load_decision_function(path):
 	""" Function to load the decision function (DataSet) 
@@ -162,13 +163,13 @@ class ROCData(object):
 		self.linestyle = linestyle
 		self.auc() #Seed initial points with default full ROC
 	
-	def auc(self,fpnum=0):
-		""" Uses the trapezoidal ruel to calculate the area under the curve. If fpnum is supplied, it will 
+	def auc(self, fpnum=0):
+		""" Uses the trapezoidal rule to calculate the area under the curve. If fpnum is supplied, it will 
 			calculate a partial AUC, up to the number of false positives in fpnum (the partial AUC is scaled
 			to between 0 and 1).
 			It assumes that the positive class is expected to have the higher of the scores (s(+) < s(-))
 			Parameters:
-				fpnum: The cumulativr FP count (fps)
+				fpnum: The cumulative FP count (fps)
 			Return:
 			
 		"""
@@ -186,7 +187,7 @@ class ROCData(object):
 				relevant_pauc.append(self.data[current_index])
 				if self.data[current_index][0] == 0:
 					fps_count += 1
-				current_index +=1
+				current_index += 1
 		total_n = len([x for x in relevant_pauc if x[0] == 0])
 		total_p = len(relevant_pauc) - total_n
 		
@@ -247,7 +248,7 @@ class ROCData(object):
 						(Nn - 1.0) * (Q2 - area * area)) / (Na * Nn))
 							
 	
-	def plot(self,title='',include_baseline=False,equal_aspect=True):
+	def plot(self, title='', include_baseline=False, equal_aspect=True, file_name='ROC_plot.png'):
 		""" Method that generates a plot of the ROC curve 
 			Parameters:
 				title: Title of the chart
@@ -267,11 +268,12 @@ class ROCData(object):
 		if equal_aspect:
 			cax = pylab.gca()
 			cax.set_aspect('equal')
-		pylab.xlabel('1 - Specificity')
-		pylab.ylabel('Sensitivity')
+		pylab.xlabel('1 - Specificity (True Negative Rate)')
+		pylab.ylabel('Sensitivity (Recall)')
 		pylab.title(title)
 		
-		pylab.show()
+		pylab.savefig(file_name, bbox_inches=0)
+		# pylab.show()
 		
 	
 	def confusion_matrix(self,threshold,do_print=False):
@@ -286,11 +288,16 @@ class ROCData(object):
 		pos_points = [x for x in self.data if x[1] >= threshold]
 		neg_points = [x for x in self.data if x[1] < threshold]
 		tp,fp,fn,tn = self._calculate_counts(pos_points,neg_points)
+		
+		
 		if do_print:
+			print "\nConfusion Matrix: "
 			print "\t Actual class"
 			print "\t+(1)\t-(0)"
 			print "+(1)\t%i\t%i\tPredicted" % (tp,fp)
 			print "-(0)\t%i\t%i\tclass" % (fn,tn)
+			print 
+		
 		return {'TP': tp, 'FP': fp, 'FN': fn, 'TN': tn}
 		
 
@@ -302,8 +309,8 @@ class ROCData(object):
 				metric: the specific metric of the default value is None (all metrics).
 				do_print:  if it's True show the metrics in the screen
 			Return:
-				the dictionary with the Accuracy, Sensitivity, Specificity,Efficiency,
-				                        PositivePredictiveValue, NegativePredictiveValue, PhiCoefficient
+				the dictionary with the Accuracy, Sensitivity (Recall), Specificity (True Negative Rate),Efficiency,
+				                        PositivePredictiveValue (Precision), NegativePredictiveValue, PhiCoefficient
 		"""
 		
 		accuracy = (matrix['TP'] + matrix['TN'])/ float(sum(matrix.values()))
@@ -323,19 +330,24 @@ class ROCData(object):
 							           (matrix['TP'] + matrix['FN']) *
 									   (matrix['TN'] + matrix['FP']) *
 									   (matrix['TN'] + matrix['FN']))) or 1.0
+		f1_score = 2.0 * ((positivePredictiveValue * sensitivity) / (positivePredictiveValue + sensitivity))
 									
+		
 		if do_print:
-			print 'Sensitivity: ' , sensitivity
-			print 'Specificity: ' , specificity
-			print 'Efficiency: ' , efficiency
-			print 'Accuracy: ' , accuracy
-			print 'PositivePredictiveValue: ' , positivePredictiveValue
-			print 'NegativePredictiveValue' , NegativePredictiveValue
-			print 'PhiCoefficient' , PhiCoefficient
-			
+			print '\nEvaluation metrics:'
+			print 'Sensitivity (Recall):    ' , sensitivity
+			print 'Specificity:             ' , specificity
+			print 'Efficiency:              ' , efficiency
+			print 'Accuracy:                ' , accuracy
+			print 'Precision:               ' , positivePredictiveValue
+			print 'NegativePredictiveValue: ' , NegativePredictiveValue
+			print 'PhiCoefficient:          ' , PhiCoefficient
+			print 'F1-score:                ' , f1_score
+			print 
 		
 		return {'SENS': sensitivity, 'SPEC': specificity, 'ACC': accuracy, 'EFF': efficiency,
-				'PPV':positivePredictiveValue, 'NPV':NegativePredictiveValue , 'PHI':  PhiCoefficient}
+				'PPV':positivePredictiveValue, 'NPV':NegativePredictiveValue , 'PHI':  PhiCoefficient, 
+				'F1':f1_score }
 
 
 	def _calculate_counts(self,pos_data,neg_data):
