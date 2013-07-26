@@ -255,6 +255,8 @@ def plot_results_rocs(results, labels, file_name, img_title):
 
 def print_results_eval_metrics(roc_data_list, labels, score_thresholds):
     
+    roc_evals = []
+    
     for i, roc_data in enumerate(roc_data_list):
         print '----------------------------------------------------------------------------------'
         print labels[i]
@@ -266,9 +268,69 @@ def print_results_eval_metrics(roc_data_list, labels, score_thresholds):
         roc_data.confusion_matrix(score_thresholds[i], True)
         
         # prints the evaluation metrics 
-        roc_data.evaluateMetrics(roc_data.confusion_matrix(score_thresholds[i]), do_print=True)
+        roc_evals.append(roc_data.evaluateMetrics(roc_data.confusion_matrix(score_thresholds[i]), do_print=True))
         print '----------------------------------------------------------------------------------'
     
+    return roc_evals
+
+
+def plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from collections import defaultdict
+    
+    METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff'] # *** depended on the number of metrics used *** 
+    COLOR_BAR_WIDTH = 0.06       # the width of the bars
+    
+    def autolabel(rects):
+        '''
+        attach text labels to each rectangle 
+        '''
+        for rect in rects:
+            height = rect.get_height()
+            print height
+            ax.text(rect.get_x() + rect.get_width() / 2., 1.05 * height, 
+                    '%.3f' % float(height), ha='center', 
+                    va='bottom', rotation=90, fontsize=9)
+    
+    
+    
+    N = len(roc_evals)
+    
+    metrics = defaultdict(list)
+    for roc_eval in roc_evals:
+        for key, value in roc_eval.iteritems():
+            if key in metrics: 
+                metrics[key] += [value]
+            else: 
+                metrics[key] = [value]
+    
+
+    x_axis_labels  = np.arange(N)  # the x locations for the groups
+
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    rects = []
+    i = 0
+    labels = []
+    for key, value in metrics.iteritems():
+        rects.append(ax.bar(x_axis_labels +COLOR_BAR_WIDTH*i, value, COLOR_BAR_WIDTH, color=METRIC_COLORS[i]))
+        labels.append(key)
+        i += 1
+    
+    # add some
+    ax.set_ylabel('Scores')
+    ax.set_title('Different Evaluation Metrics')
+    ax.set_xticks( x_axis_labels  + N * COLOR_BAR_WIDTH )
+    ax.set_xticklabels( roc_labels, rotation=30 )
+    ax.legend( tuple(rects), tuple(labels))
+    
+    for rect in rects: 
+        autolabel(rect)
+    
+    fig.savefig(eval_file_name, dpi=300, bbox_inches='tight', pad_inches=0.1)
+
 
 
 def find_seed_document(docs, positive_dir):
@@ -339,6 +401,7 @@ img_extension  = '.png'
 roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc']
 rocs_img_title = 'Query %s: ROCs of different methods' % query_id 
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
+eval_file_name = '%s_eval_bars' % query_id + img_extension
 roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
 score_thresholds = [0.51, 0.51, 0.51, 0.51, 0.63]
 
@@ -441,7 +504,9 @@ r5 = convert_to_roc_format(docs, positive_dir)
 results_list = [r1, r2, r3, r4, r5]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
-print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
+roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
 
 
+
+plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
 
