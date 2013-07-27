@@ -370,29 +370,35 @@ def append_negative_docs(docs, test_directory):
 # ****** DO ALL HARD-CODINGS HERE ****************************************************
 # ************************************************************************************
 
-config_file = "gui/prepay4.cfg" # configuration file, created using the SMARTeR GUI 
+## ***** BEGIN change the following each query *********
+
+query_id = 201
+test_directory = "F:\\topicModelingDataSet\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
+negative_dir = os.path.join(test_directory, "0") # TRUE negative documents
+
+config_file = "gui/project201.cfg" # configuration file, created using the SMARTeR GUI 
 #201
 query = "all:pre-pay:May;all:swap:May"
+seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
 #202
-#"all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
+#query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
+#seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
 #203
+#seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
 #query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
 #204
+#seed_doc_name = os.path.join(positive_dir, '3.76893.LECLWOBIZDO00GYS41VBF3KKWFL1G2RJA.txt') # query specific seed document
 #query = "all:retention:May;all:compliance:May;all:preserve:May;all:discard:May;all:destroy:May;all:delete:May;all:clean:May;all:eliminate:May;all:shred:May;all:schedule:May;all:period:May;all:documents:May;all:file:May;all:policy:May;all:e-mail:May"
 #205
 #query = "all:electricity:May;all:electric:May;all:loads:May;all:hydro:May;all:generator:May;all:power:May"
+#seed_doc_name = os.path.join(positive_dir, '3.24517.JQ2KBXZBBQ1YGHFCC30JOU2QUANNINE2B.txt') # query specific seed document
 #206 
 #query = "all:analyst:May;all:credit:May;all:rating:May;all:grade:May"
+#seed_doc_name = os.path.join(positive_dir, '3.272223.IJVCMQKKAFUIQ3VDIUKIRUEMO2H4EOKNA.txt') # query specific seed document
 #207     
 #query = "all:football:May;all:Eric Bass:May" 
-
-## ***** BEGIN change the following each query *********
-
-query_id = 201 
-test_directory = "F:\\Research\\datasets\\trec2010\\Enron\\201" # "F:\\topicModelingDataSet\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
-positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
-negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
-seed_doc_name = os.path.join(positive_dir, '3.215566.LMCMQ2KZ2ZF0XP4KTVJ00MXWSPAVRGIYA.txt') # query specific seed document 
+#seed_doc_name = os.path.join(positive_dir, '3.16296.KD0CXPYOCOXT15ZTVIGVF44AUNQD2I23B.txt') # query specific seed document 
 
 ## ***** END change this each query *********
 
