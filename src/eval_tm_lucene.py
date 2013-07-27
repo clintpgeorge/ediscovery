@@ -3,9 +3,10 @@ import os
 from lucene import BooleanClause
 from lucenesearch.lucene_index_dir import search_lucene_index, get_indexed_file_details
 
-from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables
+from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_topic_dist
 from utils.utils_file import read_config, load_file_paths_index, nexists
 from PyROC.pyroc import ROCData, plot_multiple_roc
+from utils.utils_email import parse_plain_text_email
 
 def parse_query(query):
     
@@ -288,7 +289,6 @@ def plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name):
         '''
         for rect in rects:
             height = rect.get_height()
-            print height
             ax.text(rect.get_x() + rect.get_width() / 2., 1.05 * height, 
                     '%.3f' % float(height), ha='center', 
                     va='bottom', rotation=90, fontsize=9)
@@ -370,7 +370,7 @@ def append_negative_docs(docs, test_directory):
 # ****** DO ALL HARD-CODINGS HERE ****************************************************
 # ************************************************************************************
 
-config_file = "gui/prepay.cfg" # configuration file, created using the SMARTeR GUI 
+config_file = "gui/prepay4.cfg" # configuration file, created using the SMARTeR GUI 
 #201
 query = "all:pre-pay:May;all:swap:May"
 #202
@@ -403,7 +403,7 @@ rocs_img_title = 'Query %s: ROCs of different methods' % query_id
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 eval_file_name = '%s_eval_bars' % query_id + img_extension
 roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
-score_thresholds = [0.51, 0.51, 0.51, 0.51, 0.63]
+score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.51]
 
 # ************************************************************************************
 
@@ -421,13 +421,36 @@ print query_words, fields
 
 query_text = ' '.join(query_words)
 
-with open(seed_doc_name) as fp:
-    seed_doc_text = fp.read()
-seed_doc_text = u' '.join(seed_doc_text.split() + query_words) 
+(receiver, sender, cc, subject, body_text, bcc, date) = parse_plain_text_email(seed_doc_name)
+seed_doc_text = body_text + u' ' + query_text 
 
 print query_text
 print seed_doc_text
 
+
+
+### to find the centroid of the responsive documents
+# 
+#from os import listdir
+#from os.path import isfile, join
+#import numpy as np 
+#
+#
+#positive_files = [join(positive_dir,f) for f in listdir(positive_dir) if isfile(join(positive_dir,f))]
+#
+#seed_doc_texts = []
+#for fn in positive_files:
+#    (receiver, sender, cc, subject, body_text, bcc, date) = parse_plain_text_email(fn)
+#    if body_text == '': continue 
+#    seed_doc_texts.append(body_text)
+#
+#lda_dictionary, lda_mdl, lda_index, lda_file_path_index = load_tm(mdl_cfg)
+#doc_tds = get_topic_dist(seed_doc_texts, lda_dictionary, lda_mdl)
+#
+#print np.array(doc_tds).shape 
+#
+#
+#exit()
 
 #===============================================================================
 # Here, we perform Lucene search based on a given query. 
@@ -458,6 +481,8 @@ file_name=find_seed_document(docs, positive_dir)
 #responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[1])
 #eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 r2 = convert_to_roc_format(docs, positive_dir)    
+#print [t for t in r2 if t[0] == 0]
+#print [t for t in r2 if t[0] == 1]
 # plot_roc_and_print_metrics(r2, roc_labels[1], roc_file_names[1] + img_extension, score_thresholds[1])
 
 
@@ -497,16 +522,13 @@ print len(docs)
 r5 = convert_to_roc_format(docs, positive_dir)
 #print [t for t in r5 if t[0] == 0]
 #print [t for t in r5 if t[0] == 1]
-#plot_roc_and_print_metrics(r5, roc_labels[4], roc_file_names[4] + img_extension, score_thresholds[4])
+# plot_roc_and_print_metrics(r5, roc_labels[4], roc_file_names[4] + img_extension, score_thresholds[4])
 
 
 
 results_list = [r1, r2, r3, r4, r5]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
-roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
-
-
-
-plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
+#roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
+#plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
 

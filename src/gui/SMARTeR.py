@@ -341,8 +341,8 @@ class SMARTeR (SMARTeRGUI):
         
     def _reset_defaults_indexing_preferences(self):
         
-        self._num_topics = 200
-        self._num_passes = 30
+        self._num_topics = 30
+        self._num_passes = 99
         self._min_token_freq = 1 
         self._min_token_len = 2
         
@@ -810,6 +810,8 @@ class SMARTeR (SMARTeRGUI):
         index_data(data_folder, output_folder, project_name, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len, log_to_file=True)
 
         # TODO need to show a status bar with execution status 
+        
+        print 'Indexing is completed.'
         
         
     def _on_click_clear_project_details(self, event):

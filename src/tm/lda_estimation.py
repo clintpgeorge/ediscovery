@@ -105,6 +105,51 @@ def run_lda_estimation(dictionary_file, ldac_file, lda_mdl_file, lda_beta_file, 
     index.save(lda_index_file)
 
 
+def run_hdp_estimation(dictionary_file, ldac_file, lda_mdl_file, lda_beta_file, lda_theta_file, lda_index_file):
+    '''The main function that does the LDA estimation 
+    process and saves all the model parameters and the 
+    index created by the Gensim Similarity class.   
+    '''
+
+    # loads the corpus 
+    
+    corpus = gensim.corpora.BleiCorpus(ldac_file)
+    id2word = gensim.corpora.Dictionary().load(dictionary_file)
+    
+    # runs the LDA inference 
+    
+    hdp = gensim.models.hdpmodel.HdpModel(corpus=corpus, id2word=id2word, chunksize=CHUNK_SIZE)
+    print 'HDP completed'
+    print hdp.optimal_ordering()
+    
+    (A, B) = hdp.hdp_to_lda()
+    print 'LDA completed'
+    print A.shape 
+    print B.shape  
+    
+#    # saves the LDA beta 
+#    
+#    beta = lda.expElogbeta
+#    print beta.shape
+#    np.savetxt(lda_beta_file, beta)
+
+#    # Saves document topic distributions 
+#    
+#    doc_topics = lda[corpus] # get topic probability distribution for a document
+#    num_docs = len(doc_topics)
+#    theta_matrix = np.zeros((num_docs, num_topics))
+#    count = 0
+#    for doc in doc_topics: 
+#        doc = dict(doc)
+#        theta_matrix[count, doc.keys()] = doc.values()
+#        count += 1 
+#    np.savetxt(lda_theta_file, theta_matrix)
+#    
+#    
+#    # Saves index 
+#    
+#    index = gensim.similarities.MatrixSimilarity(lda[corpus]) # transform corpus to LDA topic space and index it
+#    index.save(lda_index_file)
 
 
 #************** TESTING **************

@@ -128,9 +128,7 @@ def parse_plain_text_email(file_path, tokenize = True):
             email_text = fp.read()
             email_text = email_text.encode('UTF-8') # encodes to UNICODE 
             fp.close()
-            print body_charset
         except UnicodeError:
-            #raise
             pass
         else: break
 

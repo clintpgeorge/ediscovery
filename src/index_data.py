@@ -16,7 +16,7 @@ import ConfigParser
 # from urlparse import urlparse
 from lucenesearch.lucene_index_dir import index_plain_text_emails
 from preprocess.lucene_enron_create_corpus import build_lda_corpus
-from tm.lda_estimation import run_lda_estimation
+from tm.lda_estimation import run_lda_estimation # , run_hdp_estimation
 from tm.lsi_estimation import run_lsi_estimation
 
 LUCENE_FOLDER_NAME = 'lucene'
@@ -26,6 +26,9 @@ MIN_TOKEN_FREQ = 1
 MIN_TOKEN_LEN = 2 
 DEFAULT_NUM_TOPICS = 50
 DEFAULT_NUM_PASSES = 10 
+LSI_DEFAULT_NUM_TOPICS = 200
+
+
 
 
 def index_data(data_folder, output_folder, project_name, num_topics=DEFAULT_NUM_TOPICS, num_passes=DEFAULT_NUM_PASSES, min_token_freq=MIN_TOKEN_FREQ, min_token_len=MIN_TOKEN_LEN, log_to_file=True):
@@ -45,6 +48,7 @@ def index_data(data_folder, output_folder, project_name, num_topics=DEFAULT_NUM_
 
     # Create file handler which logs debug messages
     log_file_name = '%s.log' % os.path.join(project_folder, project_name)
+
     if log_to_file: 
         logging.basicConfig(filename=log_file_name, format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
     else: 
@@ -106,6 +110,8 @@ def index_data(data_folder, output_folder, project_name, num_topics=DEFAULT_NUM_
     
     run_lda_estimation(dict_file, ldac_file, lda_model_file, lda_beta_file, lda_theta_file, lda_cos_index_file, num_topics, num_passes)
     
+    # run_hdp_estimation(dict_file, ldac_file, lda_model_file, lda_beta_file, lda_theta_file, lda_cos_index_file)
+    
     config.add_section('LDA')
     config.set('LDA', 'lda_model_file', lda_model_file)
     config.set('LDA', 'lda_beta_file', lda_beta_file)
@@ -124,16 +130,16 @@ def index_data(data_folder, output_folder, project_name, num_topics=DEFAULT_NUM_
     lsi_beta_file = os.path.join(tm_folder, project_name + '.lsi.beta')
     lsi_theta_file = os.path.join(tm_folder, project_name + '.lsi.theta')
     lsi_cos_index_file = os.path.join(tm_folder, project_name + '.lsi.cos.index')
-    # LSI_NUM_TOPICS = 300
+    # 
     
-    run_lsi_estimation(dict_file, ldac_file, lsi_model_file, lsi_beta_file, lsi_theta_file, lsi_cos_index_file, num_topics)
+    run_lsi_estimation(dict_file, ldac_file, lsi_model_file, lsi_beta_file, lsi_theta_file, lsi_cos_index_file, LSI_DEFAULT_NUM_TOPICS)
     
     config.add_section('LSI')
     config.set('LSI', 'lsi_model_file', lsi_model_file)
     config.set('LSI', 'lsi_beta_file', lsi_beta_file)
     config.set('LSI', 'lsi_theta_file', lsi_theta_file)
     config.set('LSI', 'lsi_cos_index_file', lsi_cos_index_file)
-    config.set('LSI', 'lsi_num_topics', str(num_topics))
+    config.set('LSI', 'lsi_num_topics', str(LSI_DEFAULT_NUM_TOPICS))
     
     logging.info('================================================== END LSI ESTIMATION ==================================================')    
     

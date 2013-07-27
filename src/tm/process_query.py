@@ -135,7 +135,15 @@ def compute_topic_similarities(doc_text, src_docs, lda_dictionary, lda_mdl, lda_
         
     return dest_docs
 
+
+def get_topic_dist(docs, lda_dictionary, lda_mdl):
     
+    doc_tds = [] 
+    for doc in docs: 
+        doc_vec = lda_dictionary.doc2bow(whitespace_tokenize(doc))
+        doc_tds.append(lda_mdl[doc_vec])
+    return doc_tds
+
 
 def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_path_index, limit):
     '''Tokenize the input query and finds topically 
