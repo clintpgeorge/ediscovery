@@ -283,7 +283,7 @@ def plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name):
     from collections import defaultdict
     
     METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff'] # *** depended on the number of metrics used *** 
-    COLOR_BAR_WIDTH = 0.06       # the width of the bars
+    COLOR_BAR_WIDTH = 0.09       # the width of the bars
     
     def autolabel(rects):
         '''
@@ -291,9 +291,9 @@ def plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name):
         '''
         for rect in rects:
             height = rect.get_height()
-            ax.text(rect.get_x() + rect.get_width() / 2., 1.05 * height, 
-                    '%.3f' % float(height), ha='center', 
-                    va='bottom', rotation=90, fontsize=9)
+            ax.text(rect.get_x() + rect.get_width() / 2., 1.03 * height, 
+                    '%.2f' % float(height), ha='center', 
+                    va='bottom', rotation=90, fontsize=6)
     
     
     
@@ -325,8 +325,9 @@ def plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name):
     ax.set_ylabel('Scores')
     ax.set_title('Different Evaluation Metrics')
     ax.set_xticks( x_axis_labels  + N * COLOR_BAR_WIDTH )
-    ax.set_xticklabels( roc_labels, rotation=30 )
-    ax.legend( tuple(rects), tuple(labels))
+    ax.set_xticklabels( roc_labels, rotation=25, fontsize=8 )
+    # ax.legend( tuple(rects), tuple(labels))
+    ax.legend(tuple(rects), tuple(labels), bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., prop={'size':8})
     
     for rect in rects: 
         autolabel(rect)

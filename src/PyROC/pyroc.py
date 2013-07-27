@@ -113,7 +113,8 @@ def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, eq
 	if include_baseline:
 		pylab.plot([0.0,1.0], [0.0, 1.0], 'k-', label= 'Random')
 	if labels:
-		pylab.legend(loc='lower right')
+		# pylab.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0., prop={'size':6})
+		pylab.legend(loc='lower right', prop={'size':8})
 		
 	pylab.savefig(file_name, dpi=300, bbox_inches='tight', pad_inches=0.1)
 	# pylab.show()
