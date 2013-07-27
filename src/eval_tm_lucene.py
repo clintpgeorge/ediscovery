@@ -3,7 +3,7 @@ import os
 from lucene import BooleanClause
 from lucenesearch.lucene_index_dir import search_lucene_index, get_indexed_file_details
 
-from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_topic_dist
+from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_lda_topic_dist
 from utils.utils_file import read_config, load_file_paths_index, nexists
 from PyROC.pyroc import ROCData, plot_multiple_roc
 from utils.utils_email import parse_plain_text_email
@@ -226,8 +226,10 @@ def convert_to_roc_format(docs, positive_dir):
     for doc in docs:
         if os.path.exists(os.path.join(positive_dir, doc[0])):
             tuple_list = (1, doc[1])
+            # print 1, doc
         else:
             tuple_list = (0, doc[1])
+            # print 0, doc
         results.append(tuple_list)
     return results
 
@@ -358,6 +360,66 @@ def append_negative_docs(docs, test_directory):
                 
     return result        
 
+
+def lda_with_all_responsive(positive_dir, limit, mdl_cfg):
+    
+    import operator
+    from os import listdir
+    from os.path import isfile, join
+    from scipy.cluster.vq import kmeans, vq 
+    from collections import defaultdict
+    
+    index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+    num_topics = int(mdl_cfg['LDA']['num_topics'])
+    lda_dictionary, lda_mdl, lda_index, lda_file_path_index = load_tm(mdl_cfg)
+    num_clusters = 3     
+    
+    positive_files = [join(positive_dir,f) for f in listdir(positive_dir) if isfile(join(positive_dir,f))]
+    
+    seed_doc_texts = []
+    for fn in positive_files:
+        _, _, _, _, body_text, _, _ = parse_plain_text_email(fn)
+        seed_doc_texts.append(body_text)
+    
+    # Finds the centroid of the responsive documents 
+
+    doc_tds = get_lda_topic_dist(seed_doc_texts, lda_dictionary, lda_mdl, num_topics)
+    centroids, _ = kmeans(doc_tds, num_clusters, iter=100) # do k means 
+    idx,_ = vq(doc_tds, centroids) # assign each sample to a cluster
+    
+    tally = defaultdict(int)
+    for i in idx: tally[i] += 1
+    # print tally
+    max_idx = max(tally.iteritems(), key=operator.itemgetter(1))[0] # takes the centroid with max cardinality 
+    max_centroid_td = centroids[max_idx]    
+    query_td = [(i, value) for i, value in enumerate(max_centroid_td) if value > 1e-4] # converts to the gensim format 
+        
+    # print len(max_centroid_td), max_centroid_td
+    # print len(query_td), query_td
+    
+    # querying based on cosine distance from the centroid 
+    
+    sims = lda_index[query_td] # perform a similarity query against the corpus
+    sims = sorted(enumerate(sims), key=lambda item: -item[1])
+    
+    
+    ## Identifies responsive documents
+     
+    responsive_docs_idx = sims[0:limit]
+    
+    responsive_docs = [] 
+    for (doc_id, score) in responsive_docs_idx: 
+        doc = list(lda_file_path_index[doc_id]) # i.e., [doc_id, doc_dir_path, doc_name]
+        doc.append(score)
+        responsive_docs.append(doc)
+    
+    # grabs the files details from the index 
+    
+    ts_results = get_indexed_file_details(responsive_docs, index_dir) 
+    results = [[row[0], ((float(row[10]) + 1.0) / 2.0)] for row in ts_results]
+    
+    return results
+
      
 #===============================================================================
 # '''
@@ -370,14 +432,15 @@ def append_negative_docs(docs, test_directory):
 # ****** DO ALL HARD-CODINGS HERE ****************************************************
 # ************************************************************************************
 
+
 ## ***** BEGIN change the following each query *********
 
-query_id = 201
-test_directory = "F:\\topicModelingDataSet\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+query_id = 201 
+config_file = "gui/prepay4.cfg" # configuration file, created using the SMARTeR GUI 
+test_directory = "F:\\Research\\datasets\\trec2010\\Enron\\201" # "F:\\topicModelingDataSet\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
-negative_dir = os.path.join(test_directory, "0") # TRUE negative documents
+negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
 
-config_file = "gui/project201.cfg" # configuration file, created using the SMARTeR GUI 
 #201
 query = "all:pre-pay:May;all:swap:May"
 seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
@@ -404,12 +467,12 @@ seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZ
 
 limit = 1000
 img_extension  = '.png'
-roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc']
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.']
 rocs_img_title = 'Query %s: ROCs of different methods' % query_id 
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 eval_file_name = '%s_eval_bars' % query_id + img_extension
 roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
-score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.51]
+score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.8, 0.52]
 
 # ************************************************************************************
 
@@ -433,31 +496,6 @@ seed_doc_text = body_text + u' ' + query_text
 print query_text
 print seed_doc_text
 
-
-
-### to find the centroid of the responsive documents
-# 
-#from os import listdir
-#from os.path import isfile, join
-#import numpy as np 
-#
-#
-#positive_files = [join(positive_dir,f) for f in listdir(positive_dir) if isfile(join(positive_dir,f))]
-#
-#seed_doc_texts = []
-#for fn in positive_files:
-#    (receiver, sender, cc, subject, body_text, bcc, date) = parse_plain_text_email(fn)
-#    if body_text == '': continue 
-#    seed_doc_texts.append(body_text)
-#
-#lda_dictionary, lda_mdl, lda_index, lda_file_path_index = load_tm(mdl_cfg)
-#doc_tds = get_topic_dist(seed_doc_texts, lda_dictionary, lda_mdl)
-#
-#print np.array(doc_tds).shape 
-#
-#
-#exit()
-
 #===============================================================================
 # Here, we perform Lucene search based on a given query. 
 # We also classify and evaluate the retrieved documents  
@@ -467,9 +505,6 @@ print "\nLucene Search:\n"
  
 docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs = normalize_lucene_score(docs)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[0])
-#true_positives, true_negatives, false_positives, false_negatives, exceptions = eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
-#enhanced_evaluation(positive_dir, negative_dir, true_positives, false_positives)
 docs = append_negative_docs(docs, test_directory)
 r1 = convert_to_roc_format(docs,positive_dir)
 # plot_roc_and_print_metrics(r1, roc_labels[0], roc_file_names[0] + img_extension, score_thresholds[0])
@@ -483,21 +518,13 @@ r1 = convert_to_roc_format(docs,positive_dir)
 print "\nLDA Search:\n"
 
 docs = search_tm(query_text, limit, mdl_cfg)
-file_name=find_seed_document(docs, positive_dir)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[1])
-#eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 r2 = convert_to_roc_format(docs, positive_dir)    
-#print [t for t in r2 if t[0] == 0]
-#print [t for t in r2 if t[0] == 1]
 # plot_roc_and_print_metrics(r2, roc_labels[1], roc_file_names[1] + img_extension, score_thresholds[1])
 
 
 print "\nLSI Search:\n"
 
 docs = search_lsi(query_text, limit, mdl_cfg)
-print len(docs)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[2])
-#eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 r3 = convert_to_roc_format(docs, positive_dir)
 # plot_roc_and_print_metrics(r3, roc_labels[2], roc_file_names[2] + img_extension, score_thresholds[2])
 
@@ -511,9 +538,6 @@ r3 = convert_to_roc_format(docs, positive_dir)
 print "\nLDA Search (using a seed doc):\n"
 
 docs = search_tm(seed_doc_text, limit, mdl_cfg)
-print len(docs)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[3])
-#eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 r4 = convert_to_roc_format(docs, positive_dir)
 # plot_roc_and_print_metrics(r4, roc_labels[3], roc_file_names[3] + img_extension, score_thresholds[3])
     
@@ -522,9 +546,6 @@ r4 = convert_to_roc_format(docs, positive_dir)
 print "\nLSI Search  (using a seed doc):\n"
 
 docs = search_lsi(seed_doc_text, limit, mdl_cfg)
-print len(docs)
-#responsive_docs, unresponsive_docs = classify_docs(docs, score_thresholds[4])
-#eval_results(positive_dir, negative_dir, responsive_docs, unresponsive_docs)
 r5 = convert_to_roc_format(docs, positive_dir)
 #print [t for t in r5 if t[0] == 0]
 #print [t for t in r5 if t[0] == 1]
@@ -532,9 +553,24 @@ r5 = convert_to_roc_format(docs, positive_dir)
 
 
 
-results_list = [r1, r2, r3, r4, r5]
+print "\nLDA Search  (using all responsive docs):\n"
+
+docs = lda_with_all_responsive(positive_dir, limit, mdl_cfg)
+r6 = convert_to_roc_format(docs, positive_dir)
+
+
+#===============================================================================
+# # plot ROCs for all different methods 
+#===============================================================================
+
+results_list = [r1, r2, r3, r4, r5, r6]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
-#roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
-#plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
+
+#===============================================================================
+# # plot evaluation metrics for all different methods 
+#===============================================================================
+
+roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
+plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
 

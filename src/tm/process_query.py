@@ -136,13 +136,22 @@ def compute_topic_similarities(doc_text, src_docs, lda_dictionary, lda_mdl, lda_
     return dest_docs
 
 
-def get_topic_dist(docs, lda_dictionary, lda_mdl):
+def get_lda_topic_dist(docs, lda_dictionary, lda_mdl, num_topics):
     
     doc_tds = [] 
     for doc in docs: 
         doc_vec = lda_dictionary.doc2bow(whitespace_tokenize(doc))
         doc_tds.append(lda_mdl[doc_vec])
-    return doc_tds
+    
+    num_docs = len(doc_tds)
+    theta_matrix = np.zeros((num_docs, num_topics))
+    count = 0
+    for doc in doc_tds: 
+        doc = dict(doc)
+        theta_matrix[count, doc.keys()] = doc.values()
+        count += 1 
+
+    return theta_matrix
 
 
 def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_path_index, limit):
