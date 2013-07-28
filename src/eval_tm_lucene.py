@@ -7,6 +7,8 @@ from tm.process_query import load_lda_variables, load_dictionary, search_lda_mod
 from utils.utils_file import read_config, load_file_paths_index, nexists
 from PyROC.pyroc import ROCData, plot_multiple_roc
 from utils.utils_email import parse_plain_text_email
+from nltk.classify.megam import numpy
+from eval_tm_lucene_seed import NO_OF_SEED
 
 def parse_query(query):
     
@@ -421,6 +423,68 @@ def lda_with_all_responsive(positive_dir, limit, mdl_cfg):
     
     return results
 
+def lda_multiple_seeds(positive_dir, limit, mdl_cfg):
+    docs = search_tm(' '.join(query_words), limit, mdl_cfg)
+    seed_list = find_seed_list_document(docs, positive_dir)
+    results = dict() 
+    for doc in seed_list:
+        (_, _,_ ,_ , body_text, _, _) = parse_plain_text_email(os.path.join(positive_dir,doc[0]))
+        doc_text = body_text + u' ' + ' '.join(query_words) 
+        docs = search_tm(doc_text, limit, mdl_cfg)
+        results = add_to_final_list(results,docs)
+    return results
+
+def find_seed_list_document(docs, positive_dir):
+    i=0;
+    result = []
+    for doc in docs:
+        if os.path.exists(os.path.join(positive_dir,doc[0])):
+            result.append(doc)
+            i = i + 1
+            if i == NO_OF_SEED:
+                break;
+        
+    
+    return result
+
+            
+def add_to_final_list(results,docs):
+    rank=1
+    for doc in docs:
+        if doc[0] in results:
+            doc_object = results[doc[0]]
+            doc_object[0].append(rank)
+            doc_object[1].append(float(doc[1]))
+            results[doc[0]] = doc_object
+            #result[doc[0]]+=","+rank
+            
+        else:
+            doc_object = []
+            rank_list = []
+            rank_list.append(rank)
+            score_list = []
+            score_list.append(float(doc[1]))
+            doc_object.append(rank_list)
+            doc_object.append(score_list)
+            results[doc[0]] = doc_object
+            
+        rank = rank + 1
+    return results
+
+def prepare_results_roc_max(results,positive_dir):
+    
+    result = []
+    for name in results:
+        
+        if os.path.exists(os.path.join(positive_dir, name))==True:    
+            tuple_list = (1, numpy.max(results[name][1]))            
+        else:
+            tuple_list = (0, numpy.max(results[name][1]))
+        result.append(tuple_list)
+        
+    return result
+
+
      
 #===============================================================================
 # '''
@@ -468,12 +532,13 @@ query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:ba
 
 limit = 1000
 img_extension  = '.png'
-roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.']
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.']
 rocs_img_title = 'Query %s: ROCs of different methods' % query_id 
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 eval_file_name = '%s_eval_bars' % query_id + img_extension
 roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
-score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.8, 0.52]
+score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.8, 0.52,0.51]
+NO_OF_SEED = 5
 
 # ************************************************************************************
 
@@ -559,12 +624,16 @@ print "\nLDA Search  (using all responsive docs):\n"
 docs = lda_with_all_responsive(positive_dir, limit, mdl_cfg)
 r6 = convert_to_roc_format(docs, positive_dir)
 
+print "\nLDA Search (with multiple seeds):\n"
+
+results = lda_multiple_seeds(positive_dir, limit, mdl_cfg)
+r7 = prepare_results_roc_max(results,positive_dir)
 
 #===============================================================================
 # # plot ROCs for all different methods 
 #===============================================================================
 
-results_list = [r1, r2, r3, r4, r5, r6]
+results_list = [r1, r2, r3, r4, r5, r6, r7]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
@@ -574,4 +643,5 @@ print
 
 roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
 plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
+
 
