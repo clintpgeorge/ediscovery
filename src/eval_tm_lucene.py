@@ -434,6 +434,17 @@ def lda_multiple_seeds(positive_dir, limit, mdl_cfg):
         results = add_to_final_list(results,docs)
     return results
 
+def lsi_multiple_seeds(positive_dir, limit, mdl_cfg):
+    docs = search_lsi(' '.join(query_words), limit, mdl_cfg)
+    seed_list = find_seed_list_document(docs, positive_dir)
+    results = dict() 
+    for doc in seed_list:
+        (_, _,_ ,_ , body_text, _, _) = parse_plain_text_email(os.path.join(positive_dir,doc[0]))
+        doc_text = body_text + u' ' + ' '.join(query_words) 
+        docs = search_lsi(doc_text, limit, mdl_cfg)
+        results = add_to_final_list(results,docs)
+    return results
+
 def find_seed_list_document(docs, positive_dir):
     i=0;
     result = []
@@ -500,21 +511,21 @@ def prepare_results_roc_max(results,positive_dir):
 
 ## ***** BEGIN change the following each query *********
 
-query_id = 203
-config_file = "gui/project203.cfg" # configuration file, created using the SMARTeR GUI 
-test_directory = "F:\\topicModelingDataSet\\203"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+query_id = 201
+config_file = "gui/project201.cfg" # configuration file, created using the SMARTeR GUI 
+test_directory = "F:\\topicModelingDataSet\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
 
 #201
-#query = "all:pre-pay:May;all:swap:May"
-#seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
+query = "all:pre-pay:May;all:swap:May"
+seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
 #202
 #query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
 #seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
 #203
-seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
-query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
+#seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
+#query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
 #204
 #seed_doc_name = os.path.join(positive_dir, '3.76893.LECLWOBIZDO00GYS41VBF3KKWFL1G2RJA.txt') # query specific seed document
 #query = "all:retention:May;all:compliance:May;all:preserve:May;all:discard:May;all:destroy:May;all:delete:May;all:clean:May;all:eliminate:May;all:shred:May;all:schedule:May;all:period:May;all:documents:May;all:file:May;all:policy:May;all:e-mail:May"
@@ -532,12 +543,12 @@ query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:ba
 
 limit = 1000
 img_extension  = '.png'
-roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.']
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 'LSI: with multiple seeds.']
 rocs_img_title = 'Query %s: ROCs of different methods' % query_id 
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 eval_file_name = '%s_eval_bars' % query_id + img_extension
 roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
-score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.8, 0.52,0.51]
+score_thresholds = [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 1]
 NO_OF_SEED = 5
 
 # ************************************************************************************
@@ -629,11 +640,16 @@ print "\nLDA Search (with multiple seeds):\n"
 results = lda_multiple_seeds(positive_dir, limit, mdl_cfg)
 r7 = prepare_results_roc_max(results,positive_dir)
 
+print "\nLSI Search (with multiple seeds):\n"
+
+results = lsi_multiple_seeds(positive_dir, limit, mdl_cfg)
+r8 = prepare_results_roc_max(results,positive_dir)
+
 #===============================================================================
 # # plot ROCs for all different methods 
 #===============================================================================
 
-results_list = [r1, r2, r3, r4, r5, r6, r7]
+results_list = [r1, r2, r3, r4, r5, r6, r7, r8]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
