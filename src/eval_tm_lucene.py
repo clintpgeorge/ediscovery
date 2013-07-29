@@ -445,6 +445,7 @@ def lsi_multiple_seeds(positive_dir, limit, mdl_cfg):
         results = add_to_final_list(results,docs)
     return results
 
+
 def find_seed_list_document(docs, positive_dir):
     i=0;
     result = []
@@ -511,18 +512,18 @@ def prepare_results_roc_max(results,positive_dir):
 
 ## ***** BEGIN change the following each query *********
 
-query_id = 201
-config_file = "gui/project201.cfg" # configuration file, created using the SMARTeR GUI 
-test_directory = "F:\\topicModelingDataSet\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+query_id = 202
+config_file = "gui/project202.cfg" # configuration file, created using the SMARTeR GUI 
+test_directory = "F:\\topicModelingDataSet\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
 
 #201
-query = "all:pre-pay:May;all:swap:May"
-seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
+#query = "all:pre-pay:May;all:swap:May"
+#seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
 #202
-#query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
-#seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
+query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
+seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
 #203
 #seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
 #query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
@@ -548,7 +549,7 @@ rocs_img_title = 'Query %s: ROCs of different methods' % query_id
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 eval_file_name = '%s_eval_bars' % query_id + img_extension
 roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
-score_thresholds = [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 1]
+score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.8, 0.52,0.51,0.8]
 NO_OF_SEED = 5
 
 # ************************************************************************************
@@ -641,9 +642,10 @@ results = lda_multiple_seeds(positive_dir, limit, mdl_cfg)
 r7 = prepare_results_roc_max(results,positive_dir)
 
 print "\nLSI Search (with multiple seeds):\n"
-
 results = lsi_multiple_seeds(positive_dir, limit, mdl_cfg)
 r8 = prepare_results_roc_max(results,positive_dir)
+
+
 
 #===============================================================================
 # # plot ROCs for all different methods 
