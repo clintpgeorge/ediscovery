@@ -3,7 +3,7 @@ import os
 from lucene import BooleanClause
 from lucenesearch.lucene_index_dir import search_lucene_index, get_indexed_file_details
 
-from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_lda_topic_dist
+from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_lda_topic_dist, print_topic_details
 from utils.utils_file import read_config, load_file_paths_index, nexists
 from PyROC.pyroc import ROCData, plot_multiple_roc
 from utils.utils_email import parse_plain_text_email
@@ -427,7 +427,6 @@ def lda_with_all_responsive(positive_dir, limit, mdl_cfg):
     from os import listdir
     from os.path import isfile, join
     from scipy.cluster.vq import kmeans, vq 
-    from collections import defaultdict
     
     index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
     num_topics = int(mdl_cfg['LDA']['num_topics'])
@@ -453,8 +452,10 @@ def lda_with_all_responsive(positive_dir, limit, mdl_cfg):
     max_idx = max(tally.iteritems(), key=operator.itemgetter(1))[0] # takes the centroid with max cardinality 
     max_centroid_td = centroids[max_idx]    
     query_td = [(i, value) for i, value in enumerate(max_centroid_td) if value > 1e-4] # converts to the gensim format 
-        
-    print 'Query distribution:', query_td
+
+    # display details 
+    print_topic_details(query_td, lda_mdl)
+    # print 'Query distribution:', query_td
     # print len(max_centroid_td), max_centroid_td
     # print len(query_td), query_td
     
@@ -631,8 +632,7 @@ print query_text
 print seed_doc_text
 
 #===============================================================================
-# Here, we perform Lucene search based on a given query. 
-# We also classify and evaluate the retrieved documents  
+# Here, we perform Lucene, LDA, and LSI search based on a given query. 
 #===============================================================================
 
 print "\nLucene Search:\n"
@@ -643,47 +643,34 @@ docs = append_negative_docs(docs, test_directory)
 r1 = convert_to_roc_format(docs, positive_dir)
 # plot_roc_and_print_metrics(r1, roc_labels[0], roc_file_names[0] + img_extension, score_thresholds[0])
 
-#===============================================================================
-# Here, we perform topic search based on a given query. 
-# We also classify and evaluate the retrieved documents  
-#===============================================================================
-
-    
-print "\nLDA Search:\n"
+print "\nLDA Search (with keywords):\n"
 
 docs = search_tm(query_text, limit, mdl_cfg)
 r2 = convert_to_roc_format(docs, positive_dir)    
 # plot_roc_and_print_metrics(r2, roc_labels[1], roc_file_names[1] + img_extension, score_thresholds[1])
 
-
-print "\nLSI Search:\n"
-
-docs = search_lsi(query_text, limit, mdl_cfg)
-r3 = convert_to_roc_format(docs, positive_dir)
-# plot_roc_and_print_metrics(r3, roc_labels[2], roc_file_names[2] + img_extension, score_thresholds[2])
-
-#===============================================================================
-# Here we consider a relevant document as a query and 
-# perform topic search  
-#===============================================================================
-
 print "\nLDA Search (using a seed doc):\n"
 docs = search_tm(seed_doc_text, limit, mdl_cfg)
 r4 = convert_to_roc_format(docs, positive_dir)
 
-
-print "\nLSI Search  (using a seed doc):\n"
-docs = search_lsi(seed_doc_text, limit, mdl_cfg)
-r5 = convert_to_roc_format(docs, positive_dir)
-
-
-print "\nLDA Search  (using all responsive docs):\n"
+print "\nLDA Search  (using the centroid of all responsive docs):\n"
 docs = lda_with_all_responsive(positive_dir, limit, mdl_cfg)
 r6 = convert_to_roc_format(docs, positive_dir)
 
 print "\nLDA Search (with multiple seeds):\n"
 results = lda_multiple_seeds(positive_dir, limit, mdl_cfg)
 r7 = prepare_results_roc_max(results,positive_dir)
+
+
+print "\nLSI Search (with keywords):\n"
+
+docs = search_lsi(query_text, limit, mdl_cfg)
+r3 = convert_to_roc_format(docs, positive_dir)
+# plot_roc_and_print_metrics(r3, roc_labels[2], roc_file_names[2] + img_extension, score_thresholds[2])
+
+print "\nLSI Search  (using a seed doc):\n"
+docs = search_lsi(seed_doc_text, limit, mdl_cfg)
+r5 = convert_to_roc_format(docs, positive_dir)
 
 print "\nLSI Search (with multiple seeds):\n"
 results = lsi_multiple_seeds(positive_dir, limit, mdl_cfg)

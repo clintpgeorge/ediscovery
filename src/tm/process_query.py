@@ -153,6 +153,19 @@ def get_lda_topic_dist(docs, lda_dictionary, lda_mdl, num_topics):
 
     return theta_matrix
 
+def print_topic_details(query_td, lda_mdl, TOP_K_TOPICS = 5):
+    from operator import itemgetter
+    import heapq
+    
+    dominant_topics = heapq.nlargest(TOP_K_TOPICS, dict(query_td).items(), key=itemgetter(1))
+    
+    print 'Query distribution:', query_td
+    print 'Top %s topic(s)      :' % min(TOP_K_TOPICS, len(query_td)), dominant_topics
+    topic_words = lda_mdl.show_topics(topics=-1, topn=20, log=False, formatted=False)
+    for (topic_id, _) in dominant_topics:
+        print '\t', topic_id, topic_words[topic_id] 
+
+    
 
 def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_path_index, limit):
     '''Tokenize the input query and finds topically 
@@ -171,7 +184,7 @@ def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_pa
         limit - the limit on the number of responsive records 
     
     '''
-
+    
     # process the query 
     
     query_vec = lda_dictionary.doc2bow(whitespace_tokenize(query_text))
@@ -186,8 +199,11 @@ def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_pa
     
     query_td = lda_mdl[query_vec]
     
+    # the following code is just for analysis 
+    
     print 'Query vector      :', [(w_id, lda_dictionary[w_id], count) for (w_id, count) in query_vec]
-    print 'Query distribution:', query_td
+    print_topic_details(query_td, lda_mdl)
+        
     
     # querying based on cosine distance
     
