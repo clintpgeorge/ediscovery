@@ -13,7 +13,9 @@ from collections import defaultdict
 
 METRICS_DICT =  {'SENS': 'Recall (Sensitivity)', 'SPEC': 'Specificity', 'ACC': 'Accuracy', 'EFF': 'Efficiency',
     'PPV': 'Precision (Positive Predictive Value)', 'NPV': 'Negative Predictive Value' , 'PHI':  'Phi Coefficient', 
-    'F1': 'F1 Score' }
+    'F1': 'F1 Score', 'TN': 'True Negatives', 'TP': 'True Positives', 'FN': 'False Negatives', 'FP': 'False Positives' }
+
+METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff'] # *** depended on the number of metrics used *** 
 
 def parse_query(query):
     
@@ -308,21 +310,22 @@ def plot_search_on_eval_metrics(roc_data_list, labels, query_id='Query'):
         roc_search_em.append(eval_dict)
         
 
-    for score_key in METRICS_DICT.keys():
-        eval_file_name = '%s_%s.png' % (query_id, score_key)
+    for score_key in ['ACC', 'PPV', 'SENS', 'F1', 'TN', 'TP']: # METRICS_DICT.keys():
+        eval_file_name = '%s_%s.png' % (query_id, METRICS_DICT[score_key])
         
         pylab.clf()
-        pylab.ylim((-0.5, 1))
         pylab.xlim((0, 1))
         pylab.xticks(pylab.arange(0,1.1,.1))
-        pylab.yticks(pylab.arange(0,1.1,.1))
+        if score_key not in ['TN', 'TP']:
+            pylab.ylim((-0.5, 1))
+            pylab.yticks(pylab.arange(0,1.1,.1))
         pylab.grid(True)
         pylab.xlabel('Score Thresholds')
         pylab.ylabel(METRICS_DICT[score_key])
         pylab.title(METRICS_DICT[score_key])
         
         for ix, eval_dict in enumerate(roc_search_em):
-            pylab.plot(score_thresholds, eval_dict[score_key], linewidth=2, label=labels[ix])
+            pylab.plot(score_thresholds, eval_dict[score_key], linewidth=2, label=labels[ix], color=METRIC_COLORS[ix])
         
         if labels:
             pylab.legend(loc='lower left', prop={'size':9})
@@ -341,7 +344,7 @@ def plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name):
     import matplotlib.pyplot as plt
 
     
-    METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff'] # *** depended on the number of metrics used *** 
+    # METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff'] # *** depended on the number of metrics used *** 
     COLOR_BAR_WIDTH = 0.09       # the width of the bars
     
     def autolabel(rects):
