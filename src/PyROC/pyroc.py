@@ -316,33 +316,52 @@ class ROCData(object):
 		
 		accuracy = (matrix['TP'] + matrix['TN'])/ float(sum(matrix.values()))
 		
-		sensitivity = (matrix['TP'])/ float(matrix['TP'] + matrix['FN'])
-		
-		specificity = (matrix['TN'])/float(matrix['TN'] + matrix['FP'])
-		
+		try: 
+			sensitivity = (matrix['TP'])/ float(matrix['TP'] + matrix['FN'])
+		except: 
+			sensitivity = 0.0 
+			
+		try: 
+			specificity = matrix['TN'] / float(matrix['TN'] + matrix['FP'])
+		except: 
+			specificity = 0.0 
+			
 		efficiency = (sensitivity + specificity) / 2.0
 		
-		positivePredictiveValue =  matrix['TP'] / float(matrix['TP'] + matrix['FP'])
+		try:
+			positivePredictiveValue =  matrix['TP'] / float(matrix['TP'] + matrix['FP'])
+		except:
+			positivePredictiveValue = 0.0 
 
-		NegativePredictiveValue = matrix['TN'] / float(matrix['TN'] + matrix['FN'])
+		try:
+			NegativePredictiveValue = matrix['TN'] / float(matrix['TN'] + matrix['FN'])
+		except:
+			NegativePredictiveValue = 0.0 
 		
-		PhiCoefficient = (matrix['TP'] * matrix['TN'] - matrix['FP'] * matrix['FN'])/(
+		
+		try:
+			PhiCoefficient = (matrix['TP'] * matrix['TN'] - matrix['FP'] * matrix['FN'])/(
 							math.sqrt( (matrix['TP'] + matrix['FP']) *
 							           (matrix['TP'] + matrix['FN']) *
 									   (matrix['TN'] + matrix['FP']) *
 									   (matrix['TN'] + matrix['FN']))) or 1.0
-		f1_score = 2.0 * ((positivePredictiveValue * sensitivity) / (positivePredictiveValue + sensitivity))
-									
+		except:
+			PhiCoefficient = 0.0 
+		
+		try:
+			f1_score = 2.0 * ((positivePredictiveValue * sensitivity) / (positivePredictiveValue + sensitivity))
+		except: 
+			f1_score = 0.0 					
 		
 		if do_print:
 			print '\nEvaluation metrics:'
 			print 'Sensitivity (Recall):    ' , sensitivity
 			print 'Specificity:             ' , specificity
-			print 'Efficiency:              ' , efficiency
+			# print 'Efficiency:              ' , efficiency
 			print 'Accuracy:                ' , accuracy
 			print 'Precision:               ' , positivePredictiveValue
 			print 'NegativePredictiveValue: ' , NegativePredictiveValue
-			print 'PhiCoefficient:          ' , PhiCoefficient
+			# print 'PhiCoefficient:          ' , PhiCoefficient
 			print 'F1-score:                ' , f1_score
 			print 
 		

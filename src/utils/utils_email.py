@@ -75,9 +75,18 @@ def punkt_word_tokenizer(text):
 
     text = ' '.join(text.lower().split()) # removes newline, tab, and white space        
     tokens = tokenizer.tokenize(text)
-    tokens = [cleanup(w) for w in tokens]
-    tokens = [w for w in tokens if w not in REMOVE_LIST]
-    return tokens
+    # tokens = [cleanup(w) for w in tokens]
+    # tokens = [w for w in tokens if w not in REMOVE_LIST]
+    filtered = []
+    for w in tokens:
+        try: 
+            w = cleanup(w)
+            if w not in REMOVE_LIST: 
+                filtered.append(w)
+        except: 
+            pass 
+    
+    return filtered
 
 def whitespace_tokenize(doc_text):
     '''

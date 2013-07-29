@@ -182,8 +182,11 @@ def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_pa
     else: 
         logging.info('%d query words are in the dictionary.', len(query_vec))
     
+    
+    
     query_td = lda_mdl[query_vec]
     
+    print 'Query vector      :', [(w_id, lda_dictionary[w_id], count) for (w_id, count) in query_vec]
     print 'Query distribution:', query_td
     
     # querying based on cosine distance
@@ -256,7 +259,8 @@ def search_lsi_model(query, dictionary, lsi, index, files_info, limit=5):
     
     query_td = lsi[query_vec]
     
-    print 'Query distribution:', query_td
+    # print 'Query vector      :', [(w_id, dictionary[w_id], count) for (w_id, count) in query_vec]
+    # print 'Query distribution:', query_td
     
     # querying based on cosine distance
     

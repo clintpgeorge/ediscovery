@@ -7,8 +7,13 @@ from tm.process_query import load_lda_variables, load_dictionary, search_lda_mod
 from utils.utils_file import read_config, load_file_paths_index, nexists
 from PyROC.pyroc import ROCData, plot_multiple_roc
 from utils.utils_email import parse_plain_text_email
-from nltk.classify.megam import numpy
-from eval_tm_lucene_seed import NO_OF_SEED
+import numpy as np 
+from collections import defaultdict
+
+
+METRICS_DICT =  {'SENS': 'Recall (Sensitivity)', 'SPEC': 'Specificity', 'ACC': 'Accuracy', 'EFF': 'Efficiency',
+    'PPV': 'Precision (Positive Predictive Value)', 'NPV': 'Negative Predictive Value' , 'PHI':  'Phi Coefficient', 
+    'F1': 'F1 Score' }
 
 def parse_query(query):
     
@@ -279,10 +284,62 @@ def print_results_eval_metrics(roc_data_list, labels, score_thresholds):
     return roc_evals
 
 
+def plot_search_on_eval_metrics(roc_data_list, labels, query_id='Query'):
+    import pylab
+    
+    roc_search_em = []
+    score_thresholds = np.arange(0.0, 1.0, 0.05)
+    print '----------------------------------------------------------------------------------'
+    for i, roc_data in enumerate(roc_data_list):
+        
+        print labels[i], '( AUC:', roc_data.auc(), ')'
+        print 
+        
+        eval_dict = defaultdict(list)
+        for score_threshold in score_thresholds:
+            cm = roc_data.confusion_matrix(score_threshold)
+            em = roc_data.evaluateMetrics(cm)
+            for key, value in dict(cm.items() + em.items()).iteritems():
+                if key in eval_dict: 
+                    eval_dict[key] += [value]
+                else: 
+                    eval_dict[key] = [value]
+
+        roc_search_em.append(eval_dict)
+        
+
+    for score_key in METRICS_DICT.keys():
+        eval_file_name = '%s_%s.png' % (query_id, score_key)
+        
+        pylab.clf()
+        pylab.ylim((-0.5, 1))
+        pylab.xlim((0, 1))
+        pylab.xticks(pylab.arange(0,1.1,.1))
+        pylab.yticks(pylab.arange(0,1.1,.1))
+        pylab.grid(True)
+        pylab.xlabel('Score Thresholds')
+        pylab.ylabel(METRICS_DICT[score_key])
+        pylab.title(METRICS_DICT[score_key])
+        
+        for ix, eval_dict in enumerate(roc_search_em):
+            pylab.plot(score_thresholds, eval_dict[score_key], linewidth=2, label=labels[ix])
+        
+        if labels:
+            pylab.legend(loc='lower left', prop={'size':9})
+        
+        pylab.savefig(eval_file_name, dpi=300, bbox_inches='tight', pad_inches=0.1)
+    
+        print 'Saved figure: ', eval_file_name
+        
+    print '----------------------------------------------------------------------------------'
+    
+    return roc_search_em
+
+
+
 def plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name):
     import matplotlib.pyplot as plt
-    import numpy as np
-    from collections import defaultdict
+
     
     METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff'] # *** depended on the number of metrics used *** 
     COLOR_BAR_WIDTH = 0.09       # the width of the bars
@@ -397,6 +454,7 @@ def lda_with_all_responsive(positive_dir, limit, mdl_cfg):
     max_centroid_td = centroids[max_idx]    
     query_td = [(i, value) for i, value in enumerate(max_centroid_td) if value > 1e-4] # converts to the gensim format 
         
+    print 'Query distribution:', query_td
     # print len(max_centroid_td), max_centroid_td
     # print len(query_td), query_td
     
@@ -461,15 +519,13 @@ def find_seed_list_document(docs, positive_dir):
 
             
 def add_to_final_list(results,docs):
-    rank=1
+    rank = 1
     for doc in docs:
         if doc[0] in results:
             doc_object = results[doc[0]]
             doc_object[0].append(rank)
             doc_object[1].append(float(doc[1]))
             results[doc[0]] = doc_object
-            #result[doc[0]]+=","+rank
-            
         else:
             doc_object = []
             rank_list = []
@@ -489,9 +545,9 @@ def prepare_results_roc_max(results,positive_dir):
     for name in results:
         
         if os.path.exists(os.path.join(positive_dir, name))==True:    
-            tuple_list = (1, numpy.max(results[name][1]))            
+            tuple_list = (1, np.max(results[name][1]))            
         else:
-            tuple_list = (0, numpy.max(results[name][1]))
+            tuple_list = (0, np.max(results[name][1]))
         result.append(tuple_list)
         
     return result
@@ -512,18 +568,18 @@ def prepare_results_roc_max(results,positive_dir):
 
 ## ***** BEGIN change the following each query *********
 
-query_id = 202
-config_file = "gui/project202.cfg" # configuration file, created using the SMARTeR GUI 
-test_directory = "F:\\topicModelingDataSet\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+query_id = 201
+config_file = "gui/project1.cfg" # configuration file, created using the SMARTeR GUI 
+test_directory = "F:\\Research\\datasets\\trec2010\\Enron\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
 
 #201
-#query = "all:pre-pay:May;all:swap:May"
-#seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
+query = "all:pre-pay:May;all:swap:May"
+seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
 #202
-query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
-seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
+#query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
+#seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
 #203
 #seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
 #query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
@@ -584,7 +640,7 @@ print "\nLucene Search:\n"
 docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs = normalize_lucene_score(docs)
 docs = append_negative_docs(docs, test_directory)
-r1 = convert_to_roc_format(docs,positive_dir)
+r1 = convert_to_roc_format(docs, positive_dir)
 # plot_roc_and_print_metrics(r1, roc_labels[0], roc_file_names[0] + img_extension, score_thresholds[0])
 
 #===============================================================================
@@ -611,33 +667,21 @@ r3 = convert_to_roc_format(docs, positive_dir)
 # perform topic search  
 #===============================================================================
 
-
-
 print "\nLDA Search (using a seed doc):\n"
-
 docs = search_tm(seed_doc_text, limit, mdl_cfg)
 r4 = convert_to_roc_format(docs, positive_dir)
-# plot_roc_and_print_metrics(r4, roc_labels[3], roc_file_names[3] + img_extension, score_thresholds[3])
-    
-    
+
 
 print "\nLSI Search  (using a seed doc):\n"
-
 docs = search_lsi(seed_doc_text, limit, mdl_cfg)
 r5 = convert_to_roc_format(docs, positive_dir)
-#print [t for t in r5 if t[0] == 0]
-#print [t for t in r5 if t[0] == 1]
-# plot_roc_and_print_metrics(r5, roc_labels[4], roc_file_names[4] + img_extension, score_thresholds[4])
-
 
 
 print "\nLDA Search  (using all responsive docs):\n"
-
 docs = lda_with_all_responsive(positive_dir, limit, mdl_cfg)
 r6 = convert_to_roc_format(docs, positive_dir)
 
 print "\nLDA Search (with multiple seeds):\n"
-
 results = lda_multiple_seeds(positive_dir, limit, mdl_cfg)
 r7 = prepare_results_roc_max(results,positive_dir)
 
@@ -655,11 +699,15 @@ results_list = [r1, r2, r3, r4, r5, r6, r7, r8]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
-#===============================================================================
-# # plot evaluation metrics for all different methods 
-#===============================================================================
 
-roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
-plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
+plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
+
+
+##===============================================================================
+## # plot evaluation metrics for all different methods 
+##===============================================================================
+#
+#roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
+#plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
 
 
