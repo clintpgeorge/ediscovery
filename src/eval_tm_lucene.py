@@ -339,6 +339,37 @@ def plot_search_on_eval_metrics(roc_data_list, labels, query_id='Query'):
     return roc_search_em
 
 
+def multi_plot_search_on_eval_metrics(roc_search_em, labels, metrics, line_styles, query_id='Query'):
+    import pylab
+    
+    pylab.clf()
+    pylab.xlim((0, 1))
+    pylab.xticks(pylab.arange(0,1.1,.1))
+    pylab.ylim((-0.5, 1))
+    pylab.yticks(pylab.arange(0,1.1,.1))
+    pylab.grid(True)
+    pylab.xlabel('Score Thresholds')
+    
+    for iix, score_key in enumerate(metrics): 
+        for ix, eval_dict in enumerate(roc_search_em):
+            pylab.plot(score_thresholds, eval_dict[score_key], 
+                       linewidth=2, label=labels[ix] + '(%s)' % score_key, 
+                       color=METRIC_COLORS[ix], linestyle=line_styles[iix])
+        
+    pylab.ylabel(' '.join(METRICS_DICT[score_key] for score_key in metrics))
+    pylab.title(' '.join(METRICS_DICT[score_key] for score_key in metrics))
+    
+    if labels: pylab.legend(loc='lower left', prop={'size':9})
+
+    eval_file_name = '%s_%s.png' % (query_id, '_'.join(METRICS_DICT[score_key] for score_key in metrics))
+    pylab.savefig(eval_file_name, dpi=300, bbox_inches='tight', pad_inches=0.1)
+
+    print 'Saved figure: ', eval_file_name
+        
+    print '----------------------------------------------------------------------------------'
+    
+
+
 
 def plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name):
     import matplotlib.pyplot as plt
@@ -604,7 +635,6 @@ seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZ
 
 limit = 1000
 img_extension  = '.png'
-roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 'LSI: with multiple seeds.']
 rocs_img_title = 'Query %s: ROCs of different methods' % query_id 
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 eval_file_name = '%s_eval_bars' % query_id + img_extension
@@ -684,14 +714,17 @@ r8 = prepare_results_roc_max(results,positive_dir)
 #===============================================================================
 # # plot ROCs for all different methods 
 #===============================================================================
-
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 'LSI: with multiple seeds.']
 results_list = [r1, r2, r3, r4, r5, r6, r7, r8]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
 
-plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
+roc_search_em = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
 
+metrics = ['PPV', 'SENS']
+line_styles = ["-","--"]
+multi_plot_search_on_eval_metrics(roc_search_em, roc_labels, metrics, line_styles, str(query_id))
 
 ##===============================================================================
 ## # plot evaluation metrics for all different methods 

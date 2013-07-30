@@ -189,6 +189,7 @@ class ROCData(object):
 				if self.data[current_index][0] == 0:
 					fps_count += 1
 				current_index += 1
+
 		total_n = len([x for x in relevant_pauc if x[0] == 0])
 		total_p = len(relevant_pauc) - total_n
 		
@@ -201,17 +202,17 @@ class ROCData(object):
 		while current_index < len(relevant_pauc):
 			df = relevant_pauc[current_index][1]
 			if previous_df != df:
-				points.append((fpr,tpr,fp_count))
+				points.append((fpr, tpr, fp_count))
 			if relevant_pauc[current_index][0] == 0:
-				fp_count +=1
+				fp_count += 1
 			elif relevant_pauc[current_index][0] == 1:
-				tp_count +=1
-			fpr = fp_count/total_n
-			tpr = tp_count/total_p
+				tp_count += 1
+			fpr = fp_count / total_n # false positive rate 
+			tpr = tp_count / total_p # true positive rate 
 			previous_df = df
-			current_index +=1
-		points.append((fpr,tpr,fp_count)) #Add last point
-		points.sort(key=lambda i: (i[0],i[1]))
+			current_index += 1
+		points.append((fpr, tpr, fp_count)) # to add the last point
+		points.sort(key=lambda i: (i[0], i[1])) # sorts based on fpr and then tpr 
 		self.derived_points = points
 		
 		return self._trapezoidal_rule(points)
