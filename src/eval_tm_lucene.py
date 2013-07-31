@@ -635,8 +635,8 @@ seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZ
 
 limit = 1000
 img_extension  = '.png'
-rocs_img_title = 'Query %s: ROCs of different methods' % query_id 
-rocs_file_name = '%s_ROC_plots' % query_id + img_extension
+
+
 eval_file_name = '%s_eval_bars' % query_id + img_extension
 roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
 score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.8, 0.52,0.51,0.8]
@@ -714,17 +714,61 @@ r8 = prepare_results_roc_max(results,positive_dir)
 #===============================================================================
 # # plot ROCs for all different methods 
 #===============================================================================
+rocs_file_name = '%s_ROC_plots' % query_id + img_extension
+rocs_img_title = 'Query %s: ROCs of all methods' % query_id 
 roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 'LSI: with multiple seeds.']
 results_list = [r1, r2, r3, r4, r5, r6, r7, r8]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
-
 roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
 
 metrics = ['PPV', 'SENS']
-line_styles = ["-","--"]
+line_styles = ["-",":"]
 multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id))
+
+#===============================================================================
+# # LDA methods 
+#===============================================================================
+
+
+rocs_file_name = '%s_LDA_ROC_plots' % query_id + img_extension
+rocs_img_title = 'Query %s: ROCs of LDA methods' % query_id 
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LDA: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.']
+results_list = [r1, r2, r4, r6, r7]
+roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
+print 
+
+roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id) + '_LDA')
+
+metrics = ['PPV', 'SENS']
+line_styles = ["-",":"]
+multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id) + '_LDA')
+
+
+#===============================================================================
+# # LSI methods 
+#===============================================================================
+
+rocs_file_name = '%s_LSI_ROC_plots' % query_id + img_extension
+rocs_img_title = 'Query %s: ROCs of LSI methods' % query_id 
+roc_labels = ['Lucene: with keywords', 'LSI: with keywords', 'LSI: with a seed doc', 'LSI: with multiple seeds.']
+results_list = [r1, r3, r5, r8]
+roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
+print 
+
+roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id) + '_LSI')
+
+metrics = ['PPV', 'SENS']
+line_styles = ["-",":"]
+multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id) + '_LSI')
+
+
+
+#===============================================================================
+# # Best methods 
+#===============================================================================
+
 
 ##===============================================================================
 ## # plot evaluation metrics for all different methods 
