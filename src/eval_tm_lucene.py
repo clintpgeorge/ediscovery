@@ -336,10 +336,10 @@ def plot_search_on_eval_metrics(roc_data_list, labels, query_id='Query'):
         
     print '----------------------------------------------------------------------------------'
     
-    return roc_search_em
+    return (roc_search_em, score_thresholds)
 
 
-def multi_plot_search_on_eval_metrics(roc_search_em, labels, metrics, line_styles, query_id='Query'):
+def multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, labels, metrics, line_styles, query_id='Query'):
     import pylab
     
     pylab.clf()
@@ -720,11 +720,11 @@ roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs
 print 
 
 
-roc_search_em = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
+roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
 
 metrics = ['PPV', 'SENS']
 line_styles = ["-","--"]
-multi_plot_search_on_eval_metrics(roc_search_em, roc_labels, metrics, line_styles, str(query_id))
+multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id))
 
 ##===============================================================================
 ## # plot evaluation metrics for all different methods 
