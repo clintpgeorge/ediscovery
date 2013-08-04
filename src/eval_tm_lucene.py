@@ -86,6 +86,49 @@ def search_tm(query_text, limit, mdl_cfg):
     
     return results
 
+
+def search_tm_topics(topics_list, limit, mdl_cfg):   
+
+    EPS = 1e-24
+    lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
+    index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+    path_index_file = mdl_cfg['CORPUS']['path_index_file']    
+    lda_file_path_index = load_file_paths_index(path_index_file)    
+    lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble)
+    num_docs, num_topics = lda_theta.shape
+    
+    print 'Number of documents: ', num_docs, ' number of topics: ', num_topics  
+    
+    unsel_topic_idx = [idx for idx in range(0, num_topics) if idx not in topics_list]
+    
+
+    sel = np.log(lda_theta[:, topics_list] + EPS)
+    unsel = np.log(1.0 - lda_theta[:, unsel_topic_idx] + EPS)
+    ln_score = sel.sum(axis=1) + unsel.sum(axis=1)  
+    sorted_idx = ln_score.argsort(axis=0)[::-1]
+    # score = np.exp(ln_score)
+    
+    ts_results = []
+    min_ln_score = min(ln_score)
+    n_ln_score = (1.0 - ln_score / min_ln_score)
+    # n_ln_score = n_ln_score / max(n_ln_score)
+    
+    for i in range(0, min(limit, num_docs)):
+        ts_results.append([lda_file_path_index[sorted_idx[i]][0], 
+                          lda_file_path_index[sorted_idx[i]][1], 
+                          lda_file_path_index[sorted_idx[i]][2], 
+                          n_ln_score[sorted_idx[i]]])
+        # print lda_file_path_index[sorted_idx[i]], ln_score[sorted_idx[i]], score[sorted_idx[i]] / max(score), n_ln_score[sorted_idx[i]] 
+        
+
+    # grabs the files details from the index 
+    
+    ts_results = get_indexed_file_details(ts_results, index_dir) 
+    results = [[row[0], row[10]] for row in ts_results]
+    
+    return results
+
+
 def search_lsi(query_text, limit, mdl_cfg):   
 
     lsi_dictionary, lsi_mdl, lsi_index, lsi_file_path_index = load_lsi(mdl_cfg)
@@ -241,6 +284,34 @@ def convert_to_roc_format(docs, positive_dir):
             # print 0, doc
         results.append(tuple_list)
     return results
+
+def compare_true_retrieved_documents(m1_docs, m2_docs, positive_dir, score_thresholds):
+    
+    m1_pos_results = []
+    m2_pos_results = []
+    for doc in m1_docs:
+        if os.path.exists(os.path.join(positive_dir, doc[0])) and float(doc[1]) >= score_thresholds[0]:
+            m1_pos_results.append(doc[0])
+            # print 's1', doc[0]
+
+    for doc in m2_docs:
+        if os.path.exists(os.path.join(positive_dir, doc[0])) and float(doc[1]) >= score_thresholds[1]:
+            m2_pos_results.append(doc[0])
+            # print 's2', doc[0]
+            
+    m1_pos_set = set(m1_pos_results)
+    m2_pos_set = set(m2_pos_results)
+ 
+    print '\nCommon files found: \n'
+    print m1_pos_set.intersection(m2_pos_set)
+ 
+    print '\nFiles found only in Set 1:'
+    print m1_pos_set - m2_pos_set
+    
+    print '\nFiles found only in Set 2:'
+    print m2_pos_set - m1_pos_set
+    
+
 
 def plot_roc_and_print_metrics(roc_result, roc_title='ROC Curve', file_name='ROC_plot.png', score_threshold=0.5):
     #Example instance labels (first index) with the decision function , score (second index)
@@ -672,15 +743,24 @@ print "\nLucene Search:\n"
  
 docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs = normalize_lucene_score(docs)
-docs = append_negative_docs(docs, test_directory)
-r1 = convert_to_roc_format(docs, positive_dir)
+docs1 = append_negative_docs(docs, test_directory)
+r1 = convert_to_roc_format(docs1, positive_dir)
 # plot_roc_and_print_metrics(r1, roc_labels[0], roc_file_names[0] + img_extension, score_thresholds[0])
 
 print "\nLDA Search (with keywords):\n"
 
-docs = search_tm(query_text, limit, mdl_cfg)
-r2 = convert_to_roc_format(docs, positive_dir)    
+docs2 = search_tm(query_text, limit, mdl_cfg)
+r2 = convert_to_roc_format(docs2, positive_dir)    
 # plot_roc_and_print_metrics(r2, roc_labels[1], roc_file_names[1] + img_extension, score_thresholds[1])
+
+
+compare_true_retrieved_documents(docs1, docs2, positive_dir, [0.51, .7])
+
+print "\nLDA Search on topics:\n"
+docs = search_tm_topics([7, 29, 0, 24, 6], limit, mdl_cfg) # the topic indices should changed according to each query 
+r10 = convert_to_roc_format(docs, positive_dir)
+print r10
+
 
 print "\nLDA Search (using a seed doc):\n"
 docs = search_tm(seed_doc_text, limit, mdl_cfg)
@@ -734,8 +814,10 @@ multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, m
 
 rocs_file_name = '%s_LDA_ROC_plots' % query_id + img_extension
 rocs_img_title = 'Query %s: ROCs of LDA methods' % query_id 
-roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LDA: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.']
-results_list = [r1, r2, r4, r6, r7]
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LDA: with a seed doc', 
+              'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 
+              'LDA: Search on topics']
+results_list = [r1, r2, r4, r6, r7, r10]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
@@ -762,7 +844,6 @@ roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc
 metrics = ['PPV', 'SENS']
 line_styles = ["-",":"]
 multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id) + '_LSI')
-
 
 
 #===============================================================================
