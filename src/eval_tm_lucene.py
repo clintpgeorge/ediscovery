@@ -758,6 +758,18 @@ seed_doc_text = body_text + u' ' + query_text
 print query_text
 print seed_doc_text
 
+'''
+#=============================================================
+#Test scripts, to compare true positives
+#=============================================================
+docs1 = search_li([query_words, fields, clauses], limit, mdl_cfg)
+#docs2 = search_tm(query_text, limit, mdl_cfg)
+#docs3 = search_lsi(query_text, limit, mdl_cfg)
+docs4 = lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
+#docs5 = lsi_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
+compare_true_retrieved_documents(docs1, docs4, positive_dir, [0, 0.99],True)#True only when combining TM and lucene, else false or blank
+'''
+
 #===============================================================================
 # Here, we perform Lucene, LDA, and LSI search based on a given query. 
 #===============================================================================
