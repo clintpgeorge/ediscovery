@@ -609,6 +609,29 @@ def lsi_multiple_seeds(positive_dir, limit, mdl_cfg):
         results = add_to_final_list(results,docs)
     return results
 
+def lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,query_list):      
+    docs = search_li(query_list, limit, mdl_cfg)
+    seed_list = find_seed_list_document(docs, positive_dir)
+    results = dict() 
+    for doc in seed_list:
+        (_, _,_ ,_ , body_text, _, _) = parse_plain_text_email(os.path.join(positive_dir,doc[0]))
+        doc_text = body_text + u' ' + ' '.join(query_words) 
+        docs = search_tm(doc_text, limit, mdl_cfg)
+        results = add_to_final_list(results,docs)
+    return results
+
+def lsi_multiple_seeds_lu(positive_dir, limit, mdl_cfg,query_list):
+      
+    docs = search_li(query_list, limit, mdl_cfg)
+    seed_list = find_seed_list_document(docs, positive_dir)
+    results = dict() 
+    for doc in seed_list:
+        (_, _,_ ,_ , body_text, _, _) = parse_plain_text_email(os.path.join(positive_dir,doc[0]))
+        doc_text = body_text + u' ' + ' '.join(query_words) 
+        docs = search_lsi(doc_text, limit, mdl_cfg)
+        results = add_to_final_list(results,docs)
+    return results
+
 
 def find_seed_list_document(docs, positive_dir):
     i=0;
