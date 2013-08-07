@@ -87,6 +87,85 @@ def search_tm(query_text, limit, mdl_cfg):
     
     return results
 
+
+def search_tm_topics(topics_list, limit, mdl_cfg):   
+
+    EPS = 1e-24
+    lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
+    index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+    path_index_file = mdl_cfg['CORPUS']['path_index_file']    
+    lda_file_path_index = load_file_paths_index(path_index_file)    
+    lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble)
+    num_docs, num_topics = lda_theta.shape
+    
+    print 'Number of documents: ', num_docs, ' number of topics: ', num_topics  
+    
+    unsel_topic_idx = [idx for idx in range(0, num_topics) if idx not in topics_list]
+    
+
+    sel = np.log(lda_theta[:, topics_list] + EPS)
+    unsel = np.log(1.0 - lda_theta[:, unsel_topic_idx] + EPS)
+    ln_score = sel.sum(axis=1) + unsel.sum(axis=1)  
+    sorted_idx = ln_score.argsort(axis=0)[::-1]
+    # score = np.exp(ln_score)
+    
+    ts_results = []
+    min_ln_score = min(ln_score)
+    n_ln_score = (1.0 - ln_score / min_ln_score)
+    # n_ln_score = n_ln_score / max(n_ln_score)
+    
+    for i in range(0, min(limit, num_docs)):
+        ts_results.append([lda_file_path_index[sorted_idx[i]][0], 
+                          lda_file_path_index[sorted_idx[i]][1], 
+                          lda_file_path_index[sorted_idx[i]][2], 
+                          n_ln_score[sorted_idx[i]]])
+        # print lda_file_path_index[sorted_idx[i]], ln_score[sorted_idx[i]], n_ln_score[sorted_idx[i]] 
+        
+
+    # grabs the files details from the index     
+    ts_results = get_indexed_file_details(ts_results, index_dir) 
+    
+    results = [[row[0], float(row[10])] for row in ts_results] # Note: we need a float conversion because it's retrieving as string 
+    
+    return results
+
+def search_tm_sel_topics_cos(topics_list, topics_prob, limit, mdl_cfg):   
+
+    lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
+    index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+    path_index_file = mdl_cfg['CORPUS']['path_index_file']    
+    lda_file_path_index = load_file_paths_index(path_index_file)    
+    lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble)
+    num_docs, num_topics = lda_theta.shape
+    
+    print 'Number of documents: ', num_docs, ' number of topics: ', num_topics  
+    
+    from scipy.spatial.distance import cosine 
+    topics_prob = np.array(topics_prob)
+    sel = lda_theta[:, topics_list]
+    cos_scores = np.zeros(num_docs)
+    for i in range(0, num_docs):
+        cos_scores[i] = cosine(topics_prob, sel[i, :])
+
+    sorted_idx = cos_scores.argsort(axis=0)[::-1]
+    
+    ts_results = []
+    
+    for i in range(0, min(limit, num_docs)):
+        ts_results.append([lda_file_path_index[sorted_idx[i]][0], 
+                          lda_file_path_index[sorted_idx[i]][1], 
+                          lda_file_path_index[sorted_idx[i]][2], 
+                          cos_scores[sorted_idx[i]]])
+        print lda_file_path_index[sorted_idx[i]], cos_scores[sorted_idx[i]]
+        
+
+    # grabs the files details from the index 
+    
+    ts_results = get_indexed_file_details(ts_results, index_dir) 
+    results = [[row[0], row[10]] for row in ts_results]
+    
+    return results
+
 def search_lsi(query_text, limit, mdl_cfg):   
 
     lsi_dictionary, lsi_mdl, lsi_index, lsi_file_path_index = load_lsi(mdl_cfg)
@@ -695,7 +774,7 @@ def finalize_list_dict_docs(docs, test_directory):
                 result_dict[file_name] = min_score
                 result_list.append([file_name,min_score])
                 
-    return result_dict,result_list,min_score
+    return result_dict, result_list, min_score
 
 def prepare_final_result(results_lucene,results_tm, min_score):
     import math
@@ -712,42 +791,7 @@ def prepare_final_result(results_lucene,results_tm, min_score):
     result = sorted(result, key=lambda student: student[1])
     return result
 
-def search_tm_sel_topics_cos(topics_list, topics_prob, limit, mdl_cfg):   
 
-    lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
-    index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
-    path_index_file = mdl_cfg['CORPUS']['path_index_file']    
-    lda_file_path_index = load_file_paths_index(path_index_file)    
-    lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble)
-    num_docs, num_topics = lda_theta.shape
-    
-    print 'Number of documents: ', num_docs, ' number of topics: ', num_topics  
-    
-    from scipy.spatial.distance import cosine 
-    topics_prob = np.array(topics_prob)
-    sel = lda_theta[:, topics_list]
-    cos_scores = np.zeros(num_docs)
-    for i in range(0, num_docs):
-        cos_scores[i] = cosine(topics_prob, sel[i, :])
-
-    sorted_idx = cos_scores.argsort(axis=0)[::-1]
-    
-    ts_results = []
-    
-    for i in range(0, min(limit, num_docs)):
-        ts_results.append([lda_file_path_index[sorted_idx[i]][0], 
-                          lda_file_path_index[sorted_idx[i]][1], 
-                          lda_file_path_index[sorted_idx[i]][2], 
-                          cos_scores[sorted_idx[i]]])
-        print lda_file_path_index[sorted_idx[i]], cos_scores[sorted_idx[i]]
-        
-
-    # grabs the files details from the index 
-    
-    ts_results = get_indexed_file_details(ts_results, index_dir) 
-    results = [[row[0], row[10]] for row in ts_results]
-    
-    return results
 
 
 def normalize_wrt_tm(docs1,docs2):
@@ -787,19 +831,18 @@ def normalize_wrt_tm(docs1,docs2):
 
 ## ***** BEGIN change the following each query *********
 
-query_id = 202
-config_file = "E:\\Ediscovery\\CFG_s\\project202.cfg" # configuration file, created using the SMARTeR GUI 
-test_directory = "F:\\topicModelingDataSet\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+query_id = 201
+config_file = "gui/project1.cfg" # configuration file, created using the SMARTeR GUI 
+test_directory = "F:\\Research\\datasets\\trec2010\\Enron\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
 
-
 #201
-#query = "all:pre-pay:May;all:swap:May"
-#seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
+query = "all:pre-pay:May;all:swap:May"
+seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
 #202
-query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
-seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
+# query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
+# seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
 #203
 #seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
 #query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
@@ -858,40 +901,64 @@ compare_true_retrieved_documents(docs1, docs2, positive_dir, [0, 0.8])
 exit()
 '''
 ####Simple Multiplication
-docs1 = search_li([query_words, fields, clauses], limit, mdl_cfg)
-docs1_dict,docs1_list,min_score = finalize_list_dict_docs(docs1, test_directory)
-docs2 = search_tm(query_text, limit, mdl_cfg)
-final_docs = prepare_final_result(docs1_dict, docs2, min_score)
-res_tm = convert_to_roc_format(final_docs, positive_dir)
-res_lu= convert_to_roc_format(docs1_list, positive_dir) 
+lu_docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
+lda_docs = search_tm(query_text, limit, mdl_cfg)
+
+docs1_dict, docs1_list, min_score = finalize_list_dict_docs(lu_docs, test_directory)
+final_docs = prepare_final_result(docs1_dict, lda_docs, min_score)
+
+lda_lu_res = convert_to_roc_format(final_docs, positive_dir)
+lu_res = convert_to_roc_format(docs1_list, positive_dir) 
 
 
 ####After score normalization 
-docs1_norm = normalize_wrt_tm(docs1_list,docs2)
+docs1_norm = normalize_wrt_tm(docs1_list, lda_docs)
 docs1_norm_dict = dict()
 for doc in docs1_norm:
     docs1_norm_dict[doc[0]] = doc[1]
-final_docs_norm = prepare_final_result(docs1_norm_dict, docs2, min_score)
+final_docs_norm = prepare_final_result(docs1_norm_dict, lda_docs, min_score)
 res_tm_norm = convert_to_roc_format(final_docs_norm, positive_dir)
 
-####Search single topic
-docs = search_tm_sel_topics_cos([7, 24], [0.011111111111172993, 0.011111111111123317], limit, mdl_cfg)
-res_topic = convert_to_roc_format(docs, positive_dir)
+'''
+LDA search using a set of selected dominating query topics 
+'''
+# docs = search_tm_sel_topics_cos([7, 24], [0.011111111111172993, 0.011111111111123317], limit, mdl_cfg)
+
+print "\nLDA Search using query topics:\n"
+lda_tts_docs = search_tm_topics([7, 29, 0, 24, 6], limit, mdl_cfg) # the topic indices should changed according to each query 
+lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
+
+
+
 
 ####Plot graph
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 rocs_img_title = 'Query %s: ROCs of all methods' % query_id 
-roc_labels = ['Lucene','LDA*Lucene', 'LDA norm*Lucene' ,'Topic']
-results_list = [res_lu,res_tm, res_tm_norm,res_topic]
+roc_labels = ['Lucene', 'LDA * Lucene', 'LDA norm * Lucene' ,'LDA using query topics']
+results_list = [lu_res, lda_lu_res, res_tm_norm, lda_tts_res]
+
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
+
 print 
 
+'''
+Here, we search on the score thresholds and plots 
+the corresponding evaluation metrics
+'''
 roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
 
-metrics = ['PPV', 'SENS']
-line_styles = ["-",":"]
-multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id))
+
+#'''
+#The below plot compare Recall and Precision in a single plot 
+#'''
+#metrics = ['PPV', 'SENS']
+#line_styles = ["-",":"]
+#multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id))
+
 exit()
+
+
+
 #===============================================================================
 # Here, we perform Lucene, LDA, and LSI search based on a given query. 
 #===============================================================================
