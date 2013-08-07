@@ -750,7 +750,7 @@ def compare_true_retrieved_documents(m1_docs, m2_docs, positive_dir, score_thres
     print '\nFiles found only in Set 2:'
     print len(m2_pos_set - m1_pos_set)
     
-def finalize_list_dict_docs(docs, test_directory):
+def lu_append_nonresp(docs, test_directory):
     '''
     Used only for Lucene 
     '''
@@ -772,29 +772,30 @@ def finalize_list_dict_docs(docs, test_directory):
         for file_name in files:
             if file_name not in result:
                 result_dict[file_name] = min_score
-                result_list.append([file_name,min_score])
+                result_list.append([file_name, min_score])
                 
-    return result_dict, result_list, min_score
+    return result_dict, result_list
 
-def prepare_final_result(results_lucene,results_tm, min_score):
-    import math
+
+
+def lu_tm_mult_scores(results_lucene, results_tm):
     result = []
-    #min_score=math.log(min_score)-1
     
     for res_tm in results_tm:
-        res = []
-        res.append(res_tm[0])
-        #score_lu=1-(math.log(results_lucene[res_tm[0]])/min_score)
-        score_lu = results_lucene[res_tm[0]]
-        res.append(score_lu*res_tm[1])
-        result.append(res)
+        lu_score = results_lucene[res_tm[0]]
+        mult_score = float(lu_score) * float(res_tm[1]) * 1000
+        result.append([res_tm[0], mult_score])
+        
+        print res_tm[0], lu_score, res_tm[1], mult_score
+
     result = sorted(result, key=lambda student: student[1])
+    
     return result
 
 
 
 
-def normalize_wrt_tm(docs1,docs2):
+def lu_normalize_scores_wrt_tm_scores(docs1,docs2):
     rank_list = []
     temp_score = 100
     for doc in docs2:
@@ -904,20 +905,20 @@ exit()
 lu_docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 lda_docs = search_tm(query_text, limit, mdl_cfg)
 
-docs1_dict, docs1_list, min_score = finalize_list_dict_docs(lu_docs, test_directory)
-final_docs = prepare_final_result(docs1_dict, lda_docs, min_score)
+docs1_dict, docs1_list = lu_append_nonresp(lu_docs, test_directory)
+lu_tm_docs = lu_tm_mult_scores(docs1_dict, lda_docs)
 
-lda_lu_res = convert_to_roc_format(final_docs, positive_dir)
+lda_lu_res = convert_to_roc_format(lu_tm_docs, positive_dir)
 lu_res = convert_to_roc_format(docs1_list, positive_dir) 
 
 
 ####After score normalization 
-docs1_norm = normalize_wrt_tm(docs1_list, lda_docs)
+docs1_norm = lu_normalize_scores_wrt_tm_scores(docs1_list, lda_docs)
 docs1_norm_dict = dict()
 for doc in docs1_norm:
     docs1_norm_dict[doc[0]] = doc[1]
-final_docs_norm = prepare_final_result(docs1_norm_dict, lda_docs, min_score)
-res_tm_norm = convert_to_roc_format(final_docs_norm, positive_dir)
+lu_tm_docs_norm = lu_tm_mult_scores(docs1_norm_dict, lda_docs)
+res_tm_norm = convert_to_roc_format(lu_tm_docs_norm, positive_dir)
 
 '''
 LDA search using a set of selected dominating query topics 
@@ -934,7 +935,7 @@ lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
 ####Plot graph
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 rocs_img_title = 'Query %s: ROCs of all methods' % query_id 
-roc_labels = ['Lucene', 'LDA * Lucene', 'LDA norm * Lucene' ,'LDA using query topics']
+roc_labels = ['Lucene ranking', 'LDA ranking * Lucene ranking', 'LDA ranking (norm) * Lucene ranking' ,'LDA ranking (w/ query topics)']
 results_list = [lu_res, lda_lu_res, res_tm_norm, lda_tts_res]
 
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
