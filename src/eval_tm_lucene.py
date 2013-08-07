@@ -9,13 +9,14 @@ from PyROC.pyroc import ROCData, plot_multiple_roc
 from utils.utils_email import parse_plain_text_email
 import numpy as np 
 from collections import defaultdict
+from setuptools.command.setopt import config_file
 
 
 METRICS_DICT =  {'SENS': 'Recall (Sensitivity)', 'SPEC': 'Specificity', 'ACC': 'Accuracy', 'EFF': 'Efficiency',
     'PPV': 'Precision (Positive Predictive Value)', 'NPV': 'Negative Predictive Value' , 'PHI':  'Phi Coefficient', 
     'F1': 'F1 Score', 'TN': 'True Negatives', 'TP': 'True Positives', 'FN': 'False Negatives', 'FP': 'False Positives' }
 
-METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff'] # *** depended on the number of metrics used *** 
+METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff','#ffee00', '#ff00ee','#ccbbff'] # *** depended on the number of metrics used *** 
 
 def parse_query(query):
     
@@ -85,49 +86,6 @@ def search_tm(query_text, limit, mdl_cfg):
     results = [[row[0], ((float(row[10]) + 1.0) / 2.0)] for row in ts_results]
     
     return results
-
-
-def search_tm_topics(topics_list, limit, mdl_cfg):   
-
-    EPS = 1e-24
-    lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
-    index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
-    path_index_file = mdl_cfg['CORPUS']['path_index_file']    
-    lda_file_path_index = load_file_paths_index(path_index_file)    
-    lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble)
-    num_docs, num_topics = lda_theta.shape
-    
-    print 'Number of documents: ', num_docs, ' number of topics: ', num_topics  
-    
-    unsel_topic_idx = [idx for idx in range(0, num_topics) if idx not in topics_list]
-    
-
-    sel = np.log(lda_theta[:, topics_list] + EPS)
-    unsel = np.log(1.0 - lda_theta[:, unsel_topic_idx] + EPS)
-    ln_score = sel.sum(axis=1) + unsel.sum(axis=1)  
-    sorted_idx = ln_score.argsort(axis=0)[::-1]
-    # score = np.exp(ln_score)
-    
-    ts_results = []
-    min_ln_score = min(ln_score)
-    n_ln_score = (1.0 - ln_score / min_ln_score)
-    # n_ln_score = n_ln_score / max(n_ln_score)
-    
-    for i in range(0, min(limit, num_docs)):
-        ts_results.append([lda_file_path_index[sorted_idx[i]][0], 
-                          lda_file_path_index[sorted_idx[i]][1], 
-                          lda_file_path_index[sorted_idx[i]][2], 
-                          n_ln_score[sorted_idx[i]]])
-        # print lda_file_path_index[sorted_idx[i]], ln_score[sorted_idx[i]], score[sorted_idx[i]] / max(score), n_ln_score[sorted_idx[i]] 
-        
-
-    # grabs the files details from the index 
-    
-    ts_results = get_indexed_file_details(ts_results, index_dir) 
-    results = [[row[0], row[10]] for row in ts_results]
-    
-    return results
-
 
 def search_lsi(query_text, limit, mdl_cfg):   
 
@@ -284,34 +242,6 @@ def convert_to_roc_format(docs, positive_dir):
             # print 0, doc
         results.append(tuple_list)
     return results
-
-def compare_true_retrieved_documents(m1_docs, m2_docs, positive_dir, score_thresholds):
-    
-    m1_pos_results = []
-    m2_pos_results = []
-    for doc in m1_docs:
-        if os.path.exists(os.path.join(positive_dir, doc[0])) and float(doc[1]) >= score_thresholds[0]:
-            m1_pos_results.append(doc[0])
-            # print 's1', doc[0]
-
-    for doc in m2_docs:
-        if os.path.exists(os.path.join(positive_dir, doc[0])) and float(doc[1]) >= score_thresholds[1]:
-            m2_pos_results.append(doc[0])
-            # print 's2', doc[0]
-            
-    m1_pos_set = set(m1_pos_results)
-    m2_pos_set = set(m2_pos_results)
- 
-    print '\nCommon files found: \n'
-    print m1_pos_set.intersection(m2_pos_set)
- 
-    print '\nFiles found only in Set 1:'
-    print m1_pos_set - m2_pos_set
-    
-    print '\nFiles found only in Set 2:'
-    print m2_pos_set - m1_pos_set
-    
-
 
 def plot_roc_and_print_metrics(roc_result, roc_title='ROC Curve', file_name='ROC_plot.png', score_threshold=0.5):
     #Example instance labels (first index) with the decision function , score (second index)
@@ -609,7 +539,8 @@ def lsi_multiple_seeds(positive_dir, limit, mdl_cfg):
         results = add_to_final_list(results,docs)
     return results
 
-def lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,query_list):      
+def lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,query_list):
+      
     docs = search_li(query_list, limit, mdl_cfg)
     seed_list = find_seed_list_document(docs, positive_dir)
     results = dict() 
@@ -681,6 +612,165 @@ def prepare_results_roc_max(results,positive_dir):
         
     return result
 
+def prepare_results_max(results,positive_dir):
+    
+    result = []
+    for name in results:
+        if os.path.exists(os.path.join(positive_dir, name))==True:    
+            tuple_list = [name, np.max(results[name][1])]           
+        else:
+            tuple_list = [name, np.max(results[name][1])]
+        result.append(tuple_list)
+    result = sorted(result, key=lambda student: student[1])
+    return result
+
+def compare_true_retrieved_documents(m1_docs, m2_docs, positive_dir, score_thresholds, flag=False):
+    
+    m1_pos_results = []
+    m2_pos_results = []
+    for doc in m1_docs:
+            if os.path.exists(os.path.join(positive_dir, doc[0])) and float(doc[1]) >= score_thresholds[0]:
+                m1_pos_results.append(doc[0])
+                print 's1', doc[0]
+
+    if flag==False:
+        m2_temp_docs=m2_docs
+    else:
+        m2_temp_docs = prepare_results_max(m2_docs,positive_dir)
+    
+    false_positive=0
+    for doc in m2_temp_docs:
+        if float(doc[1]) >= score_thresholds[1]:
+            if os.path.exists(os.path.join(positive_dir, doc[0])) :
+                m2_pos_results.append(doc[0])
+                print 's2', doc[0]
+            else:
+                false_positive+=1
+    print false_positive
+    print len(m2_pos_results)
+            
+            
+    m1_pos_set = set(m1_pos_results)
+    m2_pos_set = set(m2_pos_results)
+ 
+    print '\Set 1: \n'
+    print len(m1_pos_set)
+    
+    print '\nset2: \n'
+    print len(m2_pos_set)
+ 
+    print '\nUnion files found: \n'
+    print len(m1_pos_set.union(m2_pos_set))
+ 
+    print '\nCommon files found: \n'
+    print len(m1_pos_set.intersection(m2_pos_set))
+ 
+    print '\nFiles found only in Set 1:'
+    print len(m1_pos_set - m2_pos_set)
+    
+    print '\nFiles found only in Set 2:'
+    print len(m2_pos_set - m1_pos_set)
+    
+def finalize_list_dict_docs(docs, test_directory):
+    '''
+    Used only for Lucene 
+    '''
+    
+    result_dict = dict()
+    result_list = []
+    result = dict()
+    score_list = []
+    
+    for doc in docs:
+        result[doc[0]] = True
+        result_list.append(doc)
+        result_dict[doc[0]] = doc[1]
+        score_list.append(doc[1])
+    
+    min_score = np.min(score_list) * 0.1
+    
+    for _, _, files in os.walk(test_directory):
+        for file_name in files:
+            if file_name not in result:
+                result_dict[file_name] = min_score
+                result_list.append([file_name,min_score])
+                
+    return result_dict,result_list,min_score
+
+def prepare_final_result(results_lucene,results_tm, min_score):
+    import math
+    result = []
+    #min_score=math.log(min_score)-1
+    
+    for res_tm in results_tm:
+        res = []
+        res.append(res_tm[0])
+        #score_lu=1-(math.log(results_lucene[res_tm[0]])/min_score)
+        score_lu = results_lucene[res_tm[0]]
+        res.append(score_lu*res_tm[1])
+        result.append(res)
+    result = sorted(result, key=lambda student: student[1])
+    return result
+
+def search_tm_sel_topics_cos(topics_list, topics_prob, limit, mdl_cfg):   
+
+    lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
+    index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+    path_index_file = mdl_cfg['CORPUS']['path_index_file']    
+    lda_file_path_index = load_file_paths_index(path_index_file)    
+    lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble)
+    num_docs, num_topics = lda_theta.shape
+    
+    print 'Number of documents: ', num_docs, ' number of topics: ', num_topics  
+    
+    from scipy.spatial.distance import cosine 
+    topics_prob = np.array(topics_prob)
+    sel = lda_theta[:, topics_list]
+    cos_scores = np.zeros(num_docs)
+    for i in range(0, num_docs):
+        cos_scores[i] = cosine(topics_prob, sel[i, :])
+
+    sorted_idx = cos_scores.argsort(axis=0)[::-1]
+    
+    ts_results = []
+    
+    for i in range(0, min(limit, num_docs)):
+        ts_results.append([lda_file_path_index[sorted_idx[i]][0], 
+                          lda_file_path_index[sorted_idx[i]][1], 
+                          lda_file_path_index[sorted_idx[i]][2], 
+                          cos_scores[sorted_idx[i]]])
+        print lda_file_path_index[sorted_idx[i]], cos_scores[sorted_idx[i]]
+        
+
+    # grabs the files details from the index 
+    
+    ts_results = get_indexed_file_details(ts_results, index_dir) 
+    results = [[row[0], row[10]] for row in ts_results]
+    
+    return results
+
+
+def normalize_wrt_tm(docs1,docs2):
+    rank_list = []
+    temp_score = 100
+    for doc in docs2:
+        if temp_score > doc[1]:
+            temp_score = doc[1]
+            rank_list.append(doc[1])
+    rank_len=len(rank_list)
+    i = 0
+    docs_new = []
+    temp_score=100
+    for doc in docs1:
+        if temp_score > doc[1]:
+            temp_score = doc[1]
+            i += 1
+        if(i < rank_len):
+            docs_new.append([doc[0],rank_list[i]])
+        else:
+            docs_new.append([doc[0],rank_list[rank_len-1]])
+    
+    return docs_new
 
      
 #===============================================================================
@@ -697,18 +787,19 @@ def prepare_results_roc_max(results,positive_dir):
 
 ## ***** BEGIN change the following each query *********
 
-query_id = 201
-config_file = "gui/project1.cfg" # configuration file, created using the SMARTeR GUI 
-test_directory = "F:\\Research\\datasets\\trec2010\\Enron\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+query_id = 202
+config_file = "E:\\Ediscovery\\CFG_s\\project202.cfg" # configuration file, created using the SMARTeR GUI 
+test_directory = "F:\\topicModelingDataSet\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
 
+
 #201
-query = "all:pre-pay:May;all:swap:May"
-seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
+#query = "all:pre-pay:May;all:swap:May"
+#seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
 #202
-#query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
-#seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
+query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
+seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
 #203
 #seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
 #query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
@@ -757,19 +848,50 @@ seed_doc_text = body_text + u' ' + query_text
 
 print query_text
 print seed_doc_text
-
 '''
-#=============================================================
-#Test scripts, to compare true positives
-#=============================================================
 docs1 = search_li([query_words, fields, clauses], limit, mdl_cfg)
-#docs2 = search_tm(query_text, limit, mdl_cfg)
+docs2 = search_tm(query_text, limit, mdl_cfg)
 #docs3 = search_lsi(query_text, limit, mdl_cfg)
-docs4 = lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
+#docs4 = lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
 #docs5 = lsi_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
-compare_true_retrieved_documents(docs1, docs4, positive_dir, [0, 0.99],True)#True only when combining TM and lucene, else false or blank
+compare_true_retrieved_documents(docs1, docs2, positive_dir, [0, 0.8])
+exit()
 '''
+####Simple Multiplication
+docs1 = search_li([query_words, fields, clauses], limit, mdl_cfg)
+docs1_dict,docs1_list,min_score = finalize_list_dict_docs(docs1, test_directory)
+docs2 = search_tm(query_text, limit, mdl_cfg)
+final_docs = prepare_final_result(docs1_dict, docs2, min_score)
+res_tm = convert_to_roc_format(final_docs, positive_dir)
+res_lu= convert_to_roc_format(docs1_list, positive_dir) 
 
+
+####After score normalization 
+docs1_norm = normalize_wrt_tm(docs1_list,docs2)
+docs1_norm_dict = dict()
+for doc in docs1_norm:
+    docs1_norm_dict[doc[0]] = doc[1]
+final_docs_norm = prepare_final_result(docs1_norm_dict, docs2, min_score)
+res_tm_norm = convert_to_roc_format(final_docs_norm, positive_dir)
+
+####Search single topic
+docs = search_tm_sel_topics_cos([7, 24], [0.011111111111172993, 0.011111111111123317], limit, mdl_cfg)
+res_topic = convert_to_roc_format(docs, positive_dir)
+
+####Plot graph
+rocs_file_name = '%s_ROC_plots' % query_id + img_extension
+rocs_img_title = 'Query %s: ROCs of all methods' % query_id 
+roc_labels = ['Lucene','LDA*Lucene', 'LDA norm*Lucene' ,'Topic']
+results_list = [res_lu,res_tm, res_tm_norm,res_topic]
+roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
+print 
+
+roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
+
+metrics = ['PPV', 'SENS']
+line_styles = ["-",":"]
+multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id))
+exit()
 #===============================================================================
 # Here, we perform Lucene, LDA, and LSI search based on a given query. 
 #===============================================================================
@@ -778,24 +900,15 @@ print "\nLucene Search:\n"
  
 docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs = normalize_lucene_score(docs)
-docs1 = append_negative_docs(docs, test_directory)
-r1 = convert_to_roc_format(docs1, positive_dir)
+docs = append_negative_docs(docs, test_directory)
+r1 = convert_to_roc_format(docs, positive_dir)
 # plot_roc_and_print_metrics(r1, roc_labels[0], roc_file_names[0] + img_extension, score_thresholds[0])
 
 print "\nLDA Search (with keywords):\n"
 
-docs2 = search_tm(query_text, limit, mdl_cfg)
-r2 = convert_to_roc_format(docs2, positive_dir)    
+docs = search_tm(query_text, limit, mdl_cfg)
+r2 = convert_to_roc_format(docs, positive_dir)    
 # plot_roc_and_print_metrics(r2, roc_labels[1], roc_file_names[1] + img_extension, score_thresholds[1])
-
-
-compare_true_retrieved_documents(docs1, docs2, positive_dir, [0.51, .7])
-
-print "\nLDA Search on topics:\n"
-docs = search_tm_topics([7, 29, 0, 24, 6], limit, mdl_cfg) # the topic indices should changed according to each query 
-r10 = convert_to_roc_format(docs, positive_dir)
-print r10
-
 
 print "\nLDA Search (using a seed doc):\n"
 docs = search_tm(seed_doc_text, limit, mdl_cfg)
@@ -824,15 +937,20 @@ print "\nLSI Search (with multiple seeds):\n"
 results = lsi_multiple_seeds(positive_dir, limit, mdl_cfg)
 r8 = prepare_results_roc_max(results,positive_dir)
 
+print "\nLDA+Lucene Search (with multiple seeds):\n"
+results = lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
+r9 = prepare_results_roc_max(results,positive_dir)
 
-
+print "\nLSI+Lucene Search (with multiple seeds):\n"
+results = lsi_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
+r10 = prepare_results_roc_max(results,positive_dir)
 #===============================================================================
 # # plot ROCs for all different methods 
 #===============================================================================
 rocs_file_name = '%s_ROC_plots' % query_id + img_extension
 rocs_img_title = 'Query %s: ROCs of all methods' % query_id 
-roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA: with a seed doc', 'LSI: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 'LSI: with multiple seeds.']
-results_list = [r1, r2, r3, r4, r5, r6, r7, r8]
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA+Lucene: with multiple seeds.', 'LSI+Lucene: with multiple seeds.']
+results_list = [r1, r2, r3, r9, r10]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
@@ -845,14 +963,12 @@ multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, m
 #===============================================================================
 # # LDA methods 
 #===============================================================================
-
+exit()
 
 rocs_file_name = '%s_LDA_ROC_plots' % query_id + img_extension
 rocs_img_title = 'Query %s: ROCs of LDA methods' % query_id 
-roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LDA: with a seed doc', 
-              'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 
-              'LDA: Search on topics']
-results_list = [r1, r2, r4, r6, r7, r10]
+roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LDA: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 'LDA+Lucene: with multiple seeds.']
+results_list = [r1, r2, r4, r6, r7, r9]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
@@ -869,8 +985,8 @@ multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, m
 
 rocs_file_name = '%s_LSI_ROC_plots' % query_id + img_extension
 rocs_img_title = 'Query %s: ROCs of LSI methods' % query_id 
-roc_labels = ['Lucene: with keywords', 'LSI: with keywords', 'LSI: with a seed doc', 'LSI: with multiple seeds.']
-results_list = [r1, r3, r5, r8]
+roc_labels = ['Lucene: with keywords', 'LSI: with keywords', 'LSI: with a seed doc', 'LSI: with multiple seeds.', 'LSI+Lucene: with multiple seeds.']
+results_list = [r1, r3, r5, r8, r10]
 roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
 print 
 
@@ -879,6 +995,7 @@ roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc
 metrics = ['PPV', 'SENS']
 line_styles = ["-",":"]
 multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id) + '_LSI')
+
 
 
 #===============================================================================
