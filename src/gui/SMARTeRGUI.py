@@ -161,6 +161,17 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_run_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Run Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_query.Add( self._btn_run_query, wx.GBPosition( 2, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
+		bSizer6 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self._chbx_topic_search = wx.CheckBox( self._panel_query, wx.ID_ANY, _(u"Topic Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer6.Add( self._chbx_topic_search, 0, wx.ALL, 5 )
+		
+		self._chbx_facet_search = wx.CheckBox( self._panel_query, wx.ID_ANY, _(u"Facet Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer6.Add( self._chbx_facet_search, 0, wx.ALL, 5 )
+		
+		
+		_gbsizer_query.Add( bSizer6, wx.GBPosition( 4, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		
 		
 		_sbsizer_query_model.Add( _gbsizer_query, 1, wx.EXPAND, 10 )
 		
@@ -193,6 +204,8 @@ class SMARTeRGUI ( wx.Frame ):
 		self._file_picker_mdl.Bind( wx.EVT_FILEPICKER_CHANGED, self._on_file_change_mdl )
 		self._btn_add_to_query.Bind( wx.EVT_BUTTON, self._on_click_add_to_query )
 		self._btn_run_query.Bind( wx.EVT_BUTTON, self._on_click_run_query )
+		self._chbx_topic_search.Bind( wx.EVT_CHECKBOX, self._on_chbx_topic_search )
+		self._chbx_facet_search.Bind( wx.EVT_CHECKBOX, self._on_chbx_facet_search )
 	
 	def __del__( self ):
 		pass
@@ -224,6 +237,12 @@ class SMARTeRGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_click_run_query( self, event ):
+		event.Skip()
+	
+	def _on_chbx_topic_search( self, event ):
+		event.Skip()
+	
+	def _on_chbx_facet_search( self, event ):
 		event.Skip()
 	
 

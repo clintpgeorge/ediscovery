@@ -247,7 +247,6 @@ def search_lucene_index(index_dir, query_model, limit):
                 row.append('')
         row.append(str(table.get(MetadataType.FILE_ID,'empty'))) # the unique file id of a file 
         row.append(scoreDoc.score)
-        row.append('')
         
         rows.append(row)
     

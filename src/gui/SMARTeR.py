@@ -169,9 +169,12 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         _, file_ext = os.path.splitext(file_name)
         msg_text = 'Cannot open "%s" in this viewer! Please double click the row to open the file in a default system file viewer.' % file_name
         try: 
-            if file_ext == '.txt' or file_ext == '':                
+            if file_ext == '.txt' or file_ext == '': 
+                import unicodedata
                 with open(file_name) as fp:
-                    msg_text = fp.read()            
+                    msg_text = fp.read()
+                    msg_text = unicodedata.normalize('NFKD', msg_text).encode('ascii','ignore') # converts to ascii 
+
             else:
                 file_type, _ = mimetypes.guess_type(file_name, strict=True)
                 msg_text = 'Cannot open "%s (type:%s)" in this viewer! Please double click the row to open the file in a default system file viewer.' % (file_name, file_type)
@@ -610,6 +613,14 @@ class SMARTeR (SMARTeRGUI):
         dlg = wx.MessageDialog(self, _message, _header, wx.OK | wx.ICON_ERROR)
         dlg.ShowModal()
     
+    
+    def _on_chbx_topic_search( self, event ):
+        self._chbx_facet_search.SetValue(False)
+        
+    def _on_chbx_facet_search( self, event ):
+        self._chbx_topic_search.SetValue(False)
+    
+    
     def _on_click_run_query(self, event):
         """
         Actions to be done when the "Run Query" button is clicked
@@ -623,10 +634,10 @@ class SMARTeR (SMARTeRGUI):
         lucene index to retrieve documents 
         """
         
-#        facet_search = self._chbx_facet_search.GetValue()
-#        topic_search = self._chbx_topic_search.GetValue()
-#        
-#        print facet_search, topic_search
+        facet_search = self._chbx_facet_search.GetValue()
+        topic_search = self._chbx_topic_search.GetValue()
+        
+        print facet_search, topic_search
         
         # 1. Parse the query
         
@@ -639,18 +650,18 @@ class SMARTeR (SMARTeRGUI):
             # Lucene index is mandatory 
             self._show_error_message('Run Query Error!', 'Please select a valid index for searching.')
             return  
-#        elif not facet_search and not topic_search:
-#            self._show_error_message('Run Query Error!', 'Please select a search type.')
-#            return 
+        elif not facet_search and not topic_search:
+            self._show_error_message('Run Query Error!', 'Please select a search type.')
+            return 
         elif queryText == '':
             self._show_error_message('Run Query Error!', 'Please enter a valid query.')
             return 
-#        elif topic_search and not self._is_tm_index_available:
-#            self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
-#            return 
-#        elif facet_search and not self._is_lucene_index_available:
-#            self._show_error_message('Run Query Error!', 'Lucene index is not available for facet search.')
-#            return
+        elif topic_search and not self._is_tm_index_available:
+            self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
+            return 
+        elif facet_search and not self._is_lucene_index_available:
+            self._show_error_message('Run Query Error!', 'Lucene index is not available for facet search.')
+            return
         
         #queryText has Queries, Fields, BooleanClauses
         queries = []
@@ -676,28 +687,33 @@ class SMARTeR (SMARTeRGUI):
         queryList.append(fields)
         queryList.append(clauses)
 
-#        rows = [] 
-#        fs_results = []
-#        ts_results = [] 
-        rows = search_lucene_index(self.lucene_index_dir, queryList, SEARCH_RESULTS_LIMIT)
+        rows = [] 
+        fs_results = []
+        ts_results = [] 
+
         
-#        if facet_search:
-#            fs_results = search_lucene_index(self.lucene_index_dir, queryList, SEARCH_RESULTS_LIMIT)
-#            
-#        if topic_search: 
-#            query_text = ' '.join(queries) # combines all the text in a query model 
-#            ts_results = search_lda_model(query_text, self.lda_dictionary, self.lda_mdl, self.lda_index, self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
-#            ## ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
-#            ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index 
-#            
-#        if facet_search and not topic_search: 
-#            # 2. Run Lucene query
-#            rows = fs_results
-#        elif not facet_search and topic_search: 
-#            rows = ts_results
-#        elif facet_search and topic_search: 
-#            # Combine results  
-#            rows = self._combine_lucene_tm_results(fs_results, ts_results)
+        if facet_search:
+            fs_results = search_lucene_index(self.lucene_index_dir, 
+                                             queryList, SEARCH_RESULTS_LIMIT)
+            
+        if topic_search: 
+            query_text = ' '.join(queries) # combines all the text in a query model 
+            ts_results = search_lda_model(query_text, self.lda_dictionary, 
+                                          self.lda_mdl, self.lda_index, 
+                                          self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
+            ## ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
+            ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index 
+            
+        if facet_search and not topic_search: 
+            # 2. Run Lucene query
+            rows = fs_results
+        elif not facet_search and topic_search: 
+            rows = ts_results
+        elif facet_search and topic_search: 
+            # Combine results  
+            # rows = self._combine_lucene_tm_results(fs_results, ts_results)
+            print 'TODO'
+            return 
             
         if len(rows) == 0: 
             self.SetStatusText('No documents found.')
@@ -714,7 +730,6 @@ class SMARTeR (SMARTeRGUI):
         
             dictionary_of_rows.__setitem__(str(key), file_details)
             key += 1
-            
 
         self._lc_results._set_shelve_dir(self._shelve_dir)
         self._lc_results.itemDataMap = dictionary_of_rows
@@ -744,53 +759,44 @@ class SMARTeR (SMARTeRGUI):
         and search for similar documents.  
         
         ''' 
+        pass 
         
-        # step 1: gets highly rated documents 
-        
-        
-        selected_docs = []  
-        excluded_docs = []
-        
-        for shelf_file_name in self._shelve_file_names:
-            sd = shelve.open(shelf_file_name)
-            for k in sd.keys():
-                row = sd[k]
-                if int(row[-1]) > USER_RATINGS_CUT_OFF:
-                    selected_docs.append(row) 
-                else: 
-                    excluded_docs.append(row) 
-            sd.close()
-            
-        # step 2: combine all email bodies to a single document 
-        # row index 5 is for the body field 
-        
-        bag_of_words = ''
-        for sdoc in selected_docs:
-            bag_of_words += sdoc[5]
-        
-        # bag_of_words_td = get_lda_query_td(bag_of_words, self.lda_dictionary, self.lda_mdl)
-        
-        # step 3: compute the distances between bag_of_words and 
-        # all other documents 
-        
-        excluded_docs = compute_topic_similarities(bag_of_words, selected_docs + excluded_docs, self.lda_dictionary, self.lda_mdl, self._lda_num_topics)
-        
-        
-        # TODO: need to figure out a good way to combine topic modeling 
-        #       similarity score and lucene scores      
-        
-        
-        
-            
-        
-        
-        
-    
-    
+#        # step 1: gets highly rated documents 
+#        
+#        
+#        selected_docs = []  
+#        excluded_docs = []
+#        
+#        for shelf_file_name in self._shelve_file_names:
+#            sd = shelve.open(shelf_file_name)
+#            for k in sd.keys():
+#                row = sd[k]
+#                if int(row[-1]) > USER_RATINGS_CUT_OFF:
+#                    selected_docs.append(row) 
+#                else: 
+#                    excluded_docs.append(row) 
+#            sd.close()
+#            
+#        # step 2: combine all email bodies to a single document 
+#        # row index 5 is for the body field 
+#        
+#        bag_of_words = ''
+#        for sdoc in selected_docs:
+#            bag_of_words += sdoc[5]
+#        
+#        # bag_of_words_td = get_lda_query_td(bag_of_words, self.lda_dictionary, self.lda_mdl)
+#        
+#        # step 3: compute the distances between bag_of_words and 
+#        # all other documents 
+#        
+#        excluded_docs = compute_topic_similarities(bag_of_words, selected_docs + excluded_docs, self.lda_dictionary, self.lda_mdl, self._lda_num_topics)
+#        
+#        
+#        # TODO: need to figure out a good way to combine topic modeling 
+#        #       similarity score and lucene scores      
+#        
+#        
 
-        
-    
-      
     def _on_click_index_data( self, event ):
         '''
         Handles the data folder files' indexing and topic modeling 
