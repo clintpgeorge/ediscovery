@@ -786,7 +786,7 @@ def lu_tm_mult_scores(results_lucene, results_tm):
         mult_score = float(lu_score) * float(res_tm[1]) * 1000
         result.append([res_tm[0], mult_score])
         
-        print res_tm[0], lu_score, res_tm[1], mult_score
+        #print res_tm[0], lu_score, res_tm[1], mult_score
 
     result = sorted(result, key=lambda student: student[1])
     
@@ -833,8 +833,8 @@ def lu_normalize_scores_wrt_tm_scores(docs1,docs2):
 ## ***** BEGIN change the following each query *********
 
 query_id = 201
-config_file = "gui/project1.cfg" # configuration file, created using the SMARTeR GUI 
-test_directory = "F:\\Research\\datasets\\trec2010\\Enron\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+config_file = "E:\\Ediscovery\\CFG_s\\project201.cfg" # configuration file, created using the SMARTeR GUI 
+test_directory = "F:\\topicModelingDataSet\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
 
@@ -842,8 +842,8 @@ negative_dir = os.path.join(test_directory, "0") # TRUE negative documents
 query = "all:pre-pay:May;all:swap:May"
 seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
 #202
-# query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
-# seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
+#query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
+#seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
 #203
 #seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
 #query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
@@ -895,23 +895,59 @@ print seed_doc_text
 '''
 docs1 = search_li([query_words, fields, clauses], limit, mdl_cfg)
 docs2 = search_tm(query_text, limit, mdl_cfg)
+
+docs1_dict, docs1_list = lu_append_nonresp(docs1, test_directory)
+docs3 = lu_tm_mult_scores(docs1_dict, docs2)
+
+docs4 = search_tm_topics([17, 3, 14, 1, 19], limit, mdl_cfg)
+docs5 = lu_tm_mult_scores(docs1_dict, docs4)
 #docs3 = search_lsi(query_text, limit, mdl_cfg)
 #docs4 = lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
 #docs5 = lsi_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
-compare_true_retrieved_documents(docs1, docs2, positive_dir, [0, 0.8])
+#docs6 = search_tm_topics([19, 3], limit, mdl_cfg)
+compare_true_retrieved_documents(docs1, docs5, positive_dir, [0, 0.42])
+
 exit()
 '''
+
 ####Simple Multiplication
 lu_docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
-lda_docs = search_tm(query_text, limit, mdl_cfg)
-
 docs1_dict, docs1_list = lu_append_nonresp(lu_docs, test_directory)
+lu_res = convert_to_roc_format(docs1_list, positive_dir)
+
+lda_docs = search_tm(query_text, limit, mdl_cfg)
+lda_res = convert_to_roc_format(lda_docs, positive_dir)
+
 lu_tm_docs = lu_tm_mult_scores(docs1_dict, lda_docs)
-
 lda_lu_res = convert_to_roc_format(lu_tm_docs, positive_dir)
-lu_res = convert_to_roc_format(docs1_list, positive_dir) 
+'''
+LDA search using a set of selected dominating query topics 
+'''
+# docs = search_tm_sel_topics_cos([7, 24], [0.011111111111172993, 0.011111111111123317], limit, mdl_cfg)
 
+print "\nLDA Search using query topics:\n"
+lda_tts_docs = search_tm_topics([19, 3], limit, mdl_cfg) # the topic indices should changed according to each query 
+lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
 
+final_docs_tts = lu_tm_mult_scores(docs1_dict, lda_tts_docs)
+lda_tts_lu_res = convert_to_roc_format(final_docs_tts, positive_dir)
+
+lsi_docs = search_lsi(query_text, limit, mdl_cfg)
+lsi_res = convert_to_roc_format(lda_docs, positive_dir)
+
+lu_tm_docs1 = lu_tm_mult_scores(docs1_dict, lsi_docs)
+lsi_lu_res = convert_to_roc_format(lu_tm_docs1, positive_dir)
+
+####Plot graph
+rocs_file_name = '%s_ROC_plots' % query_id + img_extension
+rocs_img_title = 'Query %s: ROCs of all methods' % query_id 
+roc_labels = ['Lucene ranking', 'LDA (w/ keywords) ranking' ,'LDA ranking (w/ keywords) * Lucene ranking','LDA ranking (w/ query topics)','LDA ranking (w/ query topics) * Lucene Ranking']
+results_list = [lu_res, lda_res, lda_lu_res, lda_tts_res,lda_tts_lu_res]
+
+roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
+print
+
+'''
 ####After score normalization 
 docs1_norm = lu_normalize_scores_wrt_tm_scores(docs1_list, lda_docs)
 docs1_norm_dict = dict()
@@ -920,27 +956,13 @@ for doc in docs1_norm:
 lu_tm_docs_norm = lu_tm_mult_scores(docs1_norm_dict, lda_docs)
 res_tm_norm = convert_to_roc_format(lu_tm_docs_norm, positive_dir)
 
-'''
-LDA search using a set of selected dominating query topics 
-'''
-# docs = search_tm_sel_topics_cos([7, 24], [0.011111111111172993, 0.011111111111123317], limit, mdl_cfg)
-
-print "\nLDA Search using query topics:\n"
-lda_tts_docs = search_tm_topics([7, 29, 0, 24, 6], limit, mdl_cfg) # the topic indices should changed according to each query 
-lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
-
-
-
-
-####Plot graph
-rocs_file_name = '%s_ROC_plots' % query_id + img_extension
-rocs_img_title = 'Query %s: ROCs of all methods' % query_id 
-roc_labels = ['Lucene ranking', 'LDA ranking * Lucene ranking', 'LDA ranking (norm) * Lucene ranking' ,'LDA ranking (w/ query topics)']
-results_list = [lu_res, lda_lu_res, res_tm_norm, lda_tts_res]
-
-roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
-
-print 
+docs1_norm = lu_normalize_scores_wrt_tm_scores(docs1_list, lda_tts_docs)
+docs1_norm_dict = dict()
+for doc in docs1_norm:
+    docs1_norm_dict[doc[0]] = doc[1]
+final_docs_tts_norm = lu_tm_mult_scores(docs1_norm_dict, lda_tts_docs)
+lda_tts_lu_norm_res = convert_to_roc_format(final_docs_tts_norm, positive_dir)
+''' 
 
 '''
 Here, we search on the score thresholds and plots 
