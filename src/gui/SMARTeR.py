@@ -132,6 +132,7 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
             shelve_file[key] = row
         shelve_file.close()
         
+        
         # 6. Displays the content in the RESULT tab of the UI
         items = dictionary_of_rows.items() 
         for key, row in items:
@@ -139,7 +140,7 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
             self.SetItemData(index, long(key))
             i = 0
             for cell in row:
-                column_name = self.GetColumn(i).GetText()     
+                column_name = self.GetColumn(i).GetText()  
                 cell = str(cell)        
                 #Only the file_path is displayed completely.
                 #The content of all other cells are restricted to 30 characters.                 
@@ -524,6 +525,7 @@ class SMARTeR (SMARTeRGUI):
         '''
         
         file_name = self._file_picker_mdl.GetPath()
+        self.project_name = file_name
         self._load_model(file_name)
 
         if self._is_tm_index_available or self._is_lucene_index_available:
@@ -620,8 +622,42 @@ class SMARTeR (SMARTeRGUI):
     def _on_chbx_facet_search( self, event ):
         self._chbx_topic_search.SetValue(False)
     
-    
     def _on_click_run_query(self, event):
+        # 1. Parse the query
+        
+        global dictionary_of_rows
+        dictionary_of_rows = OrderedDict()
+        queryText = self._tc_query.GetValue().strip() 
+        
+        # 0. Validations 
+        if not self._is_lucene_index_available:
+            # Lucene index is mandatory 
+            self._show_error_message('Run Query Error!', 'Please select a valid index for searching.')
+            return   
+        #elif queryText == '':
+        #    self._show_error_message('Run Query Error!', 'Please enter a valid query.')
+        #    return 
+        elif not self._is_tm_index_available:
+            self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
+            return 
+        
+        topics = self.lda_mdl.show_topics(topics=-1, topn=10, log=False, formatted=False)
+        topic_key = []
+        for topic in topics:
+            cnt=0
+            keywords = ""
+            for tuple_ele in topic:
+                keywords = keywords + tuple_ele[1] +", "
+                cnt += 1
+                if( cnt == 5):
+                    break
+            topic_key.append(keywords.strip()[:-1])
+        self.load_contextual_feedback(topic_key)
+        
+        self._current_page = 2
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
         """
         Actions to be done when the "Run Query" button is clicked
         0. Validations 
@@ -633,18 +669,20 @@ class SMARTeR (SMARTeRGUI):
         Note: According to our current logic we do search on the 
         lucene index to retrieve documents 
         """
-        
+    
+        '''
         facet_search = self._chbx_facet_search.GetValue()
         topic_search = self._chbx_topic_search.GetValue()
         
         print facet_search, topic_search
-        
+    
+    
         # 1. Parse the query
         
         global dictionary_of_rows
         dictionary_of_rows = OrderedDict()
         queryText = self._tc_query.GetValue().strip() 
-
+        
         # 0. Validations 
         if not self._is_lucene_index_available:
             # Lucene index is mandatory 
@@ -697,34 +735,6 @@ class SMARTeR (SMARTeRGUI):
                                              queryList, SEARCH_RESULTS_LIMIT)
             
         if topic_search: 
-            query_text = ' '.join(queries) # combines all the text in a query model 
-            ts_results = search_lda_model(query_text, self.lda_dictionary, 
-                                          self.lda_mdl, self.lda_index, 
-                                          self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
-            ## ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
-            ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index 
-            
-        if facet_search and not topic_search: 
-            # 2. Run Lucene query
-            rows = fs_results
-        elif not facet_search and topic_search: 
-            rows = ts_results
-        elif facet_search and topic_search: 
-            # Combine results  
-            # rows = self._combine_lucene_tm_results(fs_results, ts_results)
-            print 'TODO'
-            return 
-            
-        if len(rows) == 0: 
-            self.SetStatusText('No documents found.')
-            return 
-        
-        # 3. Put the results to the dictionary_of_rows
-        
-        key = 0 
-        for row in rows:
-            # file_id = row[9] # key is obtained from the lucene index
-            # print retrieve_document_details(file_id, self.lucene_index_dir).get('email_subject')
             file_details = row # values of the defined MetadataTypes 
             file_details.append('0') # Add a 'relevance' value of '0' to each search-result
         
@@ -749,7 +759,7 @@ class SMARTeR (SMARTeRGUI):
         self._current_page = 2
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
-        
+    '''    
     
     def _on_click_update_results( self, event ):
         '''
@@ -758,8 +768,60 @@ class SMARTeR (SMARTeRGUI):
         documents, represent it in topic modeling space, 
         and search for similar documents.  
         
-        ''' 
-        pass 
+        '''
+        from datetime import datetime
+        self.shelf_query = shelve.open(os.path.join(self._shelve_dir,str("rating"+SHELVE_FILE_EXTENSION)),writeback=True) # open -- file may get suffix added by low-level
+        self.shelf_query['query']  = self._tc_query.GetValue().strip() 
+        for row in dictionary_of_rows:
+            result = dictionary_of_rows[row]
+            if result[11] != 0:
+                self.shelf_query[str(result[0])]=str(result[11])
+        self.shelf_query.close()
+        dlg = wx.MessageDialog(self, "Information is recorded, Thank you", "Update Results", wx.OK)
+        dlg.ShowModal() # Shows it
+        dlg.Destroy() # finally destroy it when finished.
+        
+    def load_contextual_feedback(self, topic_list):
+        _bgd_sizer = wx.BoxSizer( wx.VERTICAL )
+        
+        self.m_staticText = wx.StaticText( self._panel_topics, wx.ID_ANY, (u"The query you ran have genrated the following keywords(Topics) you might find interesting.\n\nPlease identify the relevant keywords and discard the incorrect topics."), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText.Wrap( -1 )
+        _bgd_sizer.Add( self.m_staticText, 0, wx.ALL, 5 )
+        
+        _chk_Sizer = wx.GridBagSizer( 0, 0 )
+        _chk_Sizer.SetFlexibleDirection( wx.BOTH )
+        _chk_Sizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+        
+        chkbox_cnt = 0
+        self.chk_box = []
+        
+        for topic in topic_list:
+            radioBox_choices = [ (u"Relevant"), (u"Neutral"), (u"Irrelevant") ]
+            self.chk_box.append(wx.RadioBox( self._panel_topics, wx.ID_ANY, (topic), wx.DefaultPosition, wx.Size( 500,50 ) , radioBox_choices, 1, wx.RA_SPECIFY_ROWS ))
+            self.chk_box[chkbox_cnt].SetSelection( 1 )
+            
+            _chk_Sizer.Add( self.chk_box[chkbox_cnt], wx.GBPosition( int(chkbox_cnt/2), int(2+chkbox_cnt%2)), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+            chkbox_cnt += 1
+            if chkbox_cnt == 10:
+                break
+            
+        self._next_button = wx.Button( self._panel_topics, wx.ID_ANY, (u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self._next_button.Bind( wx.EVT_BUTTON, self._on_click_contextual_feed )
+        _chk_Sizer.Add( self._next_button, wx.GBPosition( chkbox_cnt/2, 2), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        _bgd_sizer.Add( _chk_Sizer, 1, wx.EXPAND, 5 )
+        self._panel_topics.SetSizer( _bgd_sizer )
+        self._panel_topics.Layout()
+        _bgd_sizer.Fit( self._panel_topics )
+        
+    def _on_click_contextual_feed(self,event):
+        
+        #for chk_box in self.chk_box:
+            #print chk_box.GetSelection()
+        
+        self._current_page = 3
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
         
 #        # step 1: gets highly rated documents 
 #        
