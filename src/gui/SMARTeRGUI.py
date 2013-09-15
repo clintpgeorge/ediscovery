@@ -181,29 +181,31 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer8.SetFlexibleDirection( wx.BOTH )
 		gbSizer8.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		m_listBox1Choices = [ _(u"File 1"), _(u"File 2"), _(u"File 3") ]
-		self.m_listBox1 = wx.ListBox( self._panel_feedback, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_listBox1Choices, 0 )
-		self.m_listBox1.SetMinSize( wx.Size( 400,225 ) )
+		self._panel_feedback_doc = wx.Panel( self._panel_feedback, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,225 ), wx.TAB_TRAVERSAL )
+		gbSizer8.Add( self._panel_feedback_doc, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
 		
-		gbSizer8.Add( self.m_listBox1, wx.GBPosition( 0, 0 ), wx.GBSpan( 2, 1 ), wx.ALL, 5 )
+		bSizer81 = wx.BoxSizer( wx.VERTICAL )
 		
-		m_radioBox23Choices = [ _(u"Responsive"), _(u"Un Responsive"), _(u"No Response") ]
-		self.m_radioBox23 = wx.RadioBox( self._panel_feedback, wx.ID_ANY, _(u"Feedback"), wx.DefaultPosition, wx.DefaultSize, m_radioBox23Choices, 1, wx.RA_SPECIFY_COLS )
-		self.m_radioBox23.SetSelection( 2 )
-		gbSizer8.Add( self.m_radioBox23, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_rbx_responsiveChoices = [ _(u"Responsive"), _(u"Un Responsive"), _(u"No Response") ]
+		self._rbx_responsive = wx.RadioBox( self._panel_feedback, wx.ID_ANY, _(u"Feedback"), wx.DefaultPosition, wx.DefaultSize, _rbx_responsiveChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_responsive.SetSelection( 2 )
+		bSizer81.Add( self._rbx_responsive, 0, wx.ALL, 5 )
 		
-		self.m_button10 = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Recalculate Results"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer8.Add( self.m_button10, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_recalculate_results = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Recalculate Results"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer81.Add( self._btn_recalculate_results, 0, wx.ALL, 5 )
+		
+		
+		gbSizer8.Add( bSizer81, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
 		
 		
 		bSizer8.Add( gbSizer8, 1, wx.EXPAND, 5 )
 		
 		bSizer10 = wx.BoxSizer( wx.VERTICAL )
 		
-		self.m_textCtrl9 = wx.TextCtrl( self._panel_feedback, wx.ID_ANY, _(u"Email Will be displayed here"), wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.TE_WORDWRAP )
-		self.m_textCtrl9.SetMinSize( wx.Size( 1010,225 ) )
+		self._doc_feedback_preview = wx.TextCtrl( self._panel_feedback, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_WORDWRAP )
+		self._doc_feedback_preview.SetMinSize( wx.Size( 1010,225 ) )
 		
-		bSizer10.Add( self.m_textCtrl9, 0, wx.ALL, 5 )
+		bSizer10.Add( self._doc_feedback_preview, 0, wx.ALL, 5 )
 		
 		
 		bSizer8.Add( bSizer10, 1, wx.EXPAND, 5 )
@@ -234,6 +236,8 @@ class SMARTeRGUI ( wx.Frame ):
 		self._file_picker_mdl.Bind( wx.EVT_FILEPICKER_CHANGED, self._on_file_change_mdl )
 		self._btn_add_to_query.Bind( wx.EVT_BUTTON, self._on_click_add_to_query )
 		self._btn_run_query.Bind( wx.EVT_BUTTON, self._on_click_run_query )
+		self._rbx_responsive.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated )
+		self._btn_recalculate_results.Bind( wx.EVT_BUTTON, self._on_click_recalculate )
 	
 	def __del__( self ):
 		pass
@@ -265,6 +269,12 @@ class SMARTeRGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_click_run_query( self, event ):
+		event.Skip()
+	
+	def _on_rbx_responsive_updated( self, event ):
+		event.Skip()
+	
+	def _on_click_recalculate( self, event ):
 		event.Skip()
 	
 

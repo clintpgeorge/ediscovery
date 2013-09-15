@@ -27,6 +27,8 @@ from tm.process_query import load_lda_variables, load_dictionary, \
     compute_topic_similarities
 from const import SEARCH_RESULTS_LIMIT
 from index_data import index_data
+from gui.TaggingControl import TaggingControl
+from gui.TaggingControlSmarter import TaggingControlSmarter
 
 
 ###########################################################################
@@ -590,12 +592,7 @@ class SMARTeR (SMARTeRGUI):
         if nexists(lucene_dir):
             self.lucene_index_dir = lucene_dir
             self._is_lucene_index_available = True  
-            self._tc_available_mdl.AppendText('[LUCENE] ')  
-         
-
-
-        
-        
+            self._tc_available_mdl.AppendText('[LUCENE] ')          
     def _on_click_add_to_query(self, event):
         metadataSelected = self._cbx_meta_type.GetValue()
         queryBoxText = self._tc_query_input.GetValue()
@@ -634,9 +631,9 @@ class SMARTeR (SMARTeRGUI):
             # Lucene index is mandatory 
             self._show_error_message('Run Query Error!', 'Please select a valid index for searching.')
             return   
-        #elif queryText == '':
-        #    self._show_error_message('Run Query Error!', 'Please enter a valid query.')
-        #    return 
+        elif queryText == '':
+            self._show_error_message('Run Query Error!', 'Please enter a valid query.')
+            return 
         elif not self._is_tm_index_available:
             self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
             return 
@@ -654,10 +651,46 @@ class SMARTeR (SMARTeRGUI):
             topic_key.append(keywords.strip()[:-1])
         self.load_contextual_feedback(topic_key)
         
+        queries = []
+        fields = []
+        clauses = []
+        filteredQuery = re.split(' ', queryText)
+        
+        for l in filteredQuery:
+            res = re.split(':', l )
+            print res 
+            if len(res) > 1:
+                fields.append(res[0])
+                queries.append(res[1])
+                if res[2] is 'MUST':
+                    clauses.append(BooleanClause.Occur.MUST)
+                elif res[2] is 'MUST_NOT':
+                    clauses.append(BooleanClause.Occur.MUST_NOT)
+                else:
+                    clauses.append(BooleanClause.Occur.SHOULD)
+        
+        query_text = ' '.join(queries) # combines all the text in a query model 
+        ts_results = search_lda_model(query_text, self.lda_dictionary, 
+                                          self.lda_mdl, self.lda_index, 
+                                          self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
+            ## ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
+        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index
+        
+        self.ts_results=[]
+        i=0
+        for ts in ts_results:
+            self.ts_results.append([ts[0],ts[1],''])
+            i+=1
+            if i== 100:
+                break
+        print self.ts_results
+        
+        
         self._current_page = 2
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
+    def _on_click_recalculate(self,event):
         """
         Actions to be done when the "Run Query" button is clicked
         0. Validations 
@@ -669,35 +702,26 @@ class SMARTeR (SMARTeRGUI):
         Note: According to our current logic we do search on the 
         lucene index to retrieve documents 
         """
-    
-        '''
-        facet_search = self._chbx_facet_search.GetValue()
-        topic_search = self._chbx_topic_search.GetValue()
         
-        print facet_search, topic_search
-    
-    
+        
         # 1. Parse the query
         
         global dictionary_of_rows
         dictionary_of_rows = OrderedDict()
         queryText = self._tc_query.GetValue().strip() 
-        
+
         # 0. Validations 
         if not self._is_lucene_index_available:
             # Lucene index is mandatory 
             self._show_error_message('Run Query Error!', 'Please select a valid index for searching.')
             return  
-        elif not facet_search and not topic_search:
-            self._show_error_message('Run Query Error!', 'Please select a search type.')
-            return 
         elif queryText == '':
             self._show_error_message('Run Query Error!', 'Please enter a valid query.')
             return 
-        elif topic_search and not self._is_tm_index_available:
+        elif not self._is_tm_index_available:
             self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
             return 
-        elif facet_search and not self._is_lucene_index_available:
+        elif not self._is_lucene_index_available:
             self._show_error_message('Run Query Error!', 'Lucene index is not available for facet search.')
             return
         
@@ -730,11 +754,39 @@ class SMARTeR (SMARTeRGUI):
         ts_results = [] 
 
         
-        if facet_search:
-            fs_results = search_lucene_index(self.lucene_index_dir, 
+        
+        fs_results = search_lucene_index(self.lucene_index_dir, 
                                              queryList, SEARCH_RESULTS_LIMIT)
             
-        if topic_search: 
+         
+        query_text = ' '.join(queries) # combines all the text in a query model 
+        ts_results = search_lda_model(query_text, self.lda_dictionary, 
+                                          self.lda_mdl, self.lda_index, 
+                                          self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
+            ## ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
+        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index 
+            
+        #if facet_search and not topic_search: 
+            # 2. Run Lucene query
+        #    rows = fs_results
+        #elif not facet_search and topic_search: 
+        rows = ts_results
+        #elif facet_search and topic_search: 
+            # Combine results  
+            # rows = self._combine_lucene_tm_results(fs_results, ts_results)
+         #   print 'TODO'
+          #  return 
+            
+        if len(rows) == 0: 
+            self.SetStatusText('No documents found.')
+            return 
+        
+        # 3. Put the results to the dictionary_of_rows
+        
+        key = 0 
+        for row in rows:
+            # file_id = row[9] # key is obtained from the lucene index
+            # print retrieve_document_details(file_id, self.lucene_index_dir).get('email_subject')
             file_details = row # values of the defined MetadataTypes 
             file_details.append('0') # Add a 'relevance' value of '0' to each search-result
         
@@ -756,10 +808,10 @@ class SMARTeR (SMARTeRGUI):
         
         
         # Goes to the results tab 
-        self._current_page = 2
+        self._current_page = 4
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
-    '''    
+               
     
     def _on_click_update_results( self, event ):
         '''
@@ -784,7 +836,8 @@ class SMARTeR (SMARTeRGUI):
     def load_contextual_feedback(self, topic_list):
         _bgd_sizer = wx.BoxSizer( wx.VERTICAL )
         
-        self.m_staticText = wx.StaticText( self._panel_topics, wx.ID_ANY, (u"The query you ran have genrated the following keywords(Topics) you might find interesting.\n\nPlease identify the relevant keywords and discard the incorrect topics."), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText = wx.StaticText( self._panel_topics, wx.ID_ANY, (
+            u"You may be interested in highlighting the following topics (relevant topical words) in the search process.\nPlease mark relevant keywords or skip to next page"), wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_staticText.Wrap( -1 )
         _bgd_sizer.Add( self.m_staticText, 0, wx.ALL, 5 )
         
@@ -805,14 +858,23 @@ class SMARTeR (SMARTeRGUI):
             if chkbox_cnt == 10:
                 break
             
-        self._next_button = wx.Button( self._panel_topics, wx.ID_ANY, (u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        self._next_button.Bind( wx.EVT_BUTTON, self._on_click_contextual_feed )
-        _chk_Sizer.Add( self._next_button, wx.GBPosition( chkbox_cnt/2, 2), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        self._next_cf_button = wx.Button( self._panel_topics, wx.ID_ANY, (u"Save Keywords"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self._skip_cf_button = wx.Button( self._panel_topics, wx.ID_ANY, (u"Skip"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self._next_cf_button.Bind( wx.EVT_BUTTON, self._on_click_contextual_feed )
+        self._skip_cf_button.Bind( wx.EVT_BUTTON, self._on_click_skip_contextual_feed )
+        _chk_Sizer.Add( self._next_cf_button, wx.GBPosition( chkbox_cnt/2, 2), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        _chk_Sizer.Add( self._skip_cf_button, wx.GBPosition( chkbox_cnt/2, 3), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
         
         _bgd_sizer.Add( _chk_Sizer, 1, wx.EXPAND, 5 )
         self._panel_topics.SetSizer( _bgd_sizer )
         self._panel_topics.Layout()
         _bgd_sizer.Fit( self._panel_topics )
+        
+    def _on_click_skip_contextual_feed(self,event):
+        self._current_page = 3
+        self.load_document_feedback()
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
         
     def _on_click_contextual_feed(self,event):
         
@@ -820,8 +882,35 @@ class SMARTeR (SMARTeRGUI):
             #print chk_box.GetSelection()
         
         self._current_page = 3
+        self.load_document_feedback()
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
+        
+    def load_document_feedback(self):
+        self.panel_feedback_doc=TaggingControlSmarter(self._panel_feedback_doc,self)
+        self.panel_feedback_doc._setup_review_tab()
+    
+    def _on_rbx_responsive_updated( self, event ):
+        '''
+        Handles the selected document responsive check box 
+        check and uncheck events 
+         
+        '''
+        try:
+            selected_doc_id = self.panel_feedback_doc.GetFocusedItem()
+            responsive_status = self._rbx_responsive.GetStringSelection()
+            if responsive_status == 'Responsive': 
+                self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'Yes')
+                self.ts_results[selected_doc_id][2] = 'Responsive'
+            elif responsive_status == 'Un Responsive': 
+                self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'No')
+                self.ts_results[selected_doc_id][2] = 'Un Responsive'
+            else: 
+                self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, '')
+                self.ts_results[selected_doc_id][2] = ''
+        except Exception,e:
+            print e
+        
         
 #        # step 1: gets highly rated documents 
 #        
