@@ -43,14 +43,12 @@ class TaggingControlSmarter ( wx.ListCtrl, ListCtrlAutoWidthMixin):
     def _on_review_list_item_selected(self, event):
         
         # Gets the selected row's details 
-        print "hello"
         sm = self.smarter
         selected_doc_id = self.GetFocusedItem()
         
         if selected_doc_id < 0: return 
         
         responsive = sm.ts_results[selected_doc_id][2]    
-        print responsive
         # Handles the document tags check boxes 
         
         if responsive == 'Responsive':
