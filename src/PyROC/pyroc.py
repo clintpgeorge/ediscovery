@@ -102,8 +102,11 @@ def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, eq
 	if equal_aspect:
 		cax = pylab.gca()
 		cax.set_aspect('equal')
-	pylab.xlabel('1 - Specificity (True Negative Rate)')
-	pylab.ylabel('Sensitivity (Recall)')
+	pylab.xlabel('1 - Specificity (True negative rate)', fontsize=10)
+	pylab.ylabel('Sensitivity (Recall)', fontsize=10)
+		# We change the fontsize of minor ticks label 
+	pylab.tick_params(axis='both', which='major', labelsize=9)
+	pylab.tick_params(axis='both', which='minor', labelsize=8)
 	pylab.title(title)
 	if not labels:
 		labels = [ '' for x in rocList]
@@ -114,7 +117,7 @@ def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, eq
 		pylab.plot([0.0,1.0], [0.0, 1.0], 'k-', label= 'Random')
 	if labels:
 		# pylab.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0., prop={'size':6})
-		pylab.legend(loc='lower right', prop={'size':8})
+		pylab.legend(loc='lower right', prop={'size':9})
 		
 	pylab.savefig(file_name, dpi=300, bbox_inches='tight', pad_inches=0.1)
 	# pylab.show()
