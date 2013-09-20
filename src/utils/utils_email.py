@@ -15,7 +15,8 @@ import quopri
 import codecs
 import email 
 from nltk.tokenize import PunktWordTokenizer
-
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.stem import SnowballStemmer
 
 '''
 Global variables 
@@ -31,10 +32,11 @@ REMOVE_LIST = [u"[", u"]", u"{", u"}", u"(", u")",
           u"`", u"~", u"@", u"$", u"^", u"|", u"#", u"=", u"*"];
           
 '''
-Initializes the tokenizer 
+Initializes the tokenizer, lemmatizer, and stemmer  
 '''
 tokenizer = PunktWordTokenizer()
-
+wordnet_lmtzr = WordNetLemmatizer()
+snowball_stemmer = SnowballStemmer("english") # Choose a language
 
 def xstr(s):
     return '' if s is None else str(s)
@@ -56,9 +58,11 @@ def cleanup(token):
         token = re.sub('[\(\)\{\}\[\]\'\"\\\/*<>|]', '', token)    
         for each_char in STRIP_CHAR_LIST:
             token = token.strip(each_char)
-
+        
+        if token in REMOVE_LIST: 
+            return ''
     except: 
-        None 
+        '' 
     
     return token.strip()
 
@@ -81,8 +85,9 @@ def punkt_word_tokenizer(text):
     for w in tokens:
         try: 
             w = cleanup(w)
-            if w not in REMOVE_LIST: 
-                filtered.append(w)
+            if len(w) > 0: 
+                for wt in w.split(','): 
+                    filtered.append(wt)
         except: 
             pass 
     
@@ -113,8 +118,39 @@ def load_en_stopwords(filename):
     return stopwords
 
 
+def lemmatize_tokens(word_tokens):
+    '''
+    Lemmatize tokens based on WordNet 
+    '''
+    tokens = [] 
+    for token in word_tokens:
+        try:
+            # print 'lemma:', token, '-->', wordnet_lmtzr.lemmatize(token)   
+            token = wordnet_lmtzr.lemmatize(token)
+        except: pass 
+        tokens.append(token)
+    
+    return tokens
 
-def parse_plain_text_email(file_path, tokenize = True):
+
+def stem_tokens(word_tokens):
+    '''
+    Stem tokens based on Snowball stemmer  
+    '''
+    tokens = [] 
+    for token in word_tokens:
+        try:
+            # print 'stem:', token, '-->', snowball_stemmer.stem(token)   
+            token = snowball_stemmer.stem(token)
+        except: pass 
+        tokens.append(token)
+        
+    return tokens
+
+
+
+
+def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem = False):
     '''Processes a single email file that's in plain/text format 
     
     Arguments: 
@@ -147,14 +183,16 @@ def parse_plain_text_email(file_path, tokenize = True):
         receiver = xstr(msg['to'])
         sender = xstr(msg['from'])
         cc = xstr(msg['cc'])
-        #Subodh - Rahul - Get BCC attribute from the email 
-        bcc = xstr(msg['bcc'])
+        bcc = xstr(msg['bcc']) # Subodh - Rahul - Get BCC attribute from the email 
         subject = xstr(msg['subject'])
         date = xstr(msg['date'])
         body_text = msg.get_payload()
         
         if tokenize:
             tokens = punkt_word_tokenizer(body_text)
+            if lemmatize: tokens = lemmatize_tokens(tokens)
+            if stem: tokens = stem_tokens(tokens)
+            
             if body_charset == 'ISO-8859-1':
                 body_text = ''
                 for ch in tokens:

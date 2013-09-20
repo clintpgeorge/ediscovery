@@ -13,10 +13,10 @@ import sys
 import argparse
 import logging 
 import ConfigParser
-# from urlparse import urlparse
+
 from lucenesearch.lucene_index_dir import index_plain_text_emails
 from preprocess.lucene_enron_create_corpus import build_lda_corpus
-from tm.lda_estimation import run_lda_estimation # , run_hdp_estimation
+from tm.lda_estimation import run_lda_estimation 
 from tm.lsi_estimation import run_lsi_estimation
 
 LUCENE_FOLDER_NAME = 'lucene'
@@ -24,14 +24,17 @@ TM_FOLDER_NAME = 'tm'
 STOP_WORDS_FILE_NAME = 'en_stopwords'
 MIN_TOKEN_FREQ = 1
 MIN_TOKEN_LEN = 2 
-DEFAULT_NUM_TOPICS = 50
-DEFAULT_NUM_PASSES = 10 
+DEFAULT_NUM_TOPICS = 30
+DEFAULT_NUM_PASSES = 100 
 LSI_DEFAULT_NUM_TOPICS = 200
 
 
 
 
-def index_data(data_folder, output_folder, project_name, num_topics=DEFAULT_NUM_TOPICS, num_passes=DEFAULT_NUM_PASSES, min_token_freq=MIN_TOKEN_FREQ, min_token_len=MIN_TOKEN_LEN, log_to_file=True):
+def index_data(data_folder, output_folder, project_name, 
+               num_topics=DEFAULT_NUM_TOPICS, num_passes=DEFAULT_NUM_PASSES, 
+               min_token_freq=MIN_TOKEN_FREQ, min_token_len=MIN_TOKEN_LEN, 
+               log_to_file=True, lemmatize=False, stem=False):
     
     if not os.path.exists(data_folder):
         print "Please provide a valid data folder!"
@@ -72,7 +75,7 @@ def index_data(data_folder, output_folder, project_name, num_topics=DEFAULT_NUM_
     if not os.path.exists(lucene_folder): os.makedirs(lucene_folder)
     path_index_file_name = os.path.join(project_folder, project_name + '.path.index')
     
-    index_plain_text_emails(data_folder, path_index_file_name, lucene_folder)
+    index_plain_text_emails(data_folder, path_index_file_name, lucene_folder, lemmatize=lemmatize, stem=stem)
     
     config.add_section('LUCENE')
     config.set('LUCENE', 'lucene_index_dir', lucene_folder)
@@ -164,7 +167,7 @@ if __name__=="__main__":
 
     Examples: 
         python index_data.py -h # for help 
-        python index_data.py -l -d F:\\Research\\datasets\\enron5\\maildir -o F:\\Research\\datasets\\enron5 -p ei  
+        python index_data.py -l -d F:\\Research\\datasets\\trec2010\\201 -o F:\\Research\\datasets\\trec2010 -p project4 -z    
 
     ''')
     arg_parser.add_argument("-d", dest="data_folder", type=str, help="data folder", required=True)
@@ -172,6 +175,8 @@ if __name__=="__main__":
     arg_parser.add_argument("-p", dest="project_name", type=str, help="project name", required=True)
     arg_parser.add_argument("-t", dest="num_topics", type=int, help="number of topics", default=DEFAULT_NUM_TOPICS)
     arg_parser.add_argument("-n", dest="num_passes", type=int, help="number of passes", default=DEFAULT_NUM_PASSES)
+    arg_parser.add_argument("-s", dest="stem", action="store_true", help="stem tokens", default=False)
+    arg_parser.add_argument("-z", dest="lemmatize", action="store_true", help="lemmatize tokens", default=False)
     arg_parser.add_argument("-l", "--log", dest="log", default=False, action="store_true", help="log details into a file")
     args = arg_parser.parse_args()
     
@@ -185,8 +190,14 @@ if __name__=="__main__":
     import time 
     start_time = time.time()
     
-    index_data(data_folder, output_folder, project_name, num_topics, num_passes, min_token_freq=MIN_TOKEN_FREQ, min_token_len=MIN_TOKEN_LEN, log_to_file=args.log)
+    index_data(data_folder, output_folder, project_name, 
+               num_topics, num_passes, 
+               min_token_freq=MIN_TOKEN_FREQ, 
+               min_token_len=MIN_TOKEN_LEN, 
+               log_to_file=args.log,
+               lemmatize=args.lemmatize, 
+               stem=args.stem)
     
-    print 'Execution time:', time.time() - start_time, 'seconds'
+    print '\nExecution time:', time.time() - start_time, 'seconds'
     
 

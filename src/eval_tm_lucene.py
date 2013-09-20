@@ -833,7 +833,7 @@ def lu_normalize_scores_wrt_tm_scores(docs1,docs2):
 ## ***** BEGIN change the following each query *********
 
 query_id = 201
-config_file = "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+config_file = "project4.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
 test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
@@ -908,6 +908,16 @@ lu_res = convert_to_roc_format(lu_docs_list, positive_dir)
 '''
 LDA search 
 '''
+lda_dictionary, lda_mdl, lda_index, lda_file_path_index = load_tm(mdl_cfg)
+topics = lda_mdl.show_topics(topics=-1, topn=10, log=False, formatted=False)
+print 
+print 'LDA topics'
+print 
+for topic in topics: 
+    for (prob, term) in topic:
+        print term, '(%.3f),' % prob, 
+    print     
+print 
 
 
 print 'LDA (w/ keywords) ranking'
@@ -921,7 +931,7 @@ lda_lu_res = convert_to_roc_format(lu_tm_docs, positive_dir)
 
 
 print 'LDA (w/ query topics) ranking'
-lda_tts_docs = search_tm_topics([18, 6, 4], limit, mdl_cfg) # TODO: the topic indices should changed according to each query 
+lda_tts_docs = search_tm_topics([3, 10, 6, 4, 27], limit, mdl_cfg) # TODO: the topic indices should changed according to each query e.g. [18, 6, 4]
 lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
 
 
@@ -945,7 +955,7 @@ lsi_res = convert_to_roc_format(lsi_docs, positive_dir)
 
 ## Plot ROC curves  
 
-rocs_file_name = '%s_ROC_plots' % query_id + img_extension
+rocs_file_name = '%s_ROC_plots_lemma-stems' % query_id + img_extension
 rocs_img_title = '' # 'Query %s: ROCs of all methods' % query_id 
 roc_labels = ['Lucene ranking', 
               'Keyword-LDA ranking' , 

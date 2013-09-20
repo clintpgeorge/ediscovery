@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+''' 
 This script is to create lucene indices for 
 all files stored in a directory 
    
@@ -53,7 +53,7 @@ class MetadataType:
               'email_bcc', 'email_date']
 
 
-def index_plain_text_emails(data_folder, path_index_file, store_dir):
+def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize = False, stem = False):
     '''
     Indexes all the plain text emails in the input directory 
     and stores the index in the store_dir  
@@ -70,6 +70,7 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
         2. Need to handle general meta data of files (e.g. last modified date, modified by, owner, etc)
     '''
     
+    print lemmatize, stem 
     
     if not os.path.exists(store_dir): 
         os.mkdir(store_dir)
@@ -92,14 +93,14 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir):
     store = SimpleFSDirectory(File(store_dir))
     writer = IndexWriter(store, STD_ANALYZER, True, IndexWriter.MaxFieldLength.LIMITED)
     
-    print 'Count ', len(file_tuples)
+    print len(file_tuples), 'files are there in the data directory.'
     
     for ft in file_tuples: 
         idx, root, file_name = ft
         file_path = os.path.join(root, file_name)
         logging.info("[%d] file: %s - waiting to add to index.", idx, file_name)
         # parses the emails in plain text format 
-        receiver, sender, cc, subject, message_text, bcc, date = parse_plain_text_email(file_path)
+        receiver, sender, cc, subject, message_text, bcc, date = parse_plain_text_email(file_path, tokenize = True, lemmatize = lemmatize, stem = stem)
 
         doc = Document()
         doc.add(Field(MetadataType.FILE_ID, str(idx), Field.Store.YES, Field.Index.NOT_ANALYZED))

@@ -52,7 +52,7 @@ def process_index_doc(doc):
             tokens = whitespace_tokenize(body_text)
     return tokens
 
-def create_dictionary(en_sw_file, index_reader, dictionary_file, MIN_FREQUENCY, MIN_WORD_LENGTH):
+def create_dictionary(en_sw_file, index_reader, dictionary_file, MIN_FREQUENCY, MIN_WORD_LENGTH, MAX_WORD_LENGTH):
     '''Creates a dictionary from the given text files using the Gensim class and functions
     
     Returns:
@@ -74,8 +74,8 @@ def create_dictionary(en_sw_file, index_reader, dictionary_file, MIN_FREQUENCY, 
     stop_ids = [dictionary.token2id[stopword] for stopword in stoplist if stopword in dictionary.token2id]
     once_ids = [tokenid for tokenid, docfreq in dictionary.dfs.iteritems() if docfreq < MIN_FREQUENCY]
     sw_ids = [tokenid for tokenid, docfreq in dictionary.dfs.iteritems() if (len(dictionary[tokenid]) < MIN_WORD_LENGTH)]
-    
-    dictionary.filter_tokens(stop_ids + once_ids + sw_ids) # remove stop words and words that appear only once
+    max_word_ids = [tokenid for tokenid, docfreq in dictionary.dfs.iteritems() if (len(dictionary[tokenid]) > MAX_WORD_LENGTH)]
+    dictionary.filter_tokens(stop_ids + once_ids + sw_ids + max_word_ids) # remove stop words and words that appear only once
     dictionary.compactify() # remove gaps in id sequence after words that were removed
     dictionary.save(dictionary_file) # store the dictionary, for future reference
     
@@ -104,7 +104,7 @@ class TextCorpus(object):
             yield self.dictionary.doc2bow(tokens)
 
 
-def build_lda_corpus(index_folder, paths_index_file, stop_words_file, dictionary_file, ldac_file, min_frequency, min_word_len):
+def build_lda_corpus(index_folder, paths_index_file, stop_words_file, dictionary_file, ldac_file, min_frequency, min_word_len, max_word_len=20):
     '''
     The main function that does the job! 
     
@@ -122,7 +122,7 @@ def build_lda_corpus(index_folder, paths_index_file, stop_words_file, dictionary
     store_file_paths_index(index_reader, paths_index_file) 
     
     # Creates the dictionary 
-    create_dictionary(stop_words_file, index_reader, dictionary_file, min_frequency, min_word_len)
+    create_dictionary(stop_words_file, index_reader, dictionary_file, min_frequency, min_word_len, max_word_len)
     
     # Creates the corpus 
     dictionary = corpora.Dictionary().load(dictionary_file)       
