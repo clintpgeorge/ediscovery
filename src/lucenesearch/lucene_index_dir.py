@@ -65,9 +65,6 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize =
     Returns: 
         None 
 
-    TODO: 
-        1. Need to handle dates 
-        2. Need to handle general meta data of files (e.g. last modified date, modified by, owner, etc)
     '''
     
     print lemmatize, stem 
@@ -221,9 +218,7 @@ def search_lucene_index(index_dir, query_model, limit):
         limit - the number of records to be retrieved 
     Return: 
         rows - the returned document details 
-        
-    TODO: 
-        1. Search in all fields if the user hasn't selected any particular item 
+
     
     '''
     store = SimpleFSDirectory(File(index_dir))
@@ -253,10 +248,32 @@ def search_lucene_index(index_dir, query_model, limit):
     
     return rows
 
-def main():
-    print "Hello"
-    test_search("C:\\Users\\Sahil\\Output\\Project1\\lucene")
 
 if __name__ == '__main__':
     
-    main()
+
+    # test_search("F:\\Research\\datasets\\trec2010\\project4\\lucene")
+    
+    index_dir = "F:\\Research\\datasets\\trec2010\\project4\\lucene"
+    lucene_query = 'all:(swap trans*)'
+    record_limit = 1000 
+    DEFAULT_QUERY_FIELD = 'all'
+    
+    store = SimpleFSDirectory(File(index_dir))
+    
+    searcher = IndexSearcher(store, True)
+    parser = QueryParser(Version.LUCENE_CURRENT, DEFAULT_QUERY_FIELD, STD_ANALYZER)
+    query = parser.parse(lucene_query)
+    
+    start = datetime.datetime.now()
+    scoreDocs = searcher.search(query, record_limit).scoreDocs
+    duration = datetime.datetime.now() - start
+    
+    print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
+    
+    
+
+
+    
+    
+    
