@@ -11,14 +11,14 @@ import mimetypes
 
 
 from lucene import BooleanClause
-from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin,\
+from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin, \
     ColumnSorterMixin
 from gui.SMARTeRGUI import SMARTeRGUI, RatingControl, PreferencesDialog
 from lucenesearch.lucene_index_dir import search_lucene_index, MetadataType, get_indexed_file_details
 import re
 import webbrowser
-from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS,\
-    CHAR_LIMIT_IN_RESULTS_TAB_CELLS, SHELVE_CHUNK_SIZE, SHELVE_FILE_EXTENSION,\
+from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS, \
+    CHAR_LIMIT_IN_RESULTS_TAB_CELLS, SHELVE_CHUNK_SIZE, SHELVE_FILE_EXTENSION, \
     COLUMN_NUMBER_OF_RATING
 from collections import OrderedDict
 from utils.utils_file import read_config, load_file_paths_index, nexists
@@ -40,7 +40,7 @@ present_chunk = 0
 
 # Constants 
 SHELVE_DIR_NAME = 'shelf'
-USER_RATINGS_CUT_OFF = 5 # TODO: this needs to be learned 
+USER_RATINGS_CUT_OFF = 5  # TODO: this needs to be learned 
 
 ###########################################################################
 
@@ -70,8 +70,8 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
             self.InsertColumn(columnNumber, c)
             columnNumber = columnNumber + 1
         self.InsertColumn(columnNumber, "file_id")
-        self.InsertColumn(columnNumber+1, "file_score")
-        self.InsertColumn(columnNumber+2, "rating")        
+        self.InsertColumn(columnNumber + 1, "file_score")
+        self.InsertColumn(columnNumber + 2, "rating")        
         
     
     def _set_shelve_dir(self, _dir_path):
@@ -101,33 +101,33 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         self._set_table_headers()
         
         # 1. Reads from that particular shelved-file
-        shelve_file = shelve.open(os.path.join(self._shelve_dir, str(chunk_number)+SHELVE_FILE_EXTENSION))
+        shelve_file = shelve.open(os.path.join(self._shelve_dir, str(chunk_number) + SHELVE_FILE_EXTENSION))
         self.DeleteAllItems()
         global dictionary_of_rows
         dictionary_of_rows = OrderedDict()
         
-        #print "Re-initialized dictionary = ", dictionary_of_rows
+        # print "Re-initialized dictionary = ", dictionary_of_rows
         for key in shelve_file.keys():
             row = shelve_file[key]
             # 2. Updates the dictionary_of_rows with this chunk of results
             dictionary_of_rows.__setitem__(key, row) 
-        #print "Populated Dictionary from file: \n", dictionary_of_rows.keys()
-        #print "Rows size = ", len( dictionary_of_rows.values()[0] )
+        # print "Populated Dictionary from file: \n", dictionary_of_rows.keys()
+        # print "Rows size = ", len( dictionary_of_rows.values()[0] )
         # 3. Sorts the dictionary_of_rows based on rating
         dictionary_sorted_as_list = sorted(dictionary_of_rows.items(), key=lambda (k, v): v[COLUMN_NUMBER_OF_RATING], reverse=True)
-        keys = map(lambda (k,v): k, dictionary_sorted_as_list)
-        values = map(lambda (k,v): v, dictionary_sorted_as_list)
-        dictionary_of_rows = OrderedDict( zip(keys, values) )
+        keys = map(lambda (k, v): k, dictionary_sorted_as_list)
+        values = map(lambda (k, v): v, dictionary_sorted_as_list)
+        dictionary_of_rows = OrderedDict(zip(keys, values))
 
-        #print "Sorted Dictionary: \n", dictionary_of_rows.keys()
-        #print "Rows size = ", len( dictionary_of_rows.values()[3] )
+        # print "Sorted Dictionary: \n", dictionary_of_rows.keys()
+        # print "Rows size = ", len( dictionary_of_rows.values()[3] )
         
         # 4. Change all keys in the dictionary to correspond to row_numbers in the UI
         k_in_String = dictionary_of_rows.keys()
         k_in_ints = map(int, k_in_String)
         k = sorted(k_in_ints)
         v = dictionary_of_rows.values()
-        dictionary_of_rows = OrderedDict( zip( map(str,k),v ) )
+        dictionary_of_rows = OrderedDict(zip(map(str, k), v))
            
         # 5. Change all keys in the shelved-file to correspond to row_numbers in the UI
         for key, row in dictionary_of_rows.items():
@@ -144,25 +144,25 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
             for cell in row:
                 column_name = self.GetColumn(i).GetText()  
                 cell = str(cell)        
-                #Only the file_path is displayed completely.
-                #The content of all other cells are restricted to 30 characters.                 
+                # Only the file_path is displayed completely.
+                # The content of all other cells are restricted to 30 characters.                 
                 if(column_name <> 'file_path') and len(cell) > CHAR_LIMIT_IN_RESULTS_TAB_CELLS:
                     self.SetStringItem(index, i, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
                 else:
                     self.SetStringItem(index, i, cell)
                 i += 1
-        #self.Refresh()
+        # self.Refresh()
     
-    def _on_row_right_click(self,event):
+    def _on_row_right_click(self, event):
         """Right-Clicking on a row to specify the search-relevancy of the file"""
-        Rating(None,self,self._shelve_dir)
+        Rating(None, self, self._shelve_dir)
          
-    def _on_row_double_click(self,event):
+    def _on_row_double_click(self, event):
         focussed_item_index = self.GetFocusedItem()
-        file_Name = self.GetItem(focussed_item_index,1)
+        file_Name = self.GetItem(focussed_item_index, 1)
         webbrowser.get().open(file_Name.GetText())
     
-    def _on_list_item_select(self,event) :
+    def _on_list_item_select(self, event) :
         '''
         Handles the result list row select event 
         '''
@@ -176,7 +176,7 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
                 import unicodedata
                 with open(file_name) as fp:
                     msg_text = fp.read()
-                    msg_text = unicodedata.normalize('NFKD', msg_text).encode('ascii','ignore') # converts to ascii 
+                    msg_text = unicodedata.normalize('NFKD', msg_text).encode('ascii', 'ignore')  # converts to ascii 
 
             else:
                 file_type, _ = mimetypes.guess_type(file_name, strict=True)
@@ -186,7 +186,7 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
             
         self._parent_window._tc_file_preview_pane.SetValue(msg_text)
     
-    def _on_list_item_deselect(self,event) :
+    def _on_list_item_deselect(self, event) :
         self._parent_window._tc_file_preview_pane.SetValue('')
     
     def GetListCtrl(self):
@@ -216,8 +216,8 @@ class Rating (RatingControl):
         self.checklist_control = checklist_control
         self.selected_record_index = checklist_control.GetFocusedItem()
         
-        #If the Relevance-recording window is opened again, it must show the score already given  
-        relevance_score = checklist_control.GetItem(self.selected_record_index,COLUMN_NUMBER_OF_RATING)
+        # If the Relevance-recording window is opened again, it must show the score already given  
+        relevance_score = checklist_control.GetItem(self.selected_record_index, COLUMN_NUMBER_OF_RATING)
         # self.radio_control.SetSelection( int(relevance_score.GetText()) )
         
         self._rating_slider.SetValue(int(relevance_score.GetText()))
@@ -237,19 +237,19 @@ class Rating (RatingControl):
         self.checklist_control.SetStringItem(self.selected_record_index, COLUMN_NUMBER_OF_RATING, str(rating))
         
         # Statements to just debug
-        #print "Old rating = ", dictionary_of_rows[self.selected_record_index][-1]
-        #print "New rating = ", rating
+        # print "Old rating = ", dictionary_of_rows[self.selected_record_index][-1]
+        # print "New rating = ", rating
         
         selected_row_in_dict = present_chunk * SHELVE_CHUNK_SIZE + self.selected_record_index
         # 2. Stores this new rating in the dictionary
         dictionary_of_rows[str(selected_row_in_dict)][-1] = str(rating)
 
-        shelve_file = shelve.open(os.path.join(self._shelve_dir, str(present_chunk)+ SHELVE_FILE_EXTENSION ) )
+        shelve_file = shelve.open(os.path.join(self._shelve_dir, str(present_chunk) + SHELVE_FILE_EXTENSION))
         row = shelve_file[str(selected_row_in_dict)]
-        #print "Before SUBMIT : ", shelve_file[str(selected_row_in_dict)]
+        # print "Before SUBMIT : ", shelve_file[str(selected_row_in_dict)]
         row[-1] = str(rating)
         shelve_file[str(selected_row_in_dict)] = row
-        #print "changed : ", shelve_file[str(selected_row_in_dict)] 
+        # print "changed : ", shelve_file[str(selected_row_in_dict)] 
         shelve_file.close()
         
         self.checklist_control.itemDataMap = dictionary_of_rows
@@ -268,7 +268,7 @@ class Preferences (PreferencesDialog):
         '''
         super(Preferences, self).__init__(parent) 
         
-        self._parent = parent # refers to the parent object    
+        self._parent = parent  # refers to the parent object    
         self._load_existing_indexing_preferences()
         
         self.Center()
@@ -334,7 +334,7 @@ class SMARTeR (SMARTeRGUI):
         self._current_page = 0
         
         self._shelve_dir = ''
-        self._shelve_file_names = [] # this keeps all of the shelf files path 
+        self._shelve_file_names = []  # this keeps all of the shelf files path 
         
         self._build_query_results_panel()
         self._populate_metadata_fields()
@@ -343,7 +343,21 @@ class SMARTeR (SMARTeRGUI):
         self._lda_num_topics = self._num_topics     
         
         self.Center()
+        from os.path import expanduser
+        home = expanduser("~")
+        self.directory=os.path.join(home,"SMARTeR")
+        if(os.path.exists(self.directory)==False):
+            os.makedirs(self.directory)
+        self._cfg_dir = os.path.join(self.directory,"repository")
+        if(os.path.exists(self._cfg_dir)==False):
+            os.makedirs(self._cfg_dir)
+        for _, _, files in os.walk(self._cfg_dir):
+            for file_name in files:
+                project, _ = os.path.splitext(file_name)
+                self._cbx_project_title.Append(project)
         self.Show(True)
+        
+        
         
     def _reset_defaults_indexing_preferences(self):
         
@@ -352,15 +366,12 @@ class SMARTeR (SMARTeRGUI):
         self._min_token_freq = 1 
         self._min_token_len = 2
         
-
-    def _on_menu_sel_preferences( self, event ):
+    def _on_menu_sel_preferences(self, event):
         '''
         
         '''
-        Preferences(parent = self)
+        Preferences(parent=self)
         
-
-
     def _populate_metadata_fields(self):
         '''
         This function will populate the metadata combo box 
@@ -368,10 +379,13 @@ class SMARTeR (SMARTeRGUI):
         to accommodate new metadata types as and when they are needed. 
         '''
         meta_data_types = MetadataType._types
-        self._cbx_meta_type.Append(MetadataType.ALL) # adds the all field to the combo box 
+        self._cbx_meta_type.Append(MetadataType.ALL)  # adds the all field to the combo box
+        self._cbx_meta_type1.Append(MetadataType.ALL) 
         for l in meta_data_types :
-            self._cbx_meta_type.Append(l) 
+            self._cbx_meta_type.Append(l)
+            self._cbx_meta_type1.Append(l) 
         self._cbx_meta_type.SetSelection(0)
+        self._cbx_meta_type1.SetSelection(0)
 
 
     def _build_query_results_panel(self):
@@ -383,9 +397,9 @@ class SMARTeR (SMARTeRGUI):
         _panel_right = wx.Panel(self._panel_query_results, -1)
 
         self._st_file_preview_header = wx.StaticText(_panel_right, -1, 'File Review Pane (Text Files)')
-        self._tc_file_preview_pane = wx.TextCtrl(_panel_right, -1, style=wx.TE_MULTILINE|wx.TE_READONLY, size=(-1, 200))
+        self._tc_file_preview_pane = wx.TextCtrl(_panel_right, -1, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 200))
         self._lc_results = ResultsCheckListCtrl(_panel_right, self)
-        self._lc_results._set_table_headers() # Populate the column names using the metadata types from MetadataType_types &RB
+        self._lc_results._set_table_headers()  # Populate the column names using the metadata types from MetadataType_types &RB
 
        
         vbox2 = wx.BoxSizer(wx.VERTICAL)
@@ -428,9 +442,6 @@ class SMARTeR (SMARTeRGUI):
 
         self._panel_query_results.SetSizer(hbox)
 
-
-
-        
     def _on_menu_sel_exit(self, event):
 
         dlg = wx.MessageDialog(self,
@@ -441,17 +452,14 @@ class SMARTeR (SMARTeRGUI):
         if result == wx.ID_OK:
             self.Destroy()        
         
-    def _on_notebook_page_changed( self, event ):
+    def _on_notebook_page_changed(self, event):
         '''
         Handles the note book page change event 
         '''
         
         self._current_page = event.Selection
         self._notebook.ChangeSelection(self._current_page)
-
-
-        
-    
+  
     def _create_persistent_shelves(self, items):
         """
             Stores the query-results into shelves. 
@@ -463,7 +471,7 @@ class SMARTeR (SMARTeRGUI):
         self._shelve_file_names = []
         chunk_number = -1;
         shelve_file = None
-        for key,row in items:
+        for key, row in items:
             if(int(key) % SHELVE_CHUNK_SIZE == 0):
                 chunk_number = chunk_number + 1 
                 fileName = str(chunk_number)
@@ -482,20 +490,39 @@ class SMARTeR (SMARTeRGUI):
         Removes all existing shelves 
         '''
         for file_name in self._shelve_file_names:
-            os.remove( file_name ) 
+            os.remove(file_name) 
         global num_of_chunks
         num_of_chunks = 0
     
-    def _on_click_next(self,event):
+    def _on_click_io_sel_new_project(self,event):
+        
+        super(SMARTeR, self)._on_click_io_sel_new_project(event)
+       
+        if self._chk_io_new_project.Value==True:
+            self._tc_project_name.Show(True)
+            self._tc_project_name.Enable()
+            self._tc_project_name.SetValue("")
+            self._cbx_project_title.Disable()
+            self._cbx_project_title.SetSelection(-1)
+        else:
+            #self._tc_project_name.Show(False)
+            self._tc_project_name.Disable()
+            self._tc_project_name.SetValue("Title of new project...")
+            self._cbx_project_title.Enable()
+            self._cbx_project_title.SetSelection(0)
+            
+
+    
+    def _on_click_next(self, event):
         global present_chunk
         current_chunk = present_chunk;
         
-        if(current_chunk <> num_of_chunks-1): 
+        if(current_chunk <> num_of_chunks - 1): 
             current_chunk += 1
             self._lc_results._populate_results(current_chunk)
             present_chunk = current_chunk
     
-    def _on_click_previous(self,event):
+    def _on_click_previous(self, event):
         global present_chunk
         current_chunk = present_chunk;
         current_chunk -= 1
@@ -536,8 +563,7 @@ class SMARTeR (SMARTeRGUI):
             self._show_error_message("Model Error", "Please select a valid model.")
             self._file_picker_mdl.SetPath("")
             self.mdl_cfg = None 
-            
-        
+                    
     def _load_model(self, model_cfg_file):
         '''
         Loads the models specified in the model configuration file  
@@ -546,10 +572,11 @@ class SMARTeR (SMARTeRGUI):
             model_cfg_file - the model configuration file  
         
         '''
-        
+        print model_cfg_file
         self.mdl_cfg = read_config(model_cfg_file)
-        
-        self._shelve_dir = os.path.join( self.mdl_cfg['DATA']['project_dir'], SHELVE_DIR_NAME)
+        self._data_dir_picker.SetPath(self.mdl_cfg['DATA']['root_dir'])
+        self._shelve_dir = os.path.join(self.mdl_cfg['DATA']['project_dir'], SHELVE_DIR_NAME)
+        print self._shelve_dir
         if not os.path.exists(self._shelve_dir): 
             os.makedirs(self._shelve_dir)
         
@@ -576,8 +603,7 @@ class SMARTeR (SMARTeRGUI):
             if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
                 self.lda_mdl, self.lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
                 self._lda_num_topics = int(lda_num_topics)
-                self._is_tm_index_available = True  
-                self._tc_available_mdl.AppendText('[LDA] ')    
+                self._is_tm_index_available = True      
                     
 #            # loads LSI model details 
 #            if nexists(lsi_mdl_file) and nexists(lsi_cos_index_file):
@@ -592,17 +618,34 @@ class SMARTeR (SMARTeRGUI):
         if nexists(lucene_dir):
             self.lucene_index_dir = lucene_dir
             self._is_lucene_index_available = True  
-            self._tc_available_mdl.AppendText('[LUCENE] ')          
+
+   
     def _on_click_add_to_query(self, event):
         metadataSelected = self._cbx_meta_type.GetValue()
         queryBoxText = self._tc_query_input.GetValue()
         # Uncomment the below lines if it is decided that the conjunctions AND OR NOT should be there. 
-        #if(self._rbtn_conjunction.Enabled) :
-        #self._tc_query.AppendText(self._rbtn_compulsion_level.GetStringSelection() + " " + metadataSelected + ":" + queryBoxText + " ");
-        #else :
-        #self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":");
+        # if(self._rbtn_conjunction.Enabled) :
+        # self._tc_query.AppendText(self._rbtn_compulsion_level.GetStringSelection() + " " + metadataSelected + ":" + queryBoxText + " ");
+        # else :
+        # self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":");
         #    self._rbtn_conjunction.Enable()   
         self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":" + self._rbtn_compulsion_level.GetStringSelection() + ' ')
+        
+    def _on_click_add_to_query1(self, event):
+        metadataSelected = self._cbx_meta_type1.GetValue()
+        operatorSelected = self._cbx_meta_type2.GetValue()
+        queryBoxText = '"'+self._tc_query_input1.GetValue()+'"'
+        # Uncomment the below lines if it is decided that the conjunctions AND OR NOT should be there. 
+        # if(self._rbtn_conjunction.Enabled) :
+        # self._tc_query.AppendText(self._rbtn_compulsion_level.GetStringSelection() + " " + metadataSelected + ":" + queryBoxText + " ");
+        # else :
+        # self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":");
+        #    self._rbtn_conjunction.Enable()
+        if(self._tc_query1.GetValue()==""):   
+            self._tc_query1.AppendText(metadataSelected + ":" + queryBoxText)
+        else:
+            self._tc_query1.AppendText("\n"+operatorSelected + "\n" )
+            self._tc_query1.AppendText(metadataSelected + ":" + queryBoxText)
     
     def _show_error_message(self, _header, _message):
         '''
@@ -613,10 +656,10 @@ class SMARTeR (SMARTeRGUI):
         dlg.ShowModal()
     
     
-    def _on_chbx_topic_search( self, event ):
+    def _on_chbx_topic_search(self, event):
         self._chbx_facet_search.SetValue(False)
         
-    def _on_chbx_facet_search( self, event ):
+    def _on_chbx_facet_search(self, event):
         self._chbx_topic_search.SetValue(False)
     
     def _on_click_run_query(self, event):
@@ -638,18 +681,18 @@ class SMARTeR (SMARTeRGUI):
             self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
             return 
         
-        topics = self.lda_mdl.show_topics(topics=-1, topn=10, log=False, formatted=False)
+        topics = self.lda_mdl.show_topics(topics= -1, topn=10, log=False, formatted=False)
         topic_key = []
         for topic in topics:
-            cnt=0
+            cnt = 0
             keywords = ""
             for tuple_ele in topic:
-                keywords = keywords + tuple_ele[1] +", "
+                keywords = keywords + tuple_ele[1] + ", "
                 cnt += 1
-                if( cnt == 5):
+                if(cnt == 5):
                     break
             topic_key.append(keywords.strip()[:-1])
-        self.load_contextual_feedback(topic_key)
+        
         
         queries = []
         fields = []
@@ -657,7 +700,7 @@ class SMARTeR (SMARTeRGUI):
         filteredQuery = re.split(' ', queryText)
         
         for l in filteredQuery:
-            res = re.split(':', l )
+            res = re.split(':', l)
             print res 
             if len(res) > 1:
                 fields.append(res[0])
@@ -669,28 +712,28 @@ class SMARTeR (SMARTeRGUI):
                 else:
                     clauses.append(BooleanClause.Occur.SHOULD)
         
-        query_text = ' '.join(queries) # combines all the text in a query model 
-        ts_results = search_lda_model(query_text, self.lda_dictionary, 
-                                          self.lda_mdl, self.lda_index, 
+        query_text = ' '.join(queries)  # combines all the text in a query model 
+        ts_results = search_lda_model(query_text, self.lda_dictionary,
+                                          self.lda_mdl, self.lda_index,
                                           self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
-            ## ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
-        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index
+            # # ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
+        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir)  # grabs the files details from the index
         
-        self.ts_results=[]
-        i=0
+        self.ts_results = []
+        i = 0
         for ts in ts_results:
-            self.ts_results.append([ts[0],ts[1],''])
-            i+=1
-            if i== 100:
+            self.ts_results.append([ts[0], ts[1], ''])
+            i += 1
+            if i == 100:
                 break
         print self.ts_results
-        
+        self.load_document_feedback()
         
         self._current_page = 2
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
-    def _on_click_recalculate(self,event):
+    def _on_click_recalculate(self, event):
         """
         Actions to be done when the "Run Query" button is clicked
         0. Validations 
@@ -725,14 +768,14 @@ class SMARTeR (SMARTeRGUI):
             self._show_error_message('Run Query Error!', 'Lucene index is not available for facet search.')
             return
         
-        #queryText has Queries, Fields, BooleanClauses
+        # queryText has Queries, Fields, BooleanClauses
         queries = []
         fields = []
         clauses = []
         filteredQuery = re.split(' ', queryText)
         
         for l in filteredQuery:
-            res = re.split(':', l )
+            res = re.split(':', l)
             print res 
             if len(res) > 1:
                 fields.append(res[0])
@@ -755,23 +798,23 @@ class SMARTeR (SMARTeRGUI):
 
         
         
-        fs_results = search_lucene_index(self.lucene_index_dir, 
+        fs_results = search_lucene_index(self.lucene_index_dir,
                                              queryList, SEARCH_RESULTS_LIMIT)
             
          
-        query_text = ' '.join(queries) # combines all the text in a query model 
-        ts_results = search_lda_model(query_text, self.lda_dictionary, 
-                                          self.lda_mdl, self.lda_index, 
+        query_text = ' '.join(queries)  # combines all the text in a query model 
+        ts_results = search_lda_model(query_text, self.lda_dictionary,
+                                          self.lda_mdl, self.lda_index,
                                           self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
-            ## ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
-        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) # grabs the files details from the index 
+            # # ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
+        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir)  # grabs the files details from the index 
             
-        #if facet_search and not topic_search: 
+        # if facet_search and not topic_search: 
             # 2. Run Lucene query
         #    rows = fs_results
-        #elif not facet_search and topic_search: 
+        # elif not facet_search and topic_search: 
         rows = ts_results
-        #elif facet_search and topic_search: 
+        # elif facet_search and topic_search: 
             # Combine results  
             # rows = self._combine_lucene_tm_results(fs_results, ts_results)
          #   print 'TODO'
@@ -787,8 +830,8 @@ class SMARTeR (SMARTeRGUI):
         for row in rows:
             # file_id = row[9] # key is obtained from the lucene index
             # print retrieve_document_details(file_id, self.lucene_index_dir).get('email_subject')
-            file_details = row # values of the defined MetadataTypes 
-            file_details.append('0') # Add a 'relevance' value of '0' to each search-result
+            file_details = row  # values of the defined MetadataTypes 
+            file_details.append('0')  # Add a 'relevance' value of '0' to each search-result
         
             dictionary_of_rows.__setitem__(str(key), file_details)
             key += 1
@@ -808,12 +851,12 @@ class SMARTeR (SMARTeRGUI):
         
         
         # Goes to the results tab 
-        self._current_page = 4
+        self._current_page = 3
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
                
     
-    def _on_click_update_results( self, event ):
+    def _on_click_update_results(self, event):
         '''
         This function incorporates the user ratings into 
         the ranked list. Here, we combine the highly rated 
@@ -822,64 +865,64 @@ class SMARTeR (SMARTeRGUI):
         
         '''
         from datetime import datetime
-        self.shelf_query = shelve.open(os.path.join(self._shelve_dir,str("rating"+SHELVE_FILE_EXTENSION)),writeback=True) # open -- file may get suffix added by low-level
-        self.shelf_query['query']  = self._tc_query.GetValue().strip() 
+        self.shelf_query = shelve.open(os.path.join(self._shelve_dir, str("rating" + SHELVE_FILE_EXTENSION)), writeback=True)  # open -- file may get suffix added by low-level
+        self.shelf_query['query'] = self._tc_query.GetValue().strip() 
         for row in dictionary_of_rows:
             result = dictionary_of_rows[row]
             if result[11] != 0:
-                self.shelf_query[str(result[0])]=str(result[11])
+                self.shelf_query[str(result[0])] = str(result[11])
         self.shelf_query.close()
         dlg = wx.MessageDialog(self, "Information is recorded, Thank you", "Update Results", wx.OK)
-        dlg.ShowModal() # Shows it
-        dlg.Destroy() # finally destroy it when finished.
+        dlg.ShowModal()  # Shows it
+        dlg.Destroy()  # finally destroy it when finished.
         
     def load_contextual_feedback(self, topic_list):
-        _bgd_sizer = wx.BoxSizer( wx.VERTICAL )
+        _bgd_sizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.m_staticText = wx.StaticText( self._panel_topics, wx.ID_ANY, (
-            u"You may be interested in highlighting the following topics (relevant topical words) in the search process.\nPlease mark relevant keywords or skip to next page"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        self.m_staticText.Wrap( -1 )
-        _bgd_sizer.Add( self.m_staticText, 0, wx.ALL, 5 )
+        self.m_staticText = wx.StaticText(self._panel_topics, wx.ID_ANY, (
+            u"You may be interested in highlighting the following topics (relevant topical words) in the search process.\nPlease mark relevant keywords or skip to next page"), wx.DefaultPosition, wx.DefaultSize, 0)
+        self.m_staticText.Wrap(-1)
+        _bgd_sizer.Add(self.m_staticText, 0, wx.ALL, 5)
         
-        _chk_Sizer = wx.GridBagSizer( 0, 0 )
-        _chk_Sizer.SetFlexibleDirection( wx.BOTH )
-        _chk_Sizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+        _chk_Sizer = wx.GridBagSizer(0, 0)
+        _chk_Sizer.SetFlexibleDirection(wx.BOTH)
+        _chk_Sizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_SPECIFIED)
         
         chkbox_cnt = 0
         self.chk_box = []
         
         for topic in topic_list:
             radioBox_choices = [ (u"Relevant"), (u"Neutral"), (u"Irrelevant") ]
-            self.chk_box.append(wx.RadioBox( self._panel_topics, wx.ID_ANY, (topic), wx.DefaultPosition, wx.Size( 500,50 ) , radioBox_choices, 1, wx.RA_SPECIFY_ROWS ))
-            self.chk_box[chkbox_cnt].SetSelection( 1 )
+            self.chk_box.append(wx.RadioBox(self._panel_topics, wx.ID_ANY, (topic), wx.DefaultPosition, wx.Size(500, 50) , radioBox_choices, 1, wx.RA_SPECIFY_ROWS))
+            self.chk_box[chkbox_cnt].SetSelection(1)
             
-            _chk_Sizer.Add( self.chk_box[chkbox_cnt], wx.GBPosition( int(chkbox_cnt/2), int(2+chkbox_cnt%2)), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+            _chk_Sizer.Add(self.chk_box[chkbox_cnt], wx.GBPosition(int(chkbox_cnt / 2), int(2 + chkbox_cnt % 2)), wx.GBSpan(1, 1), wx.ALL, 5)
             chkbox_cnt += 1
             if chkbox_cnt == 10:
                 break
             
-        self._next_cf_button = wx.Button( self._panel_topics, wx.ID_ANY, (u"Save Keywords"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        self._skip_cf_button = wx.Button( self._panel_topics, wx.ID_ANY, (u"Skip"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        self._next_cf_button.Bind( wx.EVT_BUTTON, self._on_click_contextual_feed )
-        self._skip_cf_button.Bind( wx.EVT_BUTTON, self._on_click_skip_contextual_feed )
-        _chk_Sizer.Add( self._next_cf_button, wx.GBPosition( chkbox_cnt/2, 2), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-        _chk_Sizer.Add( self._skip_cf_button, wx.GBPosition( chkbox_cnt/2, 3), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        self._next_cf_button = wx.Button(self._panel_topics, wx.ID_ANY, (u"Save Keywords"), wx.DefaultPosition, wx.DefaultSize, 0)
+        self._skip_cf_button = wx.Button(self._panel_topics, wx.ID_ANY, (u"Skip"), wx.DefaultPosition, wx.DefaultSize, 0)
+        self._next_cf_button.Bind(wx.EVT_BUTTON, self._on_click_contextual_feed)
+        self._skip_cf_button.Bind(wx.EVT_BUTTON, self._on_click_skip_contextual_feed)
+        _chk_Sizer.Add(self._next_cf_button, wx.GBPosition(chkbox_cnt / 2, 2), wx.GBSpan(1, 1), wx.ALL, 5)
+        _chk_Sizer.Add(self._skip_cf_button, wx.GBPosition(chkbox_cnt / 2, 3), wx.GBSpan(1, 1), wx.ALL, 5)
         
-        _bgd_sizer.Add( _chk_Sizer, 1, wx.EXPAND, 5 )
-        self._panel_topics.SetSizer( _bgd_sizer )
+        _bgd_sizer.Add(_chk_Sizer, 1, wx.EXPAND, 5)
+        self._panel_topics.SetSizer(_bgd_sizer)
         self._panel_topics.Layout()
-        _bgd_sizer.Fit( self._panel_topics )
+        _bgd_sizer.Fit(self._panel_topics)
         
-    def _on_click_skip_contextual_feed(self,event):
+    def _on_click_skip_contextual_feed(self, event):
         self._current_page = 3
         self.load_document_feedback()
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
-    def _on_click_contextual_feed(self,event):
+    def _on_click_contextual_feed(self, event):
         
-        #for chk_box in self.chk_box:
-            #print chk_box.GetSelection()
+        # for chk_box in self.chk_box:
+            # print chk_box.GetSelection()
         
         self._current_page = 3
         self.load_document_feedback()
@@ -887,10 +930,10 @@ class SMARTeR (SMARTeRGUI):
         self.SetStatusText('')
         
     def load_document_feedback(self):
-        self.panel_feedback_doc=TaggingControlSmarter(self._panel_feedback_doc,self)
+        self.panel_feedback_doc = TaggingControlSmarter(self._panel_feedback_doc, self)
         self.panel_feedback_doc._setup_review_tab()
     
-    def _on_rbx_responsive_updated( self, event ):
+    def _on_rbx_responsive_updated(self, event):
         '''
         Handles the selected document responsive check box 
         check and uncheck events 
@@ -908,7 +951,7 @@ class SMARTeR (SMARTeRGUI):
             else: 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, '')
                 self.ts_results[selected_doc_id][2] = ''
-        except Exception,e:
+        except Exception, e:
             print e
         
         
@@ -948,7 +991,7 @@ class SMARTeR (SMARTeRGUI):
 #        
 #        
 
-    def _on_click_index_data( self, event ):
+    def _on_click_index_data(self, event):
         '''
         Handles the data folder files' indexing and topic modeling 
          
@@ -957,20 +1000,38 @@ class SMARTeR (SMARTeRGUI):
             1. validations to be done 
         
         '''
-        
-        project_name = self._tc_project_name.GetValue()
+    
         data_folder = self._data_dir_picker.GetPath()
-        output_folder = self._application_dir_picker.GetPath()
-        
+        project_name = ""
         # print project_name, data_folder, output_folder, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len
-        
-        index_data(data_folder, output_folder, project_name, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len, log_to_file=True)
+        if self._chk_io_new_project.Value==True:
+            project_name = self._tc_project_name.GetValue()
+            index_data(data_folder, self.directory, project_name, self._cfg_dir, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len, log_to_file=True)
+            self._cbx_project_title.Append(self.project_name)        
+            print 'Indexing is completed.'
+        else:
+            project_name = self._cbx_project_title.GetValue()
+        #ADD
+        if project_name=="":
+            self._show_error_message("Missing input", "Please enter or select a project.")
+        else:
 
-        # TODO need to show a status bar with execution status 
-        
-        print 'Indexing is completed.'
-        
-        
+            if self._is_tm_index_available or self._is_lucene_index_available:
+                self.SetStatusText("The %s model is loaded." % self.mdl_cfg['DATA']['name'])
+                self._current_page = 1
+                self._notebook.ChangeSelection(self._current_page)
+                self.SetStatusText('')
+            else: 
+                self._show_error_message("Model Error", "Please select a valid model.")
+                self._file_picker_mdl.SetPath("")
+                self.mdl_cfg = None
+                
+    def _on_set_existing_project(self,event):
+        project_name = self._cbx_project_title.GetValue()
+        cfg_file_name = os.path.join(self._cfg_dir,project_name+".cfg")
+        self.project_name = cfg_file_name
+        self._load_model(cfg_file_name)
+              
     def _on_click_clear_project_details(self, event):
         '''
         Clears the project details 
@@ -981,9 +1042,6 @@ class SMARTeR (SMARTeRGUI):
         self._data_dir_picker.SetPath('')
         self._application_dir_picker.SetPath('')
         
-        
-
-    
     def _combine_lucene_tm_results(self, fs_results, ts_results):
         
         num_metadata_types = len(MetadataType._types)

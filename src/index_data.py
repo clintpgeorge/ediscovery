@@ -31,7 +31,7 @@ LSI_DEFAULT_NUM_TOPICS = 200
 
 
 
-def index_data(data_folder, output_folder, project_name, 
+def index_data(data_folder, output_folder, project_name, cfg_folder, 
                num_topics=DEFAULT_NUM_TOPICS, num_passes=DEFAULT_NUM_PASSES, 
                min_token_freq=MIN_TOKEN_FREQ, min_token_len=MIN_TOKEN_LEN, 
                log_to_file=True, lemmatize=False, stem=False):
@@ -59,7 +59,7 @@ def index_data(data_folder, output_folder, project_name,
 
     
     # Handling the project configuration file 
-    cfg_file_name = '%s.cfg' % project_name
+    cfg_file_name = os.path.join( cfg_folder , project_name+'.cfg' )
     config = ConfigParser.RawConfigParser()
 
     config.add_section('DATA')

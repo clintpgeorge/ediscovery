@@ -59,22 +59,17 @@ class SMARTeRGUI ( wx.Frame ):
 		self.m_staticText5.Wrap( -1 )
 		gbsizer_project.Add( self.m_staticText5, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_project_name = wx.TextCtrl( self._panel_index, wx.ID_ANY, _(u"proj"), wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
-		gbsizer_project.Add( self._tc_project_name, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._tc_project_name = wx.TextCtrl( self._panel_index, wx.ID_ANY, _(u"Title of new project..."), wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
+		self._tc_project_name.Enable( False )
+		
+		gbsizer_project.Add( self._tc_project_name, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticText6 = wx.StaticText( self._panel_index, wx.ID_ANY, _(u"Input Data Folder"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText6.Wrap( -1 )
-		gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self.m_staticText7 = wx.StaticText( self._panel_index, wx.ID_ANY, _(u"Project Folder"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText7.Wrap( -1 )
-		gbsizer_project.Add( self.m_staticText7, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._application_dir_picker = wx.DirPickerCtrl( self._panel_index, wx.ID_ANY, u"F:\\topicModelingDataSet\\201\\proj", _(u"Select a folder"), wx.DefaultPosition, wx.DefaultSize, wx.DIRP_DEFAULT_STYLE )
-		gbsizer_project.Add( self._application_dir_picker, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._data_dir_picker = wx.DirPickerCtrl( self._panel_index, wx.ID_ANY, u"F:\\topicModelingDataSet\\201", _(u"Select a folder"), wx.DefaultPosition, wx.Size( -1,-1 ), wx.DIRP_DEFAULT_STYLE )
-		gbsizer_project.Add( self._data_dir_picker, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._data_dir_picker = wx.DirPickerCtrl( self._panel_index, wx.ID_ANY, wx.EmptyString, _(u"Select a folder"), wx.DefaultPosition, wx.Size( -1,-1 ), wx.DIRP_DEFAULT_STYLE )
+		gbsizer_project.Add( self._data_dir_picker, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticline3 = wx.StaticLine( self._panel_index, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_project.Add( self.m_staticline3, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
@@ -85,6 +80,19 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_index_data = wx.Button( self._panel_index, wx.ID_ANY, _(u"Index Files"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbsizer_project.Add( self._btn_index_data, wx.GBPosition( 5, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
+		_cbx_project_titleChoices = []
+		self._cbx_project_title = wx.ComboBox( self._panel_index, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), _cbx_project_titleChoices, wx.CB_DROPDOWN|wx.CB_READONLY|wx.TE_PROCESS_ENTER )
+		gbsizer_project.Add( self._cbx_project_title, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._chk_io_new_project = wx.CheckBox( self._panel_index, wx.ID_ANY, _(u"Click to create a new project"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._chk_io_new_project.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 93, 90, False, wx.EmptyString ) )
+		
+		gbsizer_project.Add( self._chk_io_new_project, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticText14 = wx.StaticText( self._panel_index, wx.ID_ANY, _(u"Enter New Project Title"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText14.Wrap( -1 )
+		gbsizer_project.Add( self.m_staticText14, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
 		
 		sbsizer_project.Add( gbsizer_project, 1, wx.EXPAND, 5 )
 		
@@ -94,41 +102,11 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self._panel_index.SetSizer( bSizer5 )
 		self._panel_index.Layout()
-		self._notebook.AddPage( self._panel_index, _(u"Index Data"), False )
+		self._notebook.AddPage( self._panel_index, _(u"Index Data"), True )
 		self._panel_query = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._panel_query.SetMinSize( wx.Size( 950,300 ) )
 		
 		_bsizer_query = wx.BoxSizer( wx.VERTICAL )
-		
-		_sbsizer_sel_mdl = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Project Selection") ), wx.VERTICAL )
-		
-		_gbsizer_mdl = wx.GridBagSizer( 5, 5 )
-		_gbsizer_mdl.SetFlexibleDirection( wx.BOTH )
-		_gbsizer_mdl.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self._st_select_mdl = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Select a Project"), wx.Point( -1,-1 ), wx.DefaultSize, wx.ALIGN_LEFT )
-		self._st_select_mdl.Wrap( -1 )
-		_gbsizer_mdl.Add( self._st_select_mdl, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._file_picker_mdl = wx.FilePickerCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, _(u"Select Project"), u"*.cfg", wx.DefaultPosition, wx.Size( 300,-1 ), wx.FLP_OPEN )
-		self._file_picker_mdl.SetMinSize( wx.Size( 300,30 ) )
-		
-		_gbsizer_mdl.Add( self._file_picker_mdl, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._st_available_mdl = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Available indices"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_available_mdl.Wrap( -1 )
-		_gbsizer_mdl.Add( self._st_available_mdl, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._tc_available_mdl = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY )
-		self._tc_available_mdl.SetMinSize( wx.Size( 300,-1 ) )
-		
-		_gbsizer_mdl.Add( self._tc_available_mdl, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		
-		_sbsizer_sel_mdl.Add( _gbsizer_mdl, 1, wx.EXPAND, 10 )
-		
-		
-		_bsizer_query.Add( _sbsizer_sel_mdl, 0, wx.ALL|wx.EXPAND, 10 )
 		
 		_sbsizer_query_model = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Query Processing") ), wx.VERTICAL )
 		
@@ -158,7 +136,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._tc_query = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,50 ), wx.TE_MULTILINE )
 		_gbsizer_query.Add( self._tc_query, wx.GBPosition( 2, 1 ), wx.GBSpan( 2, 2 ), wx.ALL, 5 )
 		
-		self._btn_run_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Run Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_run_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Start Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_query.Add( self._btn_run_query, wx.GBPosition( 2, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -167,13 +145,48 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_bsizer_query.Add( _sbsizer_query_model, 0, wx.ALL|wx.EXPAND, 10 )
 		
+		_sbsizer_query_model1 = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Query Processing") ), wx.VERTICAL )
+		
+		_gbsizer_query1 = wx.GridBagSizer( 5, 5 )
+		_gbsizer_query1.SetFlexibleDirection( wx.BOTH )
+		_gbsizer_query1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._st_query1 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Enter Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_query1.Wrap( -1 )
+		_gbsizer_query1.Add( self._st_query1, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._tc_query_input1 = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )
+		_gbsizer_query1.Add( self._tc_query_input1, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_add_to_query1 = wx.Button( self._panel_query, wx.ID_ANY, _(u"Add To Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_query1.Add( self._btn_add_to_query1, wx.GBPosition( 0, 4 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_cbx_meta_type1Choices = []
+		self._cbx_meta_type1 = wx.ComboBox( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_meta_type1Choices, wx.CB_READONLY|wx.CB_SORT )
+		_gbsizer_query1.Add( self._cbx_meta_type1, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._tc_query1 = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,150 ), wx.TE_MULTILINE )
+		_gbsizer_query1.Add( self._tc_query1, wx.GBPosition( 2, 1 ), wx.GBSpan( 2, 2 ), wx.ALL, 5 )
+		
+		self._btn_run_query1 = wx.Button( self._panel_query, wx.ID_ANY, _(u"Start Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_query1.Add( self._btn_run_query1, wx.GBPosition( 2, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_cbx_meta_type2Choices = [ _(u"AND"), _(u"OR"), _(u"NOT") ]
+		self._cbx_meta_type2 = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"OR"), wx.DefaultPosition, wx.Size( 80,-1 ), _cbx_meta_type2Choices, wx.CB_DROPDOWN|wx.CB_READONLY )
+		self._cbx_meta_type2.SetSelection( 1 )
+		_gbsizer_query1.Add( self._cbx_meta_type2, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		_sbsizer_query_model1.Add( _gbsizer_query1, 1, wx.EXPAND, 10 )
+		
+		
+		_bsizer_query.Add( _sbsizer_query_model1, 0, wx.ALL|wx.EXPAND, 10 )
+		
 		
 		self._panel_query.SetSizer( _bsizer_query )
 		self._panel_query.Layout()
 		_bsizer_query.Fit( self._panel_query )
-		self._notebook.AddPage( self._panel_query, _(u"Query"), True )
-		self._panel_topics = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self._notebook.AddPage( self._panel_topics, _(u"Contextual Feedback"), False )
+		self._notebook.AddPage( self._panel_query, _(u"Query"), False )
 		self._panel_feedback = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer8 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -186,12 +199,12 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		bSizer81 = wx.BoxSizer( wx.VERTICAL )
 		
-		_rbx_responsiveChoices = [ _(u"Responsive"), _(u"Un Responsive"), _(u"No Response") ]
+		_rbx_responsiveChoices = [ _(u"Responsive"), _(u"Unresponsive"), _(u"Uncertain") ]
 		self._rbx_responsive = wx.RadioBox( self._panel_feedback, wx.ID_ANY, _(u"Feedback"), wx.DefaultPosition, wx.DefaultSize, _rbx_responsiveChoices, 1, wx.RA_SPECIFY_COLS )
 		self._rbx_responsive.SetSelection( 2 )
 		bSizer81.Add( self._rbx_responsive, 0, wx.ALL, 5 )
 		
-		self._btn_recalculate_results = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Recalculate Results"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_recalculate_results = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"SMARTeR Ranking"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer81.Add( self._btn_recalculate_results, 0, wx.ALL, 5 )
 		
 		
@@ -202,7 +215,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		bSizer10 = wx.BoxSizer( wx.VERTICAL )
 		
-		self._doc_feedback_preview = wx.TextCtrl( self._panel_feedback, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_WORDWRAP )
+		self._doc_feedback_preview = wx.TextCtrl( self._panel_feedback, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
 		self._doc_feedback_preview.SetMinSize( wx.Size( 1010,225 ) )
 		
 		bSizer10.Add( self._doc_feedback_preview, 0, wx.ALL, 5 )
@@ -233,9 +246,12 @@ class SMARTeRGUI ( wx.Frame ):
 		self._notebook.Bind( wx.EVT_NOTEBOOK_PAGE_CHANGED, self._on_notebook_page_changed )
 		self._btn_clear_project_details.Bind( wx.EVT_BUTTON, self._on_click_clear_project_details )
 		self._btn_index_data.Bind( wx.EVT_BUTTON, self._on_click_index_data )
-		self._file_picker_mdl.Bind( wx.EVT_FILEPICKER_CHANGED, self._on_file_change_mdl )
+		self._cbx_project_title.Bind( wx.EVT_COMBOBOX, self._on_set_existing_project )
+		self._chk_io_new_project.Bind( wx.EVT_CHECKBOX, self._on_click_io_sel_new_project )
 		self._btn_add_to_query.Bind( wx.EVT_BUTTON, self._on_click_add_to_query )
-		self._btn_run_query.Bind( wx.EVT_BUTTON, self._on_click_run_query )
+		self._btn_run_query.Bind( wx.EVT_BUTTON, self._on_click_add_to_query )
+		self._btn_add_to_query1.Bind( wx.EVT_BUTTON, self._on_click_add_to_query1 )
+		self._btn_run_query1.Bind( wx.EVT_BUTTON, self._on_click_run_query )
 		self._rbx_responsive.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated )
 		self._btn_recalculate_results.Bind( wx.EVT_BUTTON, self._on_click_recalculate )
 	
@@ -262,10 +278,17 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_click_index_data( self, event ):
 		event.Skip()
 	
-	def _on_file_change_mdl( self, event ):
+	def _on_set_existing_project( self, event ):
+		event.Skip()
+	
+	def _on_click_io_sel_new_project( self, event ):
 		event.Skip()
 	
 	def _on_click_add_to_query( self, event ):
+		event.Skip()
+	
+	
+	def _on_click_add_to_query1( self, event ):
 		event.Skip()
 	
 	def _on_click_run_query( self, event ):

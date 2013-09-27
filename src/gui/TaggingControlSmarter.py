@@ -63,17 +63,20 @@ class TaggingControlSmarter ( wx.ListCtrl, ListCtrlAutoWidthMixin):
                          
         
         #Show the preview
-        print_message = ''
+        msg_text = ''
         is_message_opened = False
         src_file_path = sm.ts_results[selected_doc_id][1]
         _, fileExtension = os.path.splitext(src_file_path)
         if fileExtension=="" or fileExtension==".txt":
-            with open(src_file_path,'r') as content:
-                print_message+=content.read()
+            import unicodedata
+            with open(src_file_path) as fp:
+                for line in fp:
+                    msg_text = msg_text+line+"\n"
+                #msg_text = unicodedata.normalize('NFKD', msg_text).encode('ascii','ignore') # converts to ascii 
             is_message_opened = True
         
         if is_message_opened:
-            sm._doc_feedback_preview.SetValue(str(print_message))
+            sm._doc_feedback_preview.SetValue(str(msg_text))
         else:
             sm._doc_feedback_preview.SetValue('')
         
