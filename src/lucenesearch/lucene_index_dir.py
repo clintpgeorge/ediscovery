@@ -249,27 +249,66 @@ def search_lucene_index(index_dir, query_model, limit):
     return rows
 
 
-if __name__ == '__main__':
+def boolean_search_lucene_index(index_dir, query_text, limit):
+    '''
+    This function searches a boolean query in the learned lucene index 
     
+    Arguments: 
+        index_dir - the lucene index directory 
+        query_text - the query text which follows http://lucene.apache.org/core/3_6_0/queryparsersyntax.html
+        limit - the number of records to be retrieved 
+    Return: 
+        rows - the returned document details 
 
-    # test_search("F:\\Research\\datasets\\trec2010\\project4\\lucene")
     
-    index_dir = "F:\\Research\\datasets\\trec2010\\project4\\lucene"
-    lucene_query = 'all:(swap trans*)'
-    record_limit = 1000 
+    '''
     DEFAULT_QUERY_FIELD = 'all'
     
     store = SimpleFSDirectory(File(index_dir))
     
     searcher = IndexSearcher(store, True)
     parser = QueryParser(Version.LUCENE_CURRENT, DEFAULT_QUERY_FIELD, STD_ANALYZER)
-    query = parser.parse(lucene_query)
+    query = parser.parse(query_text)
     
     start = datetime.datetime.now()
     scoreDocs = searcher.search(query, record_limit).scoreDocs
     duration = datetime.datetime.now() - start
     
     print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
+
+    
+    rows = []
+    for scoreDoc in scoreDocs:
+        doc = searcher.doc(scoreDoc.doc)
+        table = dict((field.name(), field.stringValue())
+                     for field in doc.getFields())
+        row = []
+        metadata = MetadataType._types
+        for field in metadata:
+            if table.get(field,'empty') != 'empty' :
+                row.append(table.get(field,'empty'))
+            else: 
+                row.append('')
+        row.append(str(table.get(MetadataType.FILE_ID,'empty'))) # the unique file id of a file 
+        row.append(scoreDoc.score)
+        
+        rows.append(row)
+    
+    return rows
+
+
+if __name__ == '__main__':
+    
+
+    # test_search("F:\\Research\\datasets\\trec2010\\project4\\lucene")
+    
+    index_dir = "F:\\Research\\datasets\\trec2010\\project4\\lucene"
+    lucene_query = 'all:(+swap trans*)'
+    record_limit = 1000 
+    
+    boolean_search_lucene_index(index_dir, lucene_query, record_limit)
+    
+
     
     
 
