@@ -271,7 +271,7 @@ def boolean_search_lucene_index(index_dir, query_text, limit):
     query = parser.parse(query_text)
     
     start = datetime.datetime.now()
-    scoreDocs = searcher.search(query, record_limit).scoreDocs
+    scoreDocs = searcher.search(query, limit).scoreDocs
     duration = datetime.datetime.now() - start
     
     print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)

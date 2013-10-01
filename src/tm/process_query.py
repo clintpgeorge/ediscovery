@@ -153,22 +153,96 @@ def get_lda_topic_dist(docs, lda_dictionary, lda_mdl, num_topics):
 
     return theta_matrix
 
-def print_topic_details(query_td, lda_mdl, TOP_K_TOPICS = 5):
+
+def print_lda_topics_on_entropy(lda_mdl, file_name='topic-words.csv', topn=50):
+    '''
+    This function loads the LDA model, computes the entropy 
+    of all topics, and sort and display them in the increasing 
+    order of entropy    
+    
+    '''
+    import math
+    
+    topics = lda_mdl.show_topics(topics=-1, topn=topn, log=False, formatted=False)
+    
+    # Computes topic-entropy 
+    topic_entropy = []
+    for topic in topics: 
+        entropy = 0.0 
+        for (prob, _) in topic:
+            entropy += prob * math.log(prob) 
+        topic_entropy.append(-entropy)
+        
+    # Gets the sorted index in the ascending order of topic-entropy  
+    sort_index = sorted(range(len(topic_entropy)),key=topic_entropy.__getitem__)
+    
+    print '---------------------------------------------------------------------'
+    print 'LDA topics:'
+    print 
+     
+    with open(file_name, 'w') as fp:
+        for idx in sort_index:
+            topic = topics[idx] 
+            terms = u','.join(['%s(%.8f)' % (term, prob) for (prob, term) in topic])
+            out_line = u','.join(['%.8f' % topic_entropy[idx], terms]) 
+            print out_line
+            print >>fp, out_line   
+    
+    print '---------------------------------------------------------------------'
+
+
+
+def print_dominant_query_topics(query_td, lda_mdl, TOP_K_TOPICS = 5):
     from operator import itemgetter
     import heapq
     
     dominant_topics = heapq.nlargest(TOP_K_TOPICS, dict(query_td).items(), key=itemgetter(1))
     
     # print 'Query distribution:', query_td
-    print '\nTop %s topic(s)      :' % min(TOP_K_TOPICS, len(query_td)), dominant_topics
+    print '\nTop %s query topic(s):' % min(TOP_K_TOPICS, len(query_td)), dominant_topics
     topic_words = lda_mdl.show_topics(topics=-1, topn=20, log=False, formatted=False)
     for (topic_id, _) in dominant_topics:
-        print '\t', topic_id, 
+        print '\t topic #%d:' % topic_id, 
         for (prob, term) in topic_words[topic_id] :
-            print term, '(%.3f),' % prob, 
+            print term, '(%.8f),' % prob, 
         print 
     print  
         
+def get_dominant_query_topics(query_text, lda_dictionary, lda_mdl, TOP_K_TOPICS = 5):
+    '''Tokenize the input query and finds the top K dominant query 
+    topics from an LDA model 
+    
+    Returns:
+        dominant_topics - a tuple list of (topic_id, topic_prob)
+    Arguments:
+        query_text - the query in text format 
+        lda_dictionary - the dictionary object 
+        lda_mdl - the LDA model object 
+    
+    '''
+    from operator import itemgetter
+    import heapq
+    
+    # process the query 
+    
+    query_vec = lda_dictionary.doc2bow(whitespace_tokenize(query_text))
+    
+    if len(query_vec) == 0: 
+        logging.exception('Query words are not in the dictionary. Exiting topic search!')
+        return [] 
+    else: 
+        logging.info('%d query words are in the dictionary.', len(query_vec))
+    
+    query_td = lda_mdl[query_vec]
+    # print 'Query distribution:', query_td
+    print 'Query TF:', [(w_id, lda_dictionary[w_id], count) for (w_id, count) in query_vec]
+    print_dominant_query_topics(query_td, lda_mdl, TOP_K_TOPICS)
+   
+    dominant_topics = heapq.nlargest(TOP_K_TOPICS, dict(query_td).items(), key=itemgetter(1))
+
+    return dominant_topics # (topic_id, topic_prob)  
+
+
 
     
 
@@ -178,8 +252,7 @@ def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_pa
     document search. 
     
     Returns:
-        a lists of lists of responsive documents in 
-        this format [doc_id, doc_dir_path, doc_name, score] 
+        responsive_docs - [doc_id, doc_dir_path, doc_name, score] 
     Arguments:
         query_text - the query in text format 
         lda_dictionary - the dictionary object 
@@ -200,15 +273,7 @@ def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_pa
     else: 
         logging.info('%d query words are in the dictionary.', len(query_vec))
     
-    
-    
     query_td = lda_mdl[query_vec]
-    
-    # the following code is just for analysis 
-    
-    print 'Query vector      :', [(w_id, lda_dictionary[w_id], count) for (w_id, count) in query_vec]
-    print_topic_details(query_td, lda_mdl)
-        
     
     # querying based on cosine distance
     
