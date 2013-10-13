@@ -3,10 +3,9 @@ import os
 from lucene import BooleanClause
 from lucenesearch.lucene_index_dir import boolean_search_lucene_index, get_indexed_file_details
 
-from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_lda_topic_dist, get_dominant_query_topics, print_dominant_query_topics, print_lda_topics_on_entropy
+from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_dominant_query_topics, print_lda_topics_on_entropy
 from utils.utils_file import read_config, load_file_paths_index, nexists
 from PyROC.pyroc import ROCData, plot_multiple_roc
-from utils.utils_email import parse_plain_text_email
 import numpy as np 
 from collections import defaultdict
 
@@ -865,7 +864,7 @@ def analyze_query(file_prefix, config_file, test_directory,
                   limit = 1000, img_extension  = '.eps'):
     
     TOP_K_TOPICS = 5 # the number topics used for Topic-LDA 
-    rocs_file_name = '%s-ROCs-lemma-stems' % file_prefix + img_extension
+    rocs_file_name = '%s-ROCs' % file_prefix + img_extension
     rocs_img_title = '' # 'Query %s: ROCs of all methods' % file_prefix 
     roc_labels = ['Lucene ranking', 
                   'Keyword-LDA ranking' , 
@@ -907,7 +906,7 @@ def analyze_query(file_prefix, config_file, test_directory,
     lda_docs = search_tm(tm_query, limit, mdl_cfg)
     lda_res = convert_to_roc_format(lda_docs, positive_dir)
     
-    plot_doc_class_predictions(lda_res, '%s-Keyword-LDA' % file_prefix)
+    # plot_doc_class_predictions(lda_res, '%s-Keyword-LDA' % file_prefix)
     
     
     print 'LDA (w/ keywords) * Lucene ranking'
@@ -969,24 +968,36 @@ def analyze_query(file_prefix, config_file, test_directory,
 
 ## ***** BEGIN change the following each query *********
 
-query_id = 201
-config_file = "project4.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
-test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-lucene_query = 'all:(pre-pay swap)'
-tm_query = 'pre-pay swap'
+#query_id = 201
+#config_file = "project-201-t50.cfg" # configuration file, created using the SMARTeR GUI 
+#test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#lucene_query = 'all:(pre-pay swap)'
+#tm_query = 'pre-pay swap'
 
 
 #query_id = 202
-#config_file = "project4.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+#config_file = "project-202.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
 #test_directory = "F:\\Research\\datasets\\trec2010\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 #lucene_query = 'all:(FAS transaction swap trust Transferor Transferee)'
 #tm_query = 'FAS transaction swap trust Transferor Transferee'
+
+query_id = 204
+config_file = "project-204-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+test_directory = "F:\\Research\\datasets\\trec2010\\204"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+lucene_query = 'all:(retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail)'
+tm_query = 'retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail'
+
+#query_id = 207
+#config_file = "project-207-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+#test_directory = "F:\\Research\\datasets\\trec2010\\207"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#lucene_query = 'all:(football Eric Bass)'
+#tm_query = 'football Eric Bass'
 
 ## ***** END change this each query *********
 
 # ************************************************************************************
 
-file_prefix = '%d' % query_id
+file_prefix = '%d-RAW' % query_id
 positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
 negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
 analyze_query(file_prefix, config_file, test_directory, 

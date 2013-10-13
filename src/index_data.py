@@ -167,7 +167,7 @@ if __name__=="__main__":
 
     Examples: 
         python index_data.py -h # for help 
-        python index_data.py -l -d F:\\Research\\datasets\\trec2010\\201 -o F:\\Research\\datasets\\trec2010 -p project4 -z    
+        python index_data.py -l -d "F:\\Research\\datasets\\trec2010\\201" -o "F:\\Research\\datasets\\trec2010" -p project-201 -z -s     
 
     ''')
     arg_parser.add_argument("-d", dest="data_folder", type=str, help="data folder", required=True)
@@ -181,8 +181,8 @@ if __name__=="__main__":
     args = arg_parser.parse_args()
     
     
-    data_folder = args.data_folder
-    output_folder = args.output_folder
+    data_folder = os.path.normpath(args.data_folder)
+    output_folder = os.path.normpath(args.output_folder)
     project_name = args.project_name
     num_topics = args.num_topics
     num_passes = args.num_passes 
@@ -198,6 +198,6 @@ if __name__=="__main__":
                lemmatize=args.lemmatize, 
                stem=args.stem)
     
-    print '\nExecution time:', time.time() - start_time, 'seconds'
+    print '\nIndexing time:', time.time() - start_time, 'seconds'
     
 

@@ -67,8 +67,6 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize =
 
     '''
     
-    print lemmatize, stem 
-    
     if not os.path.exists(store_dir): 
         os.mkdir(store_dir)
     
@@ -85,12 +83,14 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize =
         store_file_paths_index(path_index_file, file_tuples)
         logging.info('File paths index is stored into %s' % path_index_file)
     
-    logging.info('Lucene indexing..')
+    logging.info('Lucene indexing: Stem = %s, Lemmatize = %s, Number of documents = %d' % (stem, lemmatize, len(file_tuples)))
         
     store = SimpleFSDirectory(File(store_dir))
     writer = IndexWriter(store, STD_ANALYZER, True, IndexWriter.MaxFieldLength.LIMITED)
     
-    print len(file_tuples), 'files are there in the data directory.'
+    print len(file_tuples), 'files found in %s.' % data_folder
+    
+    print 'Stem: ', stem, 'Lemmatize:', lemmatize 
     
     for ft in file_tuples: 
         idx, root, file_name = ft
