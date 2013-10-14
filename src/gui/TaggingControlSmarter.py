@@ -54,9 +54,9 @@ class TaggingControlSmarter ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         if responsive == 'Responsive':
             sm._rbx_responsive.SetSelection(0)
             sm.ts_results[selected_doc_id][2] = 'Responsive'
-        elif responsive == 'Un Responsive':
+        elif responsive == 'Unresponsive':
             sm._rbx_responsive.SetSelection(1)
-            sm.ts_results[selected_doc_id][2] = 'Un Responsive'
+            sm.ts_results[selected_doc_id][2] = 'Unresponsive'
         else:
             sm._rbx_responsive.SetSelection(2)
             sm.ts_results[selected_doc_id][2] = ''
@@ -71,7 +71,7 @@ class TaggingControlSmarter ( wx.ListCtrl, ListCtrlAutoWidthMixin):
             import unicodedata
             with open(src_file_path) as fp:
                 for line in fp:
-                    msg_text = msg_text+line+"\n"
+                    msg_text = msg_text+line
                 #msg_text = unicodedata.normalize('NFKD', msg_text).encode('ascii','ignore') # converts to ascii 
             is_message_opened = True
         

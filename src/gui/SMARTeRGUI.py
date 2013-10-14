@@ -59,39 +59,28 @@ class SMARTeRGUI ( wx.Frame ):
 		self.m_staticText5.Wrap( -1 )
 		gbsizer_project.Add( self.m_staticText5, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_project_name = wx.TextCtrl( self._panel_index, wx.ID_ANY, _(u"Title of new project..."), wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
-		self._tc_project_name.Enable( False )
-		
-		gbsizer_project.Add( self._tc_project_name, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
 		self.m_staticText6 = wx.StaticText( self._panel_index, wx.ID_ANY, _(u"Input Data Folder"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText6.Wrap( -1 )
-		gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._data_dir_picker = wx.DirPickerCtrl( self._panel_index, wx.ID_ANY, wx.EmptyString, _(u"Select a folder"), wx.DefaultPosition, wx.Size( -1,-1 ), wx.DIRP_DEFAULT_STYLE )
-		gbsizer_project.Add( self._data_dir_picker, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._tc_data_fld = wx.TextCtrl( self._panel_index, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), wx.TE_READONLY )
+		gbsizer_project.Add( self._tc_data_fld, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticline3 = wx.StaticLine( self._panel_index, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		gbsizer_project.Add( self.m_staticline3, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
+		gbsizer_project.Add( self.m_staticline3, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._btn_clear_project_details = wx.Button( self._panel_index, wx.ID_ANY, _(u"Clear"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_project.Add( self._btn_clear_project_details, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbsizer_project.Add( self._btn_clear_project_details, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_index_data = wx.Button( self._panel_index, wx.ID_ANY, _(u"Index Files"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_project.Add( self._btn_index_data, wx.GBPosition( 5, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_index_data = wx.Button( self._panel_index, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbsizer_project.Add( self._btn_index_data, wx.GBPosition( 3, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		_cbx_project_titleChoices = []
 		self._cbx_project_title = wx.ComboBox( self._panel_index, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), _cbx_project_titleChoices, wx.CB_DROPDOWN|wx.CB_READONLY|wx.TE_PROCESS_ENTER )
 		gbsizer_project.Add( self._cbx_project_title, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._chk_io_new_project = wx.CheckBox( self._panel_index, wx.ID_ANY, _(u"Click to create a new project"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._chk_io_new_project.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 93, 90, False, wx.EmptyString ) )
-		
-		gbsizer_project.Add( self._chk_io_new_project, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self.m_staticText14 = wx.StaticText( self._panel_index, wx.ID_ANY, _(u"Enter New Project Title"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText14.Wrap( -1 )
-		gbsizer_project.Add( self.m_staticText14, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_new_project = wx.Button( self._panel_index, wx.ID_ANY, _(u"New Project"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbsizer_project.Add( self._btn_new_project, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		sbsizer_project.Add( gbsizer_project, 1, wx.EXPAND, 5 )
@@ -107,43 +96,6 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_query.SetMinSize( wx.Size( 950,300 ) )
 		
 		_bsizer_query = wx.BoxSizer( wx.VERTICAL )
-		
-		_sbsizer_query_model = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Query Processing") ), wx.VERTICAL )
-		
-		_gbsizer_query = wx.GridBagSizer( 5, 5 )
-		_gbsizer_query.SetFlexibleDirection( wx.BOTH )
-		_gbsizer_query.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self._st_query = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Enter Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_query.Wrap( -1 )
-		_gbsizer_query.Add( self._st_query, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._tc_query_input = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )
-		_gbsizer_query.Add( self._tc_query_input, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_add_to_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Add To Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_query.Add( self._btn_add_to_query, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		_rbtn_compulsion_levelChoices = [ _(u"MUST"), _(u"MAY"), _(u"MUST_NOT") ]
-		self._rbtn_compulsion_level = wx.RadioBox( self._panel_query, wx.ID_ANY, _(u"Compulsion Level"), wx.DefaultPosition, wx.DefaultSize, _rbtn_compulsion_levelChoices, 1, 0 )
-		self._rbtn_compulsion_level.SetSelection( 0 )
-		_gbsizer_query.Add( self._rbtn_compulsion_level, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		_cbx_meta_typeChoices = []
-		self._cbx_meta_type = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"Select Type"), wx.DefaultPosition, wx.DefaultSize, _cbx_meta_typeChoices, wx.CB_READONLY|wx.CB_SORT )
-		_gbsizer_query.Add( self._cbx_meta_type, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._tc_query = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,50 ), wx.TE_MULTILINE )
-		_gbsizer_query.Add( self._tc_query, wx.GBPosition( 2, 1 ), wx.GBSpan( 2, 2 ), wx.ALL, 5 )
-		
-		self._btn_run_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Start Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_query.Add( self._btn_run_query, wx.GBPosition( 2, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		
-		_sbsizer_query_model.Add( _gbsizer_query, 1, wx.EXPAND, 10 )
-		
-		
-		_bsizer_query.Add( _sbsizer_query_model, 0, wx.ALL|wx.EXPAND, 10 )
 		
 		_sbsizer_query_model1 = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Query Processing") ), wx.VERTICAL )
 		
@@ -175,6 +127,11 @@ class SMARTeRGUI ( wx.Frame ):
 		self._cbx_meta_type2 = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"OR"), wx.DefaultPosition, wx.Size( 80,-1 ), _cbx_meta_type2Choices, wx.CB_DROPDOWN|wx.CB_READONLY )
 		self._cbx_meta_type2.SetSelection( 1 )
 		_gbsizer_query1.Add( self._cbx_meta_type2, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._tc_query = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,50 ), wx.TE_MULTILINE )
+		self._tc_query.Hide()
+		
+		_gbsizer_query1.Add( self._tc_query, wx.GBPosition( 5, 1 ), wx.GBSpan( 2, 2 ), wx.ALL, 5 )
 		
 		
 		_sbsizer_query_model1.Add( _gbsizer_query1, 1, wx.EXPAND, 10 )
@@ -247,9 +204,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_clear_project_details.Bind( wx.EVT_BUTTON, self._on_click_clear_project_details )
 		self._btn_index_data.Bind( wx.EVT_BUTTON, self._on_click_index_data )
 		self._cbx_project_title.Bind( wx.EVT_COMBOBOX, self._on_set_existing_project )
-		self._chk_io_new_project.Bind( wx.EVT_CHECKBOX, self._on_click_io_sel_new_project )
-		self._btn_add_to_query.Bind( wx.EVT_BUTTON, self._on_click_add_to_query )
-		self._btn_run_query.Bind( wx.EVT_BUTTON, self._on_click_add_to_query )
+		self._btn_new_project.Bind( wx.EVT_BUTTON, self._on_click_new_project )
 		self._btn_add_to_query1.Bind( wx.EVT_BUTTON, self._on_click_add_to_query1 )
 		self._btn_run_query1.Bind( wx.EVT_BUTTON, self._on_click_run_query )
 		self._rbx_responsive.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated )
@@ -281,12 +236,8 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_set_existing_project( self, event ):
 		event.Skip()
 	
-	def _on_click_io_sel_new_project( self, event ):
+	def _on_click_new_project( self, event ):
 		event.Skip()
-	
-	def _on_click_add_to_query( self, event ):
-		event.Skip()
-	
 	
 	def _on_click_add_to_query1( self, event ):
 		event.Skip()
@@ -463,6 +414,83 @@ class PreferencesDialog ( wx.Dialog ):
 		event.Skip()
 	
 	def _on_click_save_indexing_preferences( self, event ):
+		event.Skip()
+	
+
+###########################################################################
+## Class NewProject
+###########################################################################
+
+class NewProject ( wx.Dialog ):
+	
+	def __init__( self, parent ):
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = _(u"Create New Project"), pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
+		
+		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		
+		bSizer5 = wx.BoxSizer( wx.VERTICAL )
+		
+		sbsizer_project = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, _(u"Project Details") ), wx.VERTICAL )
+		
+		gbsizer_project = wx.GridBagSizer( 0, 0 )
+		gbsizer_project.SetFlexibleDirection( wx.BOTH )
+		gbsizer_project.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._tc_project_name = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
+		self._tc_project_name.Enable( False )
+		
+		gbsizer_project.Add( self._tc_project_name, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticText6 = wx.StaticText( self, wx.ID_ANY, _(u"Input Data Folder"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText6.Wrap( -1 )
+		gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._data_dir_picker = wx.DirPickerCtrl( self, wx.ID_ANY, wx.EmptyString, _(u"Select a folder"), wx.DefaultPosition, wx.Size( -1,-1 ), wx.DIRP_DEFAULT_STYLE )
+		gbsizer_project.Add( self._data_dir_picker, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticline3 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbsizer_project.Add( self.m_staticline3, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self._btn_clear_project_details = wx.Button( self, wx.ID_ANY, _(u"Cancel"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbsizer_project.Add( self._btn_clear_project_details, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_index_data = wx.Button( self, wx.ID_ANY, _(u"Create Project"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbsizer_project.Add( self._btn_index_data, wx.GBPosition( 3, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticText14 = wx.StaticText( self, wx.ID_ANY, _(u"Enter New Project Title"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText14.Wrap( -1 )
+		gbsizer_project.Add( self.m_staticText14, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		sbsizer_project.Add( gbsizer_project, 1, wx.EXPAND, 5 )
+		
+		
+		bSizer5.Add( sbsizer_project, 0, wx.ALL, 10 )
+		
+		
+		self.SetSizer( bSizer5 )
+		self.Layout()
+		bSizer5.Fit( self )
+		
+		self.Centre( wx.BOTH )
+		
+		# Connect Events
+		self._tc_project_name.Bind( wx.EVT_KILL_FOCUS, self._on_focus_kill_chk_dup )
+		self._btn_clear_project_details.Bind( wx.EVT_BUTTON, self._on_click_clear_project_details )
+		self._btn_index_data.Bind( wx.EVT_BUTTON, self._on_click_index_data )
+	
+	def __del__( self ):
+		pass
+	
+	
+	# Virtual event handlers, overide them in your derived class
+	def _on_focus_kill_chk_dup( self, event ):
+		event.Skip()
+	
+	def _on_click_clear_project_details( self, event ):
+		event.Skip()
+	
+	def _on_click_index_data( self, event ):
 		event.Skip()
 	
 

@@ -13,7 +13,7 @@ import mimetypes
 from lucene import BooleanClause
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin, \
     ColumnSorterMixin
-from gui.SMARTeRGUI import SMARTeRGUI, RatingControl, PreferencesDialog
+from gui.SMARTeRGUI import SMARTeRGUI, RatingControl, PreferencesDialog, NewProject
 from lucenesearch.lucene_index_dir import search_lucene_index, MetadataType, get_indexed_file_details
 import re
 import webbrowser
@@ -254,7 +254,107 @@ class Rating (RatingControl):
         
         self.checklist_control.itemDataMap = dictionary_of_rows
         self.Destroy()
+'''        
+class CreateProject (NewProject):
+    def __init__(self, parent):
+        """ Calls the parent class's method """ 
+        super(NewProject, self).__init__(parent)
+        self.Center()
+        self.Show(True)
+'''
+        
+class NewProject1 ( wx.Dialog ):
+    smarter=None
+    def __init__( self, parent ):
+        wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = (u"Create New Project"), pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
+        
+        self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+        
+        bSizer5 = wx.BoxSizer( wx.VERTICAL )
+        
+        sbsizer_project = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY,(u"Project Details") ), wx.VERTICAL )
+        
+        gbsizer_project = wx.GridBagSizer( 0, 0 )
+        gbsizer_project.SetFlexibleDirection( wx.BOTH )
+        gbsizer_project.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+        
+        self._tc_project_name = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
 
+        
+        gbsizer_project.Add( self._tc_project_name, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        self.m_staticText6 = wx.StaticText( self, wx.ID_ANY, (u"Input Data Folder"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText6.Wrap( -1 )
+        gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        self._data_dir_picker = wx.DirPickerCtrl( self, wx.ID_ANY, wx.EmptyString, (u"Select a folder"), wx.DefaultPosition, wx.Size( -1,-1 ), wx.DIRP_DEFAULT_STYLE )
+        gbsizer_project.Add( self._data_dir_picker, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        self.m_staticline3 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+        gbsizer_project.Add( self.m_staticline3, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
+        
+        self._btn_clear_project_details = wx.Button( self, wx.ID_ANY, (u"Cancel"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        gbsizer_project.Add( self._btn_clear_project_details, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        self._btn_index_data = wx.Button( self, wx.ID_ANY, (u"Create Project"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        gbsizer_project.Add( self._btn_index_data, wx.GBPosition( 3, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        self.m_staticText14 = wx.StaticText( self, wx.ID_ANY, (u"Enter New Project Title"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText14.Wrap( -1 )
+        gbsizer_project.Add( self.m_staticText14, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        
+        sbsizer_project.Add( gbsizer_project, 1, wx.EXPAND, 5 )
+        
+        
+        bSizer5.Add( sbsizer_project, 0, wx.ALL, 10 )
+        
+        
+        self.SetSizer( bSizer5 )
+        self.Layout()
+        bSizer5.Fit( self )
+        
+        self.Centre( wx.BOTH )
+        
+        # Connect Events
+        self._btn_clear_project_details.Bind( wx.EVT_BUTTON, self._on_click_cancel )
+        self._btn_index_data.Bind( wx.EVT_BUTTON, self._on_click_index_data )
+        self._tc_project_name.Bind( wx.EVT_KILL_FOCUS, self._on_focus_kill_chk_dup )
+        
+        self.smarter=parent
+    
+    def __del__( self ):
+        pass
+    
+    
+    # Virtual event handlers, overide them in your derived class
+    def _on_click_cancel( self, event ):
+        self.Destroy()
+    
+    def _on_click_index_data( self, event ):
+        
+        project_name=self._tc_project_name.GetValue()
+        if project_name in self.smarter._cbx_project_title.GetStrings():
+            self.smarter._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
+            self._tc_project_name.SetValue("")
+        else:
+            data_folder = self._data_dir_picker.GetPath()
+            project_name = ""
+            #     print project_name, data_folder, output_folder, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len
+            project_name = self._tc_project_name.GetValue()
+            index_data(data_folder, self.smarter.directory, project_name, self.smarter._cfg_dir, self.smarter._num_topics, self.smarter._num_passes, self.smarter._min_token_freq, self.smarter._min_token_len, log_to_file=True)
+            self.smarter._cbx_project_title.Append(project_name)        
+            print 'Indexing is completed.'
+            self.Destroy()
+            
+    def _on_focus_kill_chk_dup( self, event ):
+        event.Skip()
+        project_name=self._tc_project_name.GetValue()
+        if project_name in self.smarter._cbx_project_title.GetStrings():
+            self.smarter._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
+            self._tc_project_name.SetValue("")
+            
+        
 
 ###########################################################################
 # # Class Preferences 
@@ -379,12 +479,12 @@ class SMARTeR (SMARTeRGUI):
         to accommodate new metadata types as and when they are needed. 
         '''
         meta_data_types = MetadataType._types
-        self._cbx_meta_type.Append(MetadataType.ALL)  # adds the all field to the combo box
+        #self._cbx_meta_type.Append(MetadataType.ALL)  # adds the all field to the combo box
         self._cbx_meta_type1.Append(MetadataType.ALL) 
         for l in meta_data_types :
-            self._cbx_meta_type.Append(l)
+            #self._cbx_meta_type.Append(l)
             self._cbx_meta_type1.Append(l) 
-        self._cbx_meta_type.SetSelection(0)
+        #self._cbx_meta_type.SetSelection(0)
         self._cbx_meta_type1.SetSelection(0)
 
 
@@ -511,7 +611,10 @@ class SMARTeR (SMARTeRGUI):
             self._cbx_project_title.Enable()
             self._cbx_project_title.SetSelection(0)
             
-
+    def _on_click_new_project(self, event):
+        SMARTeRGUI._on_click_new_project(self, event)
+        msg_dlg=NewProject1(self)
+        msg_dlg.Show()
     
     def _on_click_next(self, event):
         global present_chunk
@@ -574,7 +677,7 @@ class SMARTeR (SMARTeRGUI):
         '''
         print model_cfg_file
         self.mdl_cfg = read_config(model_cfg_file)
-        self._data_dir_picker.SetPath(self.mdl_cfg['DATA']['root_dir'])
+        self._tc_data_fld.SetValue(self.mdl_cfg['DATA']['root_dir'])
         self._shelve_dir = os.path.join(self.mdl_cfg['DATA']['project_dir'], SHELVE_DIR_NAME)
         print self._shelve_dir
         if not os.path.exists(self._shelve_dir): 
@@ -641,6 +744,7 @@ class SMARTeR (SMARTeRGUI):
         # else :
         # self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":");
         #    self._rbtn_conjunction.Enable()
+        self._tc_query.AppendText(metadataSelected + ":" + self._tc_query_input1.GetValue() + ":MUST")
         if(self._tc_query1.GetValue()==""):   
             self._tc_query1.AppendText(metadataSelected + ":" + queryBoxText)
         else:
@@ -668,6 +772,7 @@ class SMARTeR (SMARTeRGUI):
         global dictionary_of_rows
         dictionary_of_rows = OrderedDict()
         queryText = self._tc_query.GetValue().strip() 
+        print queryText
         
         # 0. Validations 
         if not self._is_lucene_index_available:
@@ -945,9 +1050,9 @@ class SMARTeR (SMARTeRGUI):
             if responsive_status == 'Responsive': 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'Yes')
                 self.ts_results[selected_doc_id][2] = 'Responsive'
-            elif responsive_status == 'Un Responsive': 
+            elif responsive_status == 'Unresponsive': 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'No')
-                self.ts_results[selected_doc_id][2] = 'Un Responsive'
+                self.ts_results[selected_doc_id][2] = 'Unresponsive'
             else: 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, '')
                 self.ts_results[selected_doc_id][2] = ''
@@ -1001,16 +1106,7 @@ class SMARTeR (SMARTeRGUI):
         
         '''
     
-        data_folder = self._data_dir_picker.GetPath()
-        project_name = ""
-        # print project_name, data_folder, output_folder, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len
-        if self._chk_io_new_project.Value==True:
-            project_name = self._tc_project_name.GetValue()
-            index_data(data_folder, self.directory, project_name, self._cfg_dir, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len, log_to_file=True)
-            self._cbx_project_title.Append(self.project_name)        
-            print 'Indexing is completed.'
-        else:
-            project_name = self._cbx_project_title.GetValue()
+        project_name = self._cbx_project_title.GetValue()
         #ADD
         if project_name=="":
             self._show_error_message("Missing input", "Please enter or select a project.")
