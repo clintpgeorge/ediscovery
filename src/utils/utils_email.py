@@ -150,12 +150,15 @@ def stem_tokens(word_tokens):
 
 
 
-def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem = False):
+def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem = False, nonascii = False):
     '''Processes a single email file that's in plain/text format 
     
     Arguments: 
         file_path - the email file path 
     '''
+    def removeNonAscii(s): 
+        return "".join(i for i in s if ord(i) < 128)
+    
     
     # Handles different text encoding 
     email_text = ''
@@ -212,7 +215,18 @@ def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem =
                         body_text += part.get_payload(decode=True)
                     else:
                         continue
+        
+    if not nonascii:            
+        ret = (removeNonAscii(receiver), 
+                removeNonAscii(sender), 
+                removeNonAscii(cc), 
+                removeNonAscii(subject), 
+                removeNonAscii(body_text), 
+                removeNonAscii(bcc), 
+                removeNonAscii(date))
+    else: 
+        ret = (receiver,  sender, cc, subject, body_text, bcc, date)
     
-    return (receiver, sender, cc, subject, body_text, bcc, date)
+    return ret
     
 

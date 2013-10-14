@@ -65,12 +65,7 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize =
     Returns: 
         None 
 
-    TODO: 
-        1. Need to handle dates 
-        2. Need to handle general meta data of files (e.g. last modified date, modified by, owner, etc)
     '''
-    
-    print lemmatize, stem 
     
     if not os.path.exists(store_dir): 
         os.mkdir(store_dir)
@@ -88,12 +83,14 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize =
         store_file_paths_index(path_index_file, file_tuples)
         logging.info('File paths index is stored into %s' % path_index_file)
     
-    logging.info('Lucene indexing..')
+    logging.info('Lucene indexing: Stem = %s, Lemmatize = %s, Number of documents = %d' % (stem, lemmatize, len(file_tuples)))
         
     store = SimpleFSDirectory(File(store_dir))
     writer = IndexWriter(store, STD_ANALYZER, True, IndexWriter.MaxFieldLength.LIMITED)
     
-    print len(file_tuples), 'files are there in the data directory.'
+    print len(file_tuples), 'files found in %s.' % data_folder
+    
+    print 'Stem: ', stem, 'Lemmatize:', lemmatize 
     
     for ft in file_tuples: 
         idx, root, file_name = ft
@@ -221,9 +218,7 @@ def search_lucene_index(index_dir, query_model, limit):
         limit - the number of records to be retrieved 
     Return: 
         rows - the returned document details 
-        
-    TODO: 
-        1. Search in all fields if the user hasn't selected any particular item 
+
     
     '''
     store = SimpleFSDirectory(File(index_dir))
@@ -253,10 +248,71 @@ def search_lucene_index(index_dir, query_model, limit):
     
     return rows
 
-def main():
-    print "Hello"
-    test_search("C:\\Users\\Sahil\\Output\\Project1\\lucene")
+
+def boolean_search_lucene_index(index_dir, query_text, limit):
+    '''
+    This function searches a boolean query in the learned lucene index 
+    
+    Arguments: 
+        index_dir - the lucene index directory 
+        query_text - the query text which follows http://lucene.apache.org/core/3_6_0/queryparsersyntax.html
+        limit - the number of records to be retrieved 
+    Return: 
+        rows - the returned document details 
+
+    
+    '''
+    DEFAULT_QUERY_FIELD = 'all'
+    
+    store = SimpleFSDirectory(File(index_dir))
+    
+    searcher = IndexSearcher(store, True)
+    parser = QueryParser(Version.LUCENE_CURRENT, DEFAULT_QUERY_FIELD, STD_ANALYZER)
+    query = parser.parse(query_text)
+    
+    start = datetime.datetime.now()
+    scoreDocs = searcher.search(query, limit).scoreDocs
+    duration = datetime.datetime.now() - start
+    
+    print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
+
+    
+    rows = []
+    for scoreDoc in scoreDocs:
+        doc = searcher.doc(scoreDoc.doc)
+        table = dict((field.name(), field.stringValue())
+                     for field in doc.getFields())
+        row = []
+        metadata = MetadataType._types
+        for field in metadata:
+            if table.get(field,'empty') != 'empty' :
+                row.append(table.get(field,'empty'))
+            else: 
+                row.append('')
+        row.append(str(table.get(MetadataType.FILE_ID,'empty'))) # the unique file id of a file 
+        row.append(scoreDoc.score)
+        
+        rows.append(row)
+    
+    return rows
+
 
 if __name__ == '__main__':
     
-    main()
+
+    # test_search("F:\\Research\\datasets\\trec2010\\project4\\lucene")
+    
+    index_dir = "F:\\Research\\datasets\\trec2010\\project4\\lucene"
+    lucene_query = 'all:(+swap trans*)'
+    record_limit = 1000 
+    
+    boolean_search_lucene_index(index_dir, lucene_query, record_limit)
+    
+
+    
+    
+
+
+    
+    
+    
