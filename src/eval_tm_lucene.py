@@ -863,9 +863,10 @@ def analyze_query(file_prefix, config_file, test_directory,
                   lucene_query, tm_query, 
                   limit = 1000, img_extension  = '.eps'):
     
+    positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
     TOP_K_TOPICS = 5 # the number topics used for Topic-LDA 
     rocs_file_name = '%s-ROCs' % file_prefix + img_extension
-    rocs_img_title = '' # 'Query %s: ROCs of all methods' % file_prefix 
+    rocs_img_title = '%s: ROC curves' % file_prefix 
     roc_labels = ['Lucene ranking', 
                   'Keyword-LDA ranking' , 
                   'Keyword-LDA * Lucene ranking', 
@@ -906,27 +907,27 @@ def analyze_query(file_prefix, config_file, test_directory,
     lda_docs = search_tm(tm_query, limit, mdl_cfg)
     lda_res = convert_to_roc_format(lda_docs, positive_dir)
     
-    # plot_doc_class_predictions(lda_res, '%s-Keyword-LDA' % file_prefix)
+    # plot_doc_class_predictions(lda_res, '%s-Keyword-LDA' % file_prefix, img_extension)
     
     
     print 'LDA (w/ keywords) * Lucene ranking'
     lu_tm_docs = fuse_lucene_tm_scores(lu_docs_dict, lda_docs)
     lda_lu_res = convert_to_roc_format(lu_tm_docs, positive_dir)
     
-    plot_doc_class_predictions(lda_lu_res, '%s-Keyword-LDA-Lucene' % file_prefix)
+    plot_doc_class_predictions(lda_lu_res, '%s-Keyword-LDA-Lucene' % file_prefix, img_extension)
     
     
     print 'LDA (w/ query topics) ranking'
     lda_tts_docs = search_tm_topics(dominant_topics_idx, limit, mdl_cfg) 
     lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
     
-    plot_doc_class_predictions(lda_tts_res, '%s-Topic-LDA' % file_prefix)
+    plot_doc_class_predictions(lda_tts_res, '%s-Topic-LDA' % file_prefix, img_extension)
     
     print 'LDA (w/ query topics) * Lucene Ranking'
     final_docs_tts = fuse_lucene_tm_scores(lu_docs_dict, lda_tts_docs)
     lda_tts_lu_res = convert_to_roc_format(final_docs_tts, positive_dir)
     
-    plot_doc_class_predictions(lda_tts_lu_res, '%s-Topic-LDA-Lucene' % file_prefix)
+    plot_doc_class_predictions(lda_tts_lu_res, '%s-Topic-LDA-Lucene' % file_prefix, img_extension)
     
     
     
@@ -959,55 +960,54 @@ def analyze_query(file_prefix, config_file, test_directory,
 # 
 # '''
 #===============================================================================
-
-# ************************************************************************************
-# ****** DO ALL HARD-CODINGS HERE ****************************************************
-# ************************************************************************************
-
-
-
-## ***** BEGIN change the following each query *********
-
-#query_id = 201
-#config_file = "project-201-t50.cfg" # configuration file, created using the SMARTeR GUI 
-#test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-#lucene_query = 'all:(pre-pay swap)'
-#tm_query = 'pre-pay swap'
-
-
-#query_id = 202
-#config_file = "project-202.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
-#test_directory = "F:\\Research\\datasets\\trec2010\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-#lucene_query = 'all:(FAS transaction swap trust Transferor Transferee)'
-#tm_query = 'FAS transaction swap trust Transferor Transferee'
-
-query_id = 204
-config_file = "project-204-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
-test_directory = "F:\\Research\\datasets\\trec2010\\204"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-lucene_query = 'all:(retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail)'
-tm_query = 'retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail'
-
-#query_id = 207
-#config_file = "project-207-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
-#test_directory = "F:\\Research\\datasets\\trec2010\\207"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-#lucene_query = 'all:(football Eric Bass)'
-#tm_query = 'football Eric Bass'
-
-## ***** END change this each query *********
-
-# ************************************************************************************
-
-file_prefix = '%d-RAW' % query_id
-positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
-negative_dir = os.path.join(test_directory, "0") # TRUE negative documents 
-analyze_query(file_prefix, config_file, test_directory, 
-                  lucene_query, tm_query, 
-                  limit = 1000, img_extension  = '.eps')
-
-
-#===============================================================================
-
-
+if __name__ == '__main__':
+    
+    # ************************************************************************************
+    # ****** DO ALL HARD-CODINGS HERE ****************************************************
+    # ************************************************************************************
+    
+    
+    
+    ## ***** BEGIN change the following each query *********
+    
+#    query_id = 201
+#    config_file = "project-201.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    lucene_query = 'all:(pre-pay swap)'
+#    tm_query = 'pre-pay swap'
+    
+    
+    query_id = 202
+    config_file = "project-202.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+    test_directory = "F:\\Research\\datasets\\trec2010\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+    lucene_query = 'all:(FAS transaction swap trust Transferor Transferee)'
+    tm_query = 'FAS transaction swap trust Transferor Transferee'
+    
+    # query_id = 204
+    # config_file = "project-204-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+    # test_directory = "F:\\Research\\datasets\\trec2010\\204"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+    # lucene_query = 'all:(retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail)'
+    # tm_query = 'retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail'
+    
+    #query_id = 207
+    #config_file = "project-207-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+    #test_directory = "F:\\Research\\datasets\\trec2010\\207"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+    #lucene_query = 'all:(football Eric Bass)'
+    #tm_query = 'football Eric Bass'
+    
+    ## ***** END change this each query *********
+    
+    # ************************************************************************************
+    
+    file_prefix = '%d' % query_id
+    analyze_query(file_prefix, config_file, test_directory, 
+                      lucene_query, tm_query, 
+                      limit = 1000, img_extension = '.png')
+    
+    
+    #===============================================================================
+    
+    
 
 
 

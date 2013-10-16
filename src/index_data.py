@@ -34,7 +34,7 @@ LSI_DEFAULT_NUM_TOPICS = 200
 def index_data(data_folder, output_folder, project_name, cfg_folder, 
                num_topics=DEFAULT_NUM_TOPICS, num_passes=DEFAULT_NUM_PASSES, 
                min_token_freq=MIN_TOKEN_FREQ, min_token_len=MIN_TOKEN_LEN, 
-               log_to_file=True, lemmatize=False, stem=False):
+               log_to_file=True, lemmatize=False, stem=False, nonascii=True):
     
     if not os.path.exists(data_folder):
         print "Please provide a valid data folder!"
@@ -65,10 +65,10 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
 
     config.add_section('DATA')
     config.set('DATA', 'name', project_name)
-    config.set('DATA', 'root_dir', data_folder) # may need to change the name 
-    config.set('DATA', 'project_dir', project_folder)
-    config.set('DATA', 'log_file', log_file_name)
-    config.set('DATA', 'output_folder', output_folder)    
+    config.set('DATA', 'root_dir', os.path.normpath(data_folder)) # may need to change the name 
+    config.set('DATA', 'project_dir', os.path.normpath(project_folder))
+    config.set('DATA', 'log_file', os.path.normpath(log_file_name))
+    config.set('DATA', 'output_folder', os.path.normpath(output_folder))   
         
     logging.info('================================================== BEGIN LUCENE INDEXING ==================================================')
     
@@ -76,11 +76,11 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
     if not os.path.exists(lucene_folder): os.makedirs(lucene_folder)
     path_index_file_name = os.path.join(project_folder, project_name + '.path.index')
     
-    index_plain_text_emails(data_folder, path_index_file_name, lucene_folder, lemmatize=lemmatize, stem=stem)
+    index_plain_text_emails(data_folder, path_index_file_name, lucene_folder, lemmatize=lemmatize, stem=stem, nonascii=nonascii)
     
     config.add_section('LUCENE')
-    config.set('LUCENE', 'lucene_index_dir', lucene_folder)
-    config.set('LUCENE', 'path_index_file', path_index_file_name)
+    config.set('LUCENE', 'lucene_index_dir', os.path.normpath(lucene_folder))
+    config.set('LUCENE', 'path_index_file', os.path.normpath(path_index_file_name))
     
     logging.info('================================================== END LUCENE INDEXING ==================================================')
 
@@ -95,15 +95,16 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
     build_lda_corpus(lucene_folder, path_index_file_name, STOP_WORDS_FILE_NAME, dict_file, ldac_file, min_token_freq, min_token_len)
     
     config.add_section('CORPUS')
-    config.set('CORPUS', 'tm_folder', tm_folder)
-    config.set('CORPUS', 'path_index_file', path_index_file_name)
-    config.set('CORPUS', 'blei_corpus_file', ldac_file)
-    config.set('CORPUS', 'dict_file', dict_file)
-    config.set('CORPUS', 'vocab_file', ldac_file + '.vocab')  
+    config.set('CORPUS', 'tm_folder', os.path.normpath(tm_folder))
+    config.set('CORPUS', 'path_index_file', os.path.normpath(path_index_file_name))
+    config.set('CORPUS', 'blei_corpus_file', os.path.normpath(ldac_file))
+    config.set('CORPUS', 'dict_file', os.path.normpath(dict_file))
+    config.set('CORPUS', 'vocab_file', os.path.normpath(ldac_file + '.vocab'))  
     
     
     logging.info('================================================== END CORPUS BUILDING ==================================================')
     
+    project_name = os.path.normpath(project_name)
     
     logging.info('================================================== BEGIN LDA ESTIMATION ==================================================')
 
@@ -168,7 +169,7 @@ if __name__=="__main__":
 
     Examples: 
         python index_data.py -h # for help 
-        python index_data.py -l -d "F:\\Research\\datasets\\trec2010\\201" -o "F:\\Research\\datasets\\trec2010" -p project-201 -z -s     
+        python index_data.py -l -d "F:\\Research\\datasets\\trec2010\\201" -o "F:\\Research\\datasets\\trec2010" -p project-201 -z -s -a      
 
     ''')
     arg_parser.add_argument("-d", dest="data_folder", type=str, help="data folder", required=True)
@@ -178,6 +179,7 @@ if __name__=="__main__":
     arg_parser.add_argument("-n", dest="num_passes", type=int, help="number of passes", default=DEFAULT_NUM_PASSES)
     arg_parser.add_argument("-s", dest="stem", action="store_true", help="stem tokens", default=False)
     arg_parser.add_argument("-z", dest="lemmatize", action="store_true", help="lemmatize tokens", default=False)
+    arg_parser.add_argument("-a", dest="nonascii", action="store_true", help="allow non-ASCII tokens", default=False)
     arg_parser.add_argument("-l", "--log", dest="log", default=False, action="store_true", help="log details into a file")
     args = arg_parser.parse_args()
     
@@ -197,7 +199,8 @@ if __name__=="__main__":
                min_token_len=MIN_TOKEN_LEN, 
                log_to_file=args.log,
                lemmatize=args.lemmatize, 
-               stem=args.stem)
+               stem=args.stem, 
+               nonascii=args.nonascii)
     
     print '\nIndexing time:', time.time() - start_time, 'seconds'
     

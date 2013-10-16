@@ -3,10 +3,10 @@ import numpy as np
 
 from utils.utils_file import read_config, load_file_paths_index
 
-RELEVANT_CLASS_ID = 1
-IRRELEVANT_CLASS_ID = -1 
+RELEVANT_CLASS_ID = 0
+IRRELEVANT_CLASS_ID = 1
 
-def get_tm_svm_data(mdl_cfg_file, positive_dir):   
+def get_classification_dataset(mdl_cfg_file, positive_dir):   
     
     mdl_cfg = read_config(mdl_cfg_file)
 
@@ -66,63 +66,94 @@ def plot_tm_svm_decision_values(class_ids, p_label, p_val, svm_dec_values_file='
 
 
 
-
-                     
-from libsvm.python.svmutil import *
-from libsvm.tools.grid import *
-from collections import defaultdict
+if __name__ == '__main__':
+    
+    from libsvm.python.svmutil import *
+    from libsvm.tools.grid import *
+    from collections import defaultdict
+    
+        
+    query_id = 201
+    mdl_cfg_file = "project-%d.cfg" % query_id # configuration file 
+    test_directory = "F:\\Research\\datasets\\trec2010\\%d" %  query_id # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+    positive_dir = os.path.normpath(os.path.join(test_directory, "1")) # TRUE positive documents 
+    svm_data_file = mdl_cfg_file.replace('.cfg', '-libsvm.data') 
+    svm_dec_values_file = mdl_cfg_file.replace('.cfg', '-libsvm-dec.png') 
+    
+    
+    # Loads the SVM data from the given topic model 
+    
+    class_ids, lda_theta, file_paths = get_classification_dataset(mdl_cfg_file, positive_dir)
+    
+    
+    ## Grid search for selecting C and g 
+    #
+    #save_tm_svm_data(class_ids, lda_theta, svm_data_file)
+    #rate, param = find_parameters(svm_data_file, '-log2c -10,20,1 -v 5')
+    #
+    #C = param['c']
+    #g = param['g']
+    
+    # 201
+    C = 32
+    g = 0.5
+    
+    # 202 
+    # C = 32.0
+    # g = 0.5
+    
+    print 'CV results: C = %f g = %f' % (C, g)
+    
+    # SVM train 
+    
+    train_prob  = svm_problem(class_ids, lda_theta)
+    train_param = svm_parameter('-t 2 -c 0 -b 1 -c %f -g %f' % (C, g))
+    train_mdl = svm_train(train_prob, train_param)
+    
+    
+    
+    # SVM prediction and plots the decision values 
+    # of corresponding data points 
+    
+    p_label, p_acc, p_val = svm_predict(class_ids, lda_theta, train_mdl, '-b 0')
+    plot_tm_svm_decision_values(class_ids, p_label, p_val, svm_dec_values_file)
+    
+    
+    # Convert to the ROC format and generate ROCs 
+     
+    svm_roc_in = [(class_id, p_val[i][0]) for i, class_id in enumerate(class_ids)]
+    
+    
+    #from PyROC.pyroc import ROCData
+    #roc_data = ROCData(roc_in)
+    #roc_data.plot(rocs_img_title, file_name=rocs_file_name)
 
     
-query_id = 202 
-mdl_cfg_file = "project-%d.cfg" % query_id # configuration file 
-test_directory = "F:\\Research\\datasets\\trec2010\\%d" %  query_id # the directory where we keep the training set (TRUE negatives and TRUE positives) 
-positive_dir = os.path.normpath(os.path.join(test_directory, "1")) # TRUE positive documents 
-svm_data_file = mdl_cfg_file.replace('.cfg', '-libsvm.data') 
-svm_dec_values_file = mdl_cfg_file.replace('.cfg', '-libsvm-dec.png') 
+    #----------------------------------- Generate ROC data from the RBF network 
+    
+    import pyradbas.pyradbas as pyrb    
+    from rbf import get_rbf_classification_dataset
 
-
-# Loads the SVM data from the given topic model 
-
-class_ids, lda_theta, file_paths = get_tm_svm_data(mdl_cfg_file, positive_dir)
-
-
-## Grid search for selecting C and g 
-#
-#save_tm_svm_data(class_ids, lda_theta, svm_data_file)
-#rate, param = find_parameters(svm_data_file, '-log2c -10,20,1 -v 5')
-#
-#C = param['c']
-#g = param['g']
-
-## 201
-#C = 32
-#g = 0.5
-
-# 202 
-C = 32.0
-g = 0.5
-
-print 'CV results: C = %f g = %f' % (C, g)
-
-# SVM train 
-
-train_prob  = svm_problem(class_ids, lda_theta)
-train_param = svm_parameter('-t 2 -c 0 -b 1 -c %f -g %f' % (C, g))
-train_mdl = svm_train(train_prob, train_param)
-
-
-
-# SVM prediction and plots the decision values 
-# of corresponding data points 
-
-p_label, p_acc, p_val = svm_predict(class_ids, lda_theta, train_mdl, '-b 0')
-plot_tm_svm_decision_values(class_ids, p_label, p_val, svm_dec_values_file)
-
-
-
-
-
-
-
-
-
+    # Loads the RBF dataset from the given topic model 
+    class_ids, lda_theta, file_paths = get_rbf_classification_dataset(mdl_cfg_file, positive_dir)
+    
+    # defines an exact RBFN
+    enet = pyrb.train_exact(lda_theta, class_ids, 0.05)
+    
+    # simulate
+    dec_values = enet.sim(lda_theta)
+    
+    # Convert to the ROC format and generate ROCs 
+    rbf_roc_in = [(class_id, dec_values[i]) for i, class_id in enumerate(class_ids)]
+    
+    
+    
+    #------------------------------------------------------- Generate ROC curves
+    
+    from eval_tm_lucene import plot_results_rocs
+    roc_labels = ['SVM classification', 'RBF Classification']
+    rocs_file_name = mdl_cfg_file.replace('.cfg', '-svm-rbf-ROC.png') 
+    rocs_img_title = '%s: SVM & RBF Classification ROC curves' % query_id
+    results_list = [svm_roc_in, rbf_roc_in]
+    plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
+    

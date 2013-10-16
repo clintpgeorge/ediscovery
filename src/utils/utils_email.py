@@ -150,14 +150,14 @@ def stem_tokens(word_tokens):
 
 
 
-def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem = False, nonascii = False):
+def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem = False, nonascii = True):
     '''Processes a single email file that's in plain/text format 
     
     Arguments: 
         file_path - the email file path 
     '''
     def removeNonAscii(s): 
-        return "".join(i for i in s if ord(i) < 128)
+        return ''.join(i for i in s if ord(i) < 128)
     
     
     # Handles different text encoding 
@@ -170,6 +170,13 @@ def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem =
     body_text = ''
     date = ''
     
+# TODO: Need to handle the issue of encoding... Oct 16, 2013  
+#    import chardet 
+#    with open(file_path) as fp:
+#        email_text = fp.read()
+#        chardet_charset = chardet.detect(email_text)
+        
+    
     for body_charset in 'US-ASCII', 'ISO-8859-1', 'UTF-8':
         try:
             fp = codecs.open(file_path, 'r', body_charset)
@@ -179,6 +186,9 @@ def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem =
         except UnicodeError:
             pass
         else: break
+
+    
+#    print 'Body char set:', body_charset, 'chardet:', chardet_charset  
 
     if len(email_text) > 0: 
     
@@ -205,7 +215,7 @@ def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem =
                     except UnicodeDecodeError:
                         pass
             else:
-                body_text = u' '.join(tokens)
+                body_text = ' '.join(tokens)
         else:
             # If message is multi-part, we only want the text version of 
             # the body, this walks the message and gets the body.
