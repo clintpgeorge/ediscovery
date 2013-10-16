@@ -59,6 +59,7 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
 
     
     # Handling the project configuration file 
+    print cfg_folder
     cfg_file_name = os.path.join( cfg_folder , project_name+'.cfg' )
     config = ConfigParser.RawConfigParser()
 
@@ -190,7 +191,7 @@ if __name__=="__main__":
     import time 
     start_time = time.time()
     
-    index_data(data_folder, output_folder, project_name, 
+    index_data(data_folder, output_folder, project_name, "", 
                num_topics, num_passes, 
                min_token_freq=MIN_TOKEN_FREQ, 
                min_token_len=MIN_TOKEN_LEN, 

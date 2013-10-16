@@ -147,6 +147,8 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_feedback = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer8 = wx.BoxSizer( wx.VERTICAL )
 		
+		sbSizer7 = wx.StaticBoxSizer( wx.StaticBox( self._panel_feedback, wx.ID_ANY, _(u"Feedback") ), wx.VERTICAL )
+		
 		gbSizer8 = wx.GridBagSizer( 0, 0 )
 		gbSizer8.SetFlexibleDirection( wx.BOTH )
 		gbSizer8.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
@@ -158,7 +160,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_rbx_responsiveChoices = [ _(u"Responsive"), _(u"Unresponsive"), _(u"Uncertain") ]
 		self._rbx_responsive = wx.RadioBox( self._panel_feedback, wx.ID_ANY, _(u"Feedback"), wx.DefaultPosition, wx.DefaultSize, _rbx_responsiveChoices, 1, wx.RA_SPECIFY_COLS )
-		self._rbx_responsive.SetSelection( 2 )
+		self._rbx_responsive.SetSelection( 1 )
 		bSizer81.Add( self._rbx_responsive, 0, wx.ALL, 5 )
 		
 		self._btn_recalculate_results = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"SMARTeR Ranking"), wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -168,7 +170,7 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer8.Add( bSizer81, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
 		
 		
-		bSizer8.Add( gbSizer8, 1, wx.EXPAND, 5 )
+		sbSizer7.Add( gbSizer8, 1, wx.EXPAND, 5 )
 		
 		bSizer10 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -178,7 +180,10 @@ class SMARTeRGUI ( wx.Frame ):
 		bSizer10.Add( self._doc_feedback_preview, 0, wx.ALL, 5 )
 		
 		
-		bSizer8.Add( bSizer10, 1, wx.EXPAND, 5 )
+		sbSizer7.Add( bSizer10, 1, wx.EXPAND, 5 )
+		
+		
+		bSizer8.Add( sbSizer7, 1, wx.EXPAND, 5 )
 		
 		
 		self._panel_feedback.SetSizer( bSizer8 )
@@ -187,6 +192,229 @@ class SMARTeRGUI ( wx.Frame ):
 		self._notebook.AddPage( self._panel_feedback, _(u"Document Feedback"), False )
 		self._panel_query_results = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self._notebook.AddPage( self._panel_query_results, _(u"Query Results"), False )
+		self._panel_sample_conf = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		bSizer101 = wx.BoxSizer( wx.VERTICAL )
+		
+		sbSizer6 = wx.StaticBoxSizer( wx.StaticBox( self._panel_sample_conf, wx.ID_ANY, _(u"Sample Confidence") ), wx.VERTICAL )
+		
+		gbSizer13 = wx.GridBagSizer( 0, 0 )
+		gbSizer13.SetFlexibleDirection( wx.BOTH )
+		gbSizer13.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self.m_staticText19 = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Select Confidence Interval and Confidence Level to compute sample size. "), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText19.Wrap( -1 )
+		self.m_staticText19.SetFont( wx.Font( 8, 74, 93, 92, False, "Tahoma" ) )
+		
+		gbSizer13.Add( self.m_staticText19, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
+		
+		self.m_staticline8 = wx.StaticLine( self._panel_sample_conf, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbSizer13.Add( self.m_staticline8, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_staticText20 = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Confidence Level(%)"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText20.Wrap( -1 )
+		gbSizer13.Add( self.m_staticText20, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_choice_conf_levelChoices = []
+		self._choice_conf_level = wx.Choice( self._panel_sample_conf, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, _choice_conf_levelChoices, 0 )
+		self._choice_conf_level.SetSelection( 0 )
+		gbSizer13.Add( self._choice_conf_level, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticText23 = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Confidence Interval(%)"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText23.Wrap( -1 )
+		gbSizer13.Add( self.m_staticText23, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_textCtrl13 = wx.TextCtrl( self._panel_sample_conf, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 50,-1 ), 0 )
+		gbSizer13.Add( self.m_textCtrl13, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticline10 = wx.StaticLine( self._panel_sample_conf, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbSizer13.Add( self.m_staticline10, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 5 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self._st_res_doc_stat = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Responsive: 0 of 0 documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_res_doc_stat.Wrap( -1 )
+		self._st_res_doc_stat.SetFont( wx.Font( 8, 74, 93, 90, False, "Tahoma" ) )
+		self._st_res_doc_stat.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		gbSizer13.Add( self._st_res_doc_stat, wx.GBPosition( 5, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._st_unres_doc_stat = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Unresponsive: 0 of 0 documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_unres_doc_stat.Wrap( -1 )
+		self._st_unres_doc_stat.SetFont( wx.Font( 8, 74, 93, 90, False, "Tahoma" ) )
+		self._st_unres_doc_stat.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		gbSizer13.Add( self._st_unres_doc_stat, wx.GBPosition( 6, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		gbSizer14 = wx.GridBagSizer( 0, 0 )
+		gbSizer14.SetFlexibleDirection( wx.BOTH )
+		gbSizer14.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._btn_conf_back = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer14.Add( self._btn_conf_back, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_conf_next = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer14.Add( self._btn_conf_next, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		gbSizer13.Add( gbSizer14, wx.GBPosition( 8, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		
+		
+		sbSizer6.Add( gbSizer13, 1, wx.EXPAND, 5 )
+		
+		
+		bSizer101.Add( sbSizer6, 1, wx.EXPAND, 5 )
+		
+		
+		self._panel_sample_conf.SetSizer( bSizer101 )
+		self._panel_sample_conf.Layout()
+		bSizer101.Fit( self._panel_sample_conf )
+		self._notebook.AddPage( self._panel_sample_conf, _(u"Sample Confidence"), False )
+		self._panel_random_responsive = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		_gbsizer_review_res = wx.GridBagSizer( 0, 0 )
+		_gbsizer_review_res.SetFlexibleDirection( wx.BOTH )
+		_gbsizer_review_res.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self.m_staticText13 = wx.StaticText( self._panel_random_responsive, wx.ID_ANY, _(u"Documents to be Reviewed\nDouble click on a file to open it"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText13.Wrap( -1 )
+		self.m_staticText13.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		
+		_gbsizer_review_res.Add( self.m_staticText13, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_clear_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Clear Tags"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_review_res.Add( self._btn_clear_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._panel_review_res = wx.Panel( self._panel_random_responsive, wx.ID_ANY, wx.DefaultPosition, wx.Size( 400,250 ), wx.TAB_TRAVERSAL )
+		_gbsizer_review_res.Add( self._panel_review_res, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self._tc_preview_tags = wx.TextCtrl( self._panel_random_responsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 400,250 ), 0 )
+		_gbsizer_review_res.Add( self._tc_preview_tags, wx.GBPosition( 1, 3 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
+		
+		self.m_staticText14 = wx.StaticText( self._panel_random_responsive, wx.ID_ANY, _(u"File Preview"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText14.Wrap( -1 )
+		_gbsizer_review_res.Add( self.m_staticText14, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_rbx_response_resChoices = [ _(u"Yes"), _(u"No"), _(u"Unknown") ]
+		self._rbx_response_res = wx.RadioBox( self._panel_random_responsive, wx.ID_ANY, _(u"Responsive"), wx.DefaultPosition, wx.DefaultSize, _rbx_response_resChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_response_res.SetSelection( 2 )
+		_gbsizer_review_res.Add( self._rbx_response_res, wx.GBPosition( 1, 6 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_rbx_privilage_resChoices = [ _(u"Yes"), _(u"No"), _(u"Unknown") ]
+		self._rbx_privilage_res = wx.RadioBox( self._panel_random_responsive, wx.ID_ANY, _(u"Privilage"), wx.DefaultPosition, wx.DefaultSize, _rbx_privilage_resChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_privilage_res.SetSelection( 2 )
+		_gbsizer_review_res.Add( self._rbx_privilage_res, wx.GBPosition( 2, 6 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticline6 = wx.StaticLine( self._panel_random_responsive, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		_gbsizer_review_res.Add( self.m_staticline6, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
+		
+		gbSizer11 = wx.GridBagSizer( 0, 0 )
+		gbSizer11.SetFlexibleDirection( wx.BOTH )
+		gbSizer11.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._btn_back_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer11.Add( self._btn_back_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_next_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer11.Add( self._btn_next_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		_gbsizer_review_res.Add( gbSizer11, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		
+		gbSizer12 = wx.GridBagSizer( 0, 0 )
+		gbSizer12.SetFlexibleDirection( wx.BOTH )
+		gbSizer12.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self.m_staticText15 = wx.StaticText( self._panel_random_responsive, wx.ID_ANY, _(u"Select a tag"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText15.Wrap( -1 )
+		gbSizer12.Add( self.m_staticText15, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_cmb_tags_resChoices = [ _(u"Responsive"), _(u"Privileged"), _(u"All") ]
+		self._cmb_tags_res = wx.ComboBox( self._panel_random_responsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cmb_tags_resChoices, wx.CB_READONLY )
+		self._cmb_tags_res.SetSelection( 2 )
+		gbSizer12.Add( self._cmb_tags_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_gen_report_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Generate Report"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer12.Add( self._btn_gen_report_res, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		_gbsizer_review_res.Add( gbSizer12, wx.GBPosition( 5, 5 ), wx.GBSpan( 1, 2 ), wx.EXPAND, 5 )
+		
+		
+		self._panel_random_responsive.SetSizer( _gbsizer_review_res )
+		self._panel_random_responsive.Layout()
+		_gbsizer_review_res.Fit( self._panel_random_responsive )
+		self._notebook.AddPage( self._panel_random_responsive, _(u"Sample Responsive"), False )
+		self._panel_random_unresponsive = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		_gbsizer_review_unres = wx.GridBagSizer( 0, 0 )
+		_gbsizer_review_unres.SetFlexibleDirection( wx.BOTH )
+		_gbsizer_review_unres.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self.m_staticText131 = wx.StaticText( self._panel_random_unresponsive, wx.ID_ANY, _(u"Documents to be Reviewed\nDouble click on a file to open it"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText131.Wrap( -1 )
+		self.m_staticText131.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		
+		_gbsizer_review_unres.Add( self.m_staticText131, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_clear_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Clear Tags"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_review_unres.Add( self._btn_clear_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._panel_review_unres = wx.Panel( self._panel_random_unresponsive, wx.ID_ANY, wx.DefaultPosition, wx.Size( 400,250 ), wx.TAB_TRAVERSAL )
+		_gbsizer_review_unres.Add( self._panel_review_unres, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self._tc_preview_tags_unres = wx.TextCtrl( self._panel_random_unresponsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 400,250 ), 0 )
+		_gbsizer_review_unres.Add( self._tc_preview_tags_unres, wx.GBPosition( 1, 3 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
+		
+		self.m_staticText141 = wx.StaticText( self._panel_random_unresponsive, wx.ID_ANY, _(u"File Preview"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText141.Wrap( -1 )
+		_gbsizer_review_unres.Add( self.m_staticText141, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_rbx_response_unresChoices = [ _(u"Yes"), _(u"No"), _(u"Unknown") ]
+		self._rbx_response_unres = wx.RadioBox( self._panel_random_unresponsive, wx.ID_ANY, _(u"Responsive"), wx.DefaultPosition, wx.DefaultSize, _rbx_response_unresChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_response_unres.SetSelection( 2 )
+		_gbsizer_review_unres.Add( self._rbx_response_unres, wx.GBPosition( 1, 6 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_rbx_privilage_unresChoices = [ _(u"Yes"), _(u"No"), _(u"Unknown") ]
+		self._rbx_privilage_unres = wx.RadioBox( self._panel_random_unresponsive, wx.ID_ANY, _(u"Privilage"), wx.DefaultPosition, wx.DefaultSize, _rbx_privilage_unresChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_privilage_unres.SetSelection( 2 )
+		_gbsizer_review_unres.Add( self._rbx_privilage_unres, wx.GBPosition( 2, 6 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticline61 = wx.StaticLine( self._panel_random_unresponsive, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		_gbsizer_review_unres.Add( self.m_staticline61, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
+		
+		gbSizer111 = wx.GridBagSizer( 0, 0 )
+		gbSizer111.SetFlexibleDirection( wx.BOTH )
+		gbSizer111.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._btn_back_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer111.Add( self._btn_back_unres, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_next_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer111.Add( self._btn_next_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		_gbsizer_review_unres.Add( gbSizer111, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		
+		gbSizer121 = wx.GridBagSizer( 0, 0 )
+		gbSizer121.SetFlexibleDirection( wx.BOTH )
+		gbSizer121.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self.m_staticText151 = wx.StaticText( self._panel_random_unresponsive, wx.ID_ANY, _(u"Select a tag"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText151.Wrap( -1 )
+		gbSizer121.Add( self.m_staticText151, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_cmb_tags_unresChoices = [ _(u"Responsive"), _(u"Privileged"), _(u"All") ]
+		self._cmb_tags_unres = wx.ComboBox( self._panel_random_unresponsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cmb_tags_unresChoices, wx.CB_READONLY )
+		self._cmb_tags_unres.SetSelection( 2 )
+		gbSizer121.Add( self._cmb_tags_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_gen_report_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Generate Report"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer121.Add( self._btn_gen_report_unres, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		_gbsizer_review_unres.Add( gbSizer121, wx.GBPosition( 5, 5 ), wx.GBSpan( 1, 2 ), wx.EXPAND, 5 )
+		
+		
+		self._panel_random_unresponsive.SetSizer( _gbsizer_review_unres )
+		self._panel_random_unresponsive.Layout()
+		_gbsizer_review_unres.Fit( self._panel_random_unresponsive )
+		self._notebook.AddPage( self._panel_random_unresponsive, _(u"Sample Unresponsive"), False )
 		
 		_bsizer_main.Add( self._notebook, 1, wx.EXPAND |wx.ALL, 5 )
 		

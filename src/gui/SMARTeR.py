@@ -27,7 +27,7 @@ from tm.process_query import load_lda_variables, load_dictionary, \
     compute_topic_similarities
 from const import SEARCH_RESULTS_LIMIT
 from index_data import index_data
-from gui.TaggingControl import TaggingControl
+from gui.TaggingControlGUI import TaggingControlGUI
 from gui.TaggingControlSmarter import TaggingControlSmarter
 
 
@@ -64,11 +64,12 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
     def _set_table_headers(self):
         
         self.ClearAll()
+        #Remove this after Testing
         columnHeaders = MetadataType._types
         columnNumber = 0
-        for c in columnHeaders:
-            self.InsertColumn(columnNumber, c)
-            columnNumber = columnNumber + 1
+        #for c in columnHeaders:
+        self.InsertColumn(columnNumber, columnHeaders[0])
+        columnNumber = columnNumber + 1
         self.InsertColumn(columnNumber, "file_id")
         self.InsertColumn(columnNumber + 1, "file_score")
         self.InsertColumn(columnNumber + 2, "rating")        
@@ -448,6 +449,9 @@ class SMARTeR (SMARTeRGUI):
         self.directory=os.path.join(home,"SMARTeR")
         if(os.path.exists(self.directory)==False):
             os.makedirs(self.directory)
+            
+        self._panel_review_res= TaggingControlGUI(self._panel_review_res,self)
+        self._panel_review_unres= TaggingControlGUI(self._panel_review_unres,self)
         self._cfg_dir = os.path.join(self.directory,"repository")
         if(os.path.exists(self._cfg_dir)==False):
             os.makedirs(self._cfg_dir)
@@ -492,17 +496,25 @@ class SMARTeR (SMARTeRGUI):
         
         vbox = wx.BoxSizer(wx.VERTICAL)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-
+        
         _panel_left = wx.Panel(self._panel_query_results, -1)
         _panel_right = wx.Panel(self._panel_query_results, -1)
 
         self._st_file_preview_header = wx.StaticText(_panel_right, -1, 'File Review Pane (Text Files)')
         self._tc_file_preview_pane = wx.TextCtrl(_panel_right, -1, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 200))
-        self._lc_results = ResultsCheckListCtrl(_panel_right, self)
-        self._lc_results._set_table_headers()  # Populate the column names using the metadata types from MetadataType_types &RB
-
+        self._lc_results_res = ResultsCheckListCtrl(_panel_right, self)
+        self._lc_results_res._set_table_headers()  # Populate the column names using the metadata types from MetadataType_types &RB
+        
+        self._lc_results_unres = ResultsCheckListCtrl(_panel_right, self)
+        self._lc_results_unres._set_table_headers()  # Populate the column names using the metadata types from MetadataType_types &RB
        
         vbox2 = wx.BoxSizer(wx.VERTICAL)
+        hbox2 = wx.BoxSizer(wx.HORIZONTAL)
+        self._st_responsive_doc = wx.StaticText(_panel_right, -1, 'Responsive Files')
+        self._st_unresponsive_doc = wx.StaticText(_panel_right, -1, 'Unresponsive Files')
+        
+        vbox_res = wx.BoxSizer(wx.VERTICAL)
+        vbox_unres = wx.BoxSizer(wx.VERTICAL)
 
         self._btn_sel_all = wx.Button(_panel_left, -1, 'Select All', size=(100, -1))
         self._btn_desel_all = wx.Button(_panel_left, -1, 'Deselect All', size=(100, -1))
@@ -526,13 +538,21 @@ class SMARTeR (SMARTeRGUI):
         vbox2.Add(self._btn_update_results);
         
         _panel_left.SetSizer(vbox2)
-
-        vbox.Add(self._lc_results, 1, wx.EXPAND | wx.TOP, 3)
+        vbox_res.Add(self._st_responsive_doc)
+        vbox_res.Add(self._lc_results_res, 1, wx.EXPAND, 5)
+        vbox_unres.Add(self._st_unresponsive_doc)
+        vbox_unres.Add(self._lc_results_unres, 0, wx.EXPAND, 5)
+        hbox2.Add(vbox_res)
+        hbox2.Add((50, -1))
+        hbox2.Add(vbox_unres)
+        #hbox2.Add(self._lc_results_unres, 0.5, wx.EXPAND, 5)
+        vbox.Add(hbox2)
         vbox.Add((-1, 10))
         vbox.Add(self._st_file_preview_header, 0.5, wx.EXPAND)
         vbox.Add((-1, 5))
         vbox.Add(self._tc_file_preview_pane, 0.5, wx.EXPAND)
         vbox.Add((-1, 10))
+        #vbox.Add(vbox_unres)
 
         _panel_right.SetSizer(vbox)
 
