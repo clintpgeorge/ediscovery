@@ -27,8 +27,12 @@ from tm.process_query import load_lda_variables, load_dictionary, \
     compute_topic_similarities
 from const import SEARCH_RESULTS_LIMIT
 from index_data import index_data
+from decimal import Decimal
+from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
 from gui.TaggingControlGUI import TaggingControlGUI
 from gui.TaggingControlSmarter import TaggingControlSmarter
+from gui.TaggingControlFeedback import TaggingControlFeedback
+from matplotlib.backend_bases import Event
 
 
 ###########################################################################
@@ -40,7 +44,8 @@ present_chunk = 0
 
 # Constants 
 SHELVE_DIR_NAME = 'shelf'
-USER_RATINGS_CUT_OFF = 5  # TODO: this needs to be learned 
+USER_RATINGS_CUT_OFF = 5  # TODO: this needs to be learned
+CUT_OFF=0.5 
 
 ###########################################################################
 
@@ -65,20 +70,20 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         
         self.ClearAll()
         #Remove this after Testing
-        columnHeaders = MetadataType._types
+        columnHeaders = ['File Name','File Path','File Score','Rating']# MetadataType._types
         columnNumber = 0
         #for c in columnHeaders:
         self.InsertColumn(columnNumber, columnHeaders[0])
         columnNumber = columnNumber + 1
-        self.InsertColumn(columnNumber, "file_id")
-        self.InsertColumn(columnNumber + 1, "file_score")
-        self.InsertColumn(columnNumber + 2, "rating")        
+        self.InsertColumn(columnNumber, "File Path")
+        self.InsertColumn(columnNumber + 1, "File Score")
+        self.InsertColumn(columnNumber + 2, "Rating")        
         
     
     def _set_shelve_dir(self, _dir_path):
         self._shelve_dir = _dir_path
     
-    def _populate_results(self, chunk_number):
+    def _populate_results(self, chunk_number, responsive):
         """ Given the 'chunk_number' 
             1. Reads from that particular shelved-file
             2. Updates the dictionary_of_rows with this chunk of results
@@ -137,21 +142,45 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         
         
         # 6. Displays the content in the RESULT tab of the UI
-        items = dictionary_of_rows.items() 
+        items = dictionary_of_rows.items()
+        
+        if responsive=="true":
+            low=CUT_OFF
+            high=1.1
+        else:
+            low=0
+            high=CUT_OFF
+         
         for key, row in items:
-            index = self.InsertStringItem(sys.maxint, row[0])
-            self.SetItemData(index, long(key))
+            #print row[10]
+            #exit()
+            if float(row[10])>=low and float(row[10])<high:
+                index = self.InsertStringItem(sys.maxint, row[0])
+                self.SetItemData(index, long(key))
+                cell = str(row[0])
+                self.SetStringItem(index, 0, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+                cell = str(row[1])
+                self.SetStringItem(index, 1, cell)
+                cell = str(row[10])
+                self.SetStringItem(index, 2, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+                cell = str(row[11])
+                self.SetStringItem(index, 3, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+            '''
             i = 0
             for cell in row:
-                column_name = self.GetColumn(i).GetText()  
-                cell = str(cell)        
-                # Only the file_path is displayed completely.
-                # The content of all other cells are restricted to 30 characters.                 
-                if(column_name <> 'file_path') and len(cell) > CHAR_LIMIT_IN_RESULTS_TAB_CELLS:
-                    self.SetStringItem(index, i, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
-                else:
-                    self.SetStringItem(index, i, cell)
-                i += 1
+                j = 0
+                if(i==0 | i==8 | i==9):
+                    column_name = self.GetColumn(j).GetText()  
+                    cell = str(cell)        
+                    # Only the file_path is displayed completely.
+                    # The content of all other cells are restricted to 30 characters.                 
+                    if(column_name <> 'file_path') and len(cell) > CHAR_LIMIT_IN_RESULTS_TAB_CELLS:
+                        self.SetStringItem(index, j, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+                    else:
+                        self.SetStringItem(index, j, cell)
+                    j+=1
+                i+=1
+               ''' 
         # self.Refresh()
     
     def _on_row_right_click(self, event):
@@ -429,14 +458,16 @@ class SMARTeR (SMARTeRGUI):
     def __init__(self, parent):
 
         # Calls the parent class's method 
-        super(SMARTeR, self).__init__(parent) 
+        super(SMARTeR, self).__init__(parent)
+        self.SEED = 2013  
         self._is_lucene_index_available = False 
         self._is_tm_index_available = False
         self._current_page = 0
         
         self._shelve_dir = ''
         self._shelve_file_names = []  # this keeps all of the shelf files path 
-        
+        self._responsive_files = []
+        self._unresponsive_files = []
         self._build_query_results_panel()
         self._populate_metadata_fields()
         self._reset_defaults_indexing_preferences()    
@@ -450,8 +481,8 @@ class SMARTeR (SMARTeRGUI):
         if(os.path.exists(self.directory)==False):
             os.makedirs(self.directory)
             
-        self._panel_review_res= TaggingControlGUI(self._panel_review_res,self)
-        self._panel_review_unres= TaggingControlGUI(self._panel_review_unres,self)
+        #self._panel_review_res= TaggingControlGUI(self._panel_review_res,self)
+        #self._panel_review_unres= TaggingControlGUI(self._panel_review_unres,self)
         self._cfg_dir = os.path.join(self.directory,"repository")
         if(os.path.exists(self._cfg_dir)==False):
             os.makedirs(self._cfg_dir)
@@ -459,9 +490,10 @@ class SMARTeR (SMARTeRGUI):
             for file_name in files:
                 project, _ = os.path.splitext(file_name)
                 self._cbx_project_title.Append(project)
+        self._load_cbx_confidence_levels()
+        self._init_confidence()
+        
         self.Show(True)
-        
-        
         
     def _reset_defaults_indexing_preferences(self):
         
@@ -522,13 +554,15 @@ class SMARTeR (SMARTeRGUI):
         self._btn_load_next_chunk = wx.Button(_panel_left, -1, 'Next >', size=(100, -1))
         self._btn_load_previous_chunk = wx.Button(_panel_left, -1, '< Previous', size=(100, -1))
         self._btn_update_results = wx.Button(_panel_left, -1, 'Update Results', size=(100, -1))
+        self._btn_continue = wx.Button(_panel_left, -1, 'Continue', size=(100, -1))
 
         self.Bind(wx.EVT_BUTTON, self._on_click_sel_all, id=self._btn_sel_all.GetId())
         self.Bind(wx.EVT_BUTTON, self._on_click_desel_all, id=self._btn_desel_all.GetId())
         self.Bind(wx.EVT_BUTTON, self._on_click_log_files, id=self._btn_log_files.GetId())
         self.Bind(wx.EVT_BUTTON, self._on_click_next, id=self._btn_load_next_chunk.GetId())
         self.Bind(wx.EVT_BUTTON, self._on_click_previous, id=self._btn_load_previous_chunk.GetId())        
-        self.Bind(wx.EVT_BUTTON, self._on_click_update_results, id=self._btn_update_results.GetId())  
+        self.Bind(wx.EVT_BUTTON, self._on_click_update_results, id=self._btn_update_results.GetId())
+        self.Bind(wx.EVT_BUTTON, self._on_click_continue, id=self._btn_continue.GetId())  
 
         vbox2.Add(self._btn_sel_all, 0, wx.TOP, 5)
         vbox2.Add(self._btn_desel_all)
@@ -536,6 +570,7 @@ class SMARTeR (SMARTeRGUI):
         vbox2.Add(self._btn_load_next_chunk);
         vbox2.Add(self._btn_load_previous_chunk);
         vbox2.Add(self._btn_update_results);
+        vbox2.Add(self._btn_continue);
         
         _panel_left.SetSizer(vbox2)
         vbox_res.Add(self._st_responsive_doc)
@@ -642,7 +677,8 @@ class SMARTeR (SMARTeRGUI):
         
         if(current_chunk <> num_of_chunks - 1): 
             current_chunk += 1
-            self._lc_results._populate_results(current_chunk)
+            self._lc_results_res._populate_results(current_chunk,"true")
+            self._lc_results_unres._populate_results(current_chunk,"false")
             present_chunk = current_chunk
     
     def _on_click_previous(self, event):
@@ -650,25 +686,34 @@ class SMARTeR (SMARTeRGUI):
         current_chunk = present_chunk;
         current_chunk -= 1
         if(current_chunk >= 0): 
-            self._lc_results._populate_results(current_chunk)
+            self._lc_results_res._populate_results(current_chunk,"true")
+            self._lc_results_unres._populate_results(current_chunk,"false")
             present_chunk = current_chunk    
     
     def _on_click_sel_all(self, event):
-        num = self._lc_results.GetItemCount()
+        num = self._lc_results_res.GetItemCount()
         for i in range(num):
-            self._lc_results.CheckItem(i)
+            self._lc_results_res.CheckItem(i)
+            
+        num = self._lc_results_unres.GetItemCount()
+        for i in range(num):
+            self._lc_results_unres.CheckItem(i)
 
     def _on_click_desel_all(self, event):
-        num = self._lc_results.GetItemCount()
+        num = self._lc_results_res.GetItemCount()
         for i in range(num):
-            self._lc_results.CheckItem(i, False)
+            self._lc_results_res.CheckItem(i, False)
+            
+        num = self._lc_results_unres.GetItemCount()
+        for i in range(num):
+            self._lc_results_unres.CheckItem(i, False)
 
     def _on_click_log_files(self, event):
-#        num = self._lc_results.GetItemCount()
+#        num = self._lc_results_res.GetItemCount()
 #        for i in range(num):
 #            if i == 0: self._tc_files_log.Clear()
-#            if self._lc_results.IsChecked(i):
-#                self._tc_files_log.AppendText(self._lc_results.GetItemText(i) + '\n')
+#            if self._lc_results_res.IsChecked(i):
+#                self._tc_files_log.AppendText(self._lc_results_res.GetItemText(i) + '\n')
         pass 
     
     def _on_file_change_mdl(self, event):
@@ -957,21 +1002,31 @@ class SMARTeR (SMARTeRGUI):
             # print retrieve_document_details(file_id, self.lucene_index_dir).get('email_subject')
             file_details = row  # values of the defined MetadataTypes 
             file_details.append('0')  # Add a 'relevance' value of '0' to each search-result
-        
+            
+            if float(file_details[10])>=CUT_OFF:
+                self._responsive_files.append([file_details[1],"",""])
+            else:
+                self._unresponsive_files.append([file_details[1],"",""])
             dictionary_of_rows.__setitem__(str(key), file_details)
             key += 1
+        
+    
+        
+        self._lc_results_res._set_shelve_dir(self._shelve_dir)
+        self._lc_results_res.itemDataMap = dictionary_of_rows
+        self._lc_results_res.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results_res._on_header_column_click)
 
-        self._lc_results._set_shelve_dir(self._shelve_dir)
-        self._lc_results.itemDataMap = dictionary_of_rows
-        self._lc_results.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results._on_header_column_click)
-
+        self._lc_results_unres._set_shelve_dir(self._shelve_dir)
+        self._lc_results_unres.itemDataMap = dictionary_of_rows
+        self._lc_results_unres.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results_unres._on_header_column_click)
         
         items = dictionary_of_rows.items()
         self._reset_persistent_shelves()
         self._create_persistent_shelves(items)
         global present_chunk
         present_chunk = 0
-        self._lc_results._populate_results(present_chunk)
+        self._lc_results_res._populate_results(present_chunk,"true")
+        self._lc_results_unres._populate_results(present_chunk,"false")
         self._tc_file_preview_pane.SetValue('')
         
         
@@ -979,8 +1034,7 @@ class SMARTeR (SMARTeRGUI):
         self._current_page = 3
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
-               
-    
+                  
     def _on_click_update_results(self, event):
         '''
         This function incorporates the user ratings into 
@@ -1055,7 +1109,7 @@ class SMARTeR (SMARTeRGUI):
         self.SetStatusText('')
         
     def load_document_feedback(self):
-        self.panel_feedback_doc = TaggingControlSmarter(self._panel_feedback_doc, self)
+        self.panel_feedback_doc = TaggingControlFeedback(self._panel_feedback_doc, self)
         self.panel_feedback_doc._setup_review_tab()
     
     def _on_rbx_responsive_updated(self, event):
@@ -1079,7 +1133,102 @@ class SMARTeR (SMARTeRGUI):
         except Exception, e:
             print e
         
+    def _init_confidence(self):
+        '''
+        Sets default confidence level and interval in Top Level interface
+        Arguments: None
+        Returns: None
+        '''
         
+        self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
+        items = self._cbx_confidence_levels.GetItems()
+        index = -1
+        try:
+            index = items.index(str(DEFAULT_CONFIDENCE_LEVEL))
+            self._cbx_confidence_levels.SetSelection(index)
+        except ValueError:
+            self._cbx_confidence_levels.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
+    
+        
+        # Set default confidence interval 
+        self.precision_val = DEFAULT_CONFIDENCE_INTERVAL / 100
+        str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
+        self._tc_confidence_interval.ChangeValue(str_precision)
+        
+
+        # Hides the status messages 
+        self._st_num_samples_res.Show(False)
+        self._st_num_samples_unres.Show(False)            
+    
+        
+    def _on_click_continue(self, event):
+        self._generate_file_samples()
+        self._current_page = 4
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
+    def _load_cbx_confidence_levels(self):
+        '''
+        Loads the supported confidence levels 
+        '''
+        try:
+            confidence_levels = ['%.3f' % (w * Decimal('100')) for w in  SUPPORTED_CONFIDENCES.keys()]
+            confidence_levels.sort(reverse=True)
+            self._cbx_confidence_levels.Clear()
+            for cl in confidence_levels:
+                self._cbx_confidence_levels.Append(cl)
+        except Exception,e:
+            self.error(e)
+            
+    def _on_precision_changed(self, event):
+        '''
+        Triggers an event and updates the sample list on precision - aka 
+        confidence interval change.
+        Arguments: Event of new precision value
+        Returns: Nothing
+        '''
+        
+        def show_precision_error():
+            self._show_error_message("Value Error!", "Please enter a confidence interval between 0 and 100.")
+            self._tc_confidence_interval.ChangeValue(str(int(DEFAULT_CONFIDENCE_INTERVAL))) # Sets the default value 
+            self._tc_confidence_interval.SetFocus()
+            
+
+        # Maybe intermittently null string, escaping 
+        try:
+            # Checks for positive values 
+            ci = float(self._tc_confidence_interval.GetValue())
+            if ci <= 0 or ci > 99:
+                show_precision_error()
+                return 
+            
+            self.get_precision_as_float()
+            #self._tc_out_confidence_interval.ChangeValue(self._tc_confidence_interval.GetValue())
+            #self.SetStatusText('Confidence interval is changed as ' + self._tc_confidence_interval.GetValue())
+        except ValueError:
+            show_precision_error()
+            return None 
+        
+        self._generate_file_samples()
+        
+    def _generate_file_samples(self):
+        '''
+        This function generates file sample based on the 
+        class variables such as file_list, confidence_val, 
+        and precision_val and sets the sample status label     
+        '''
+
+        # Generate samples
+        self.sampled_files_responsive = random_sampler(self._responsive_files, self.confidence_val, self.precision_val, self.SEED)
+        self.sampled_files_unresponsive = random_sampler(self._unresponsive_files, self.confidence_val, self.precision_val, self.SEED)
+        print self.sampled_files_unresponsive
+        print self._unresponsive_files
+        self._st_num_samples_res.SetLabel('Responsive: %d sample documents will be selected' % len(self.sampled_files_responsive))
+        self._st_num_samples_res.Show()
+        
+        self._st_num_samples_unres.SetLabel('Unresponsive: %d sample documents will be selected'% len(self.sampled_files_unresponsive))
+        self._st_num_samples_unres.Show()
+     
 #        # step 1: gets highly rated documents 
 #        
 #        
@@ -1115,6 +1264,41 @@ class SMARTeR (SMARTeRGUI):
 #        #       similarity score and lucene scores      
 #        
 #        
+
+    def get_precision_as_float(self):
+        '''
+        Converts precision to float
+        Returns: Nothing
+        Arguments: Nothing
+        '''
+        try:
+            self.precision_val = float(self._tc_confidence_interval.GetValue()
+                                       ) / 100.0 
+        except ValueError:
+            self.precision_val = float(int(self._tc_confidence_interval.GetValue())
+                                       ) / 100.0
+                                       
+    def _on_confidence_changed(self, event):
+        '''
+        Triggers an event and updates the sample list on confidence - aka 
+        confidence level change
+        Arguments: Event of new confidence
+        Returns: Nothing
+        '''
+        self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()) / Decimal('100')
+        self._generate_file_samples()
+
+    def _on_click_cl_goback( self, event ):
+        self._current_page = 3
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+    
+    def _on_click_cl_next( self, event ):
+        self._review_res = TaggingControlSmarter(self._panel_review_res, self._responsive_files,self._rbx_response_res,self._rbx_privilage_res,self._tc_preview_tags,self._panel_doc_tag_res)
+        self._review_res._setup_review_tab()
+        self._current_page = 5
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
 
     def _on_click_index_data(self, event):
         '''
@@ -1187,6 +1371,117 @@ class SMARTeR (SMARTeRGUI):
         
         return rows 
         
+    def _on_rbx_responsive_updated_res( self, event ):
+        '''
+        Handles the selected document responsive check box 
+        check and uncheck events 
+         
+        '''
+        responsive_status = self._rbx_response_res.GetStringSelection() 
+        if responsive_status == 'Yes': 
+            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 2, 'Yes')
+        elif responsive_status == 'No': 
+            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 2, 'No')
+        elif responsive_status == 'Unknown': 
+            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 2, '')
+
+    
+    
+    def _on_rbx_privileged_updated_res( self, event ):
+        '''
+        Handles the selected document privileged check box 
+        check and uncheck events 
+         
+        '''
+        privileged_status = self._rbx_privilage_res.GetStringSelection() 
+        if privileged_status == 'Yes': 
+            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'Yes')
+        elif privileged_status == 'No': 
+            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'No')
+        elif privileged_status == 'Unknown': 
+            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, '')
+
+    def _on_click_clear_all_doc_tags_res( self, event ):
+        '''
+        Clear all assigned document tags from the list control 
+        '''
+        try:
+            for i in range(0, len(self.sampled_files_responsive)):
+                self._review_res.SetStringItem(i, 2, '')
+                self._review_res.SetStringItem(i, 3, '')       
+            
+            self._rbx_response_res.SetStringSelection('Unknown')    
+            self._rbx_privilage_res.SetStringSelection('Unknown')  
+                
+    
+            self._is_rt_updated = True
+        except Exception,e:
+            self.error(e)
+
+    def _on_rbx_responsive_updated_unres( self, event ):
+        '''
+        Handles the selected document responsive check box 
+        check and uncheck events 
+         
+        '''
+        responsive_status = self._rbx_response_unres.GetStringSelection() 
+        if responsive_status == 'Yes': 
+            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 2, 'Yes')
+        elif responsive_status == 'No': 
+            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 2, 'No')
+        elif responsive_status == 'Unknown': 
+            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 2, '')    
+    def _on_rbx_privileged_updated_unres( self, event ):
+        '''
+        Handles the selected document privileged check box 
+        check and uncheck events 
+         
+        '''
+        privileged_status = self._rbx_privilage_unres.GetStringSelection() 
+        if privileged_status == 'Yes': 
+            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, 'Yes')
+        elif privileged_status == 'No': 
+            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, 'No')
+        elif privileged_status == 'Unknown': 
+            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, '')
+
+    def _on_click_clear_all_doc_tags_unres( self, event ):
+        '''
+        Clear all assigned document tags from the list control 
+        '''
+        try:
+            for i in range(0, len(self.sampled_files_unresponsive)):
+                self._review_unres.SetStringItem(i, 2, '')
+                self._review_unres.SetStringItem(i, 3, '')       
+            
+            self._rbx_response_unres.SetStringSelection('Unknown')    
+            self._rbx_privilage_unres.SetStringSelection('Unknown')  
+                
+    
+            self._is_rt_updated = True
+        except Exception,e:
+            self.error(e)
+            
+    def _btn_sample_back_res(self, event):
+        self._current_page = 4
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
+    def _btn_sample_back_unres(self, event):
+        self._current_page = 5
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
+    def _on_click_sample_next( self, event ):
+        self._review_unres = TaggingControlSmarter(self._panel_review_unres, self._unresponsive_files,self._rbx_response_unres,self._rbx_privilage_unres,self._tc_preview_tags_unres,self._panel_doc_tag_unres)
+        self._review_unres._setup_review_tab()
+        self._current_page = 6
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
+    def _btn_sample_exit(self, Event):
+        exit()
+
 def main():
     '''
     The main function call 

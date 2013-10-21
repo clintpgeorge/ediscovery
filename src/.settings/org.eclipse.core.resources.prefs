@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
+encoding//gui/HTML.py=iso-8859-1
 encoding//gui/RandomSampler.py=iso-8859-15
 encoding//gui/SMARTeRGUI.py=utf-8
 encoding//tm/lda_estimation.py=UTF-8
