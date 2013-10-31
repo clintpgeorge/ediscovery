@@ -108,7 +108,10 @@ class TaggingControlSmarter ( wx.ListCtrl, ListCtrlAutoWidthMixin):
             is_message_opned = False;
             
         if is_message_opened:
-            self._tc_preview.SetValue(str(print_message))
+            try:
+                self._tc_preview.SetValue(print_message)
+            except:
+                self._tc_preview.SetValue("File Encoding not supported. Double click to open.")
         else:
             self._tc_preview.SetValue('')
             

@@ -54,7 +54,7 @@ CUT_OFF=0.5
 ###########################################################################
 
 class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, ColumnSorterMixin):
-    def __init__(self, parent_panel, parent_window):
+    def __init__(self, parent_panel, parent_window,rbx_response):
         wx.ListCtrl.__init__(self, parent_panel, -1, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
         CheckListCtrlMixin.__init__(self)
         ListCtrlAutoWidthMixin.__init__(self)
@@ -65,12 +65,13 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self._on_row_right_click)
         self._shelve_dir = ''
         self._parent_window = parent_window  
+        self._rbx_res=rbx_response
         
     def _set_table_headers(self):
         
         self.ClearAll()
         #Remove this after Testing
-        columnHeaders = ['File Name','File Path','File Score','Rating']# MetadataType._types
+        columnHeaders = ['File Name','File Path','File Score','Responsive']# MetadataType._types
         columnNumber = 0
         #for c in columnHeaders:
         self.InsertColumn(columnNumber, columnHeaders[0])
@@ -83,7 +84,7 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
     def _set_shelve_dir(self, _dir_path):
         self._shelve_dir = _dir_path
     
-    def _populate_results(self, chunk_number, responsive):
+    def _populate_results(self, chunk_number, doc_list):
         """ Given the 'chunk_number' 
             1. Reads from that particular shelved-file
             2. Updates the dictionary_of_rows with this chunk of results
@@ -106,7 +107,28 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         # Populate the column names using the metadata types from MetadataType_types &RB
         self._set_table_headers()
         
+        i=chunk_number*5
+        end=0
+        if (chunk_number+1)*5>len(doc_list):
+            end=len(doc_list)
+        else:
+            end=(chunk_number+1)*5
+        
+        while i<end:
+            index = self.InsertStringItem(sys.maxint, doc_list[i][0])
+            self.SetItemData(index, i)
+            cell = str(doc_list[i][0])
+            self.SetStringItem(index, 0, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+            cell = str(doc_list[i][1])
+            self.SetStringItem(index, 1, cell)
+            cell = str(doc_list[i][2])
+            self.SetStringItem(index, 2, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+            cell = str("")
+            self.SetStringItem(index, 3, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+            i= i+1
+        
         # 1. Reads from that particular shelved-file
+        '''
         shelve_file = shelve.open(os.path.join(self._shelve_dir, str(chunk_number) + SHELVE_FILE_EXTENSION))
         self.DeleteAllItems()
         global dictionary_of_rows
@@ -163,9 +185,8 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
                 self.SetStringItem(index, 1, cell)
                 cell = str(row[10])
                 self.SetStringItem(index, 2, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
-                cell = str(row[11])
+                cell = str("")
                 self.SetStringItem(index, 3, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
-            '''
             i = 0
             for cell in row:
                 j = 0
@@ -185,7 +206,7 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
     
     def _on_row_right_click(self, event):
         """Right-Clicking on a row to specify the search-relevancy of the file"""
-        Rating(None, self, self._shelve_dir)
+        #Rating(None, self, self._shelve_dir)
          
     def _on_row_double_click(self, event):
         focussed_item_index = self.GetFocusedItem()
@@ -198,6 +219,17 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         '''
         
         focussed_item_index = self.GetFocusedItem()
+        print self.GetItemText(focussed_item_index,3)
+        
+        responsive=self.GetItemText(focussed_item_index,3)
+        if responsive == 'Yes':
+            self._rbx_res.SetSelection(0)
+        elif responsive == 'No':
+            self._rbx_res.SetSelection(1)
+        else:
+            self._rbx_res.SetSelection(2)
+            
+        
         file_name = self.GetItem(focussed_item_index, 1).GetText()
         _, file_ext = os.path.splitext(file_name)
         msg_text = 'Cannot open "%s" in this viewer! Please double click the row to open the file in a default system file viewer.' % file_name
@@ -468,11 +500,14 @@ class SMARTeR (SMARTeRGUI):
         self._shelve_file_names = []  # this keeps all of the shelf files path 
         self._responsive_files = []
         self._unresponsive_files = []
+        self._responsive_files_display = []
+        self._unresponsive_files_display = []
         self._build_query_results_panel()
         self._populate_metadata_fields()
         self._reset_defaults_indexing_preferences()    
         
-        self._lda_num_topics = self._num_topics     
+        self._lda_num_topics = self._num_topics
+        self._init_results = []     
         
         self.Center()
         from os.path import expanduser
@@ -492,7 +527,6 @@ class SMARTeR (SMARTeRGUI):
                 self._cbx_project_title.Append(project)
         self._load_cbx_confidence_levels()
         self._init_confidence()
-        
         self.Show(True)
         
     def _reset_defaults_indexing_preferences(self):
@@ -525,7 +559,7 @@ class SMARTeR (SMARTeRGUI):
 
 
     def _build_query_results_panel(self):
-        
+        '''
         vbox = wx.BoxSizer(wx.VERTICAL)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         
@@ -534,12 +568,13 @@ class SMARTeR (SMARTeRGUI):
 
         self._st_file_preview_header = wx.StaticText(_panel_right, -1, 'File Review Pane (Text Files)')
         self._tc_file_preview_pane = wx.TextCtrl(_panel_right, -1, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 200))
-        self._lc_results_res = ResultsCheckListCtrl(_panel_right, self)
+        '''
+        self._lc_results_res = ResultsCheckListCtrl(self._panel_res, self, self._rbx_feedack_res)
         self._lc_results_res._set_table_headers()  # Populate the column names using the metadata types from MetadataType_types &RB
         
-        self._lc_results_unres = ResultsCheckListCtrl(_panel_right, self)
+        self._lc_results_unres = ResultsCheckListCtrl(self._panel_unres, self,self._rbx_feedack_unres)
         self._lc_results_unres._set_table_headers()  # Populate the column names using the metadata types from MetadataType_types &RB
-       
+        '''
         vbox2 = wx.BoxSizer(wx.VERTICAL)
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
         self._st_responsive_doc = wx.StaticText(_panel_right, -1, 'Responsive Files')
@@ -596,7 +631,7 @@ class SMARTeR (SMARTeRGUI):
         hbox.Add((3, -1))
 
         self._panel_query_results.SetSizer(hbox)
-
+        '''
     def _on_menu_sel_exit(self, event):
 
         dlg = wx.MessageDialog(self,
@@ -681,6 +716,30 @@ class SMARTeR (SMARTeRGUI):
             self._lc_results_unres._populate_results(current_chunk,"false")
             present_chunk = current_chunk
     
+    def _on_click_next_res(self, event):
+        global present_chunk_res
+        current_chunk = present_chunk_res;
+        import math
+           
+                        
+        if(current_chunk <> math.ceil(len(self._responsive_files)/5) ): 
+            current_chunk += 1
+            self._lc_results_res._populate_results(current_chunk,self._responsive_files_display)
+            present_chunk_res = current_chunk
+            
+    def _on_click_next_unres(self, event):
+        global present_chunk_unres
+        import math
+        current_chunk = present_chunk_unres;
+        
+        if(current_chunk <> math.ceil(len(self._unresponsive_files)/5)):
+            
+            current_chunk += 1
+        
+            self._lc_results_unres._populate_results(current_chunk,self._unresponsive_files_display)
+            present_chunk_unres = current_chunk
+            
+    
     def _on_click_previous(self, event):
         global present_chunk
         current_chunk = present_chunk;
@@ -688,8 +747,24 @@ class SMARTeR (SMARTeRGUI):
         if(current_chunk >= 0): 
             self._lc_results_res._populate_results(current_chunk,"true")
             self._lc_results_unres._populate_results(current_chunk,"false")
-            present_chunk = current_chunk    
-    
+            present_chunk = current_chunk
+                
+    def _on_click_previous_res(self, event):
+        global present_chunk_res
+        current_chunk = present_chunk_res;
+        current_chunk -= 1
+        if(current_chunk >= 0): 
+            self._lc_results_res._populate_results(current_chunk,self._responsive_files_display)
+            present_chunk_res = current_chunk
+            
+    def _on_click_previous_unres(self, event):
+        global present_chunk_unres
+        current_chunk = present_chunk_unres;
+        current_chunk -= 1
+        if(current_chunk >= 0): 
+            self._lc_results_unres._populate_results(current_chunk,self._unresponsive_files_display)
+            present_chunk_unres = current_chunk
+            
     def _on_click_sel_all(self, event):
         num = self._lc_results_res.GetItemCount()
         for i in range(num):
@@ -896,7 +971,8 @@ class SMARTeR (SMARTeRGUI):
             i += 1
             if i == 100:
                 break
-        print self.ts_results
+        self._init_results = ts_results
+        
         self.load_document_feedback()
         
         self._current_page = 2
@@ -1005,13 +1081,14 @@ class SMARTeR (SMARTeRGUI):
             
             if float(file_details[10])>=CUT_OFF:
                 self._responsive_files.append([file_details[1],"",""])
+                self._responsive_files_display.append([file_details[0],file_details[1],file_details[10],""])
             else:
                 self._unresponsive_files.append([file_details[1],"",""])
+                self._unresponsive_files_display.append([file_details[0],file_details[1],file_details[10],""])
+            
             dictionary_of_rows.__setitem__(str(key), file_details)
             key += 1
-        
-    
-        
+            
         self._lc_results_res._set_shelve_dir(self._shelve_dir)
         self._lc_results_res.itemDataMap = dictionary_of_rows
         self._lc_results_res.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results_res._on_header_column_click)
@@ -1023,10 +1100,12 @@ class SMARTeR (SMARTeRGUI):
         items = dictionary_of_rows.items()
         self._reset_persistent_shelves()
         self._create_persistent_shelves(items)
-        global present_chunk
-        present_chunk = 0
-        self._lc_results_res._populate_results(present_chunk,"true")
-        self._lc_results_unres._populate_results(present_chunk,"false")
+        global present_chunk_res
+        global present_chunk_unres
+        present_chunk_res = 0
+        present_chunk_unres = 0
+        self._lc_results_res._populate_results(present_chunk,self._responsive_files_display)
+        self._lc_results_unres._populate_results(present_chunk,self._unresponsive_files_display)
         self._tc_file_preview_pane.SetValue('')
         
         
@@ -1111,6 +1190,43 @@ class SMARTeR (SMARTeRGUI):
     def load_document_feedback(self):
         self.panel_feedback_doc = TaggingControlFeedback(self._panel_feedback_doc, self)
         self.panel_feedback_doc._setup_review_tab()
+        
+    def _on_rbx_result_responsive_update(self, event):
+        
+        
+        try:
+            selected_doc_id = self._lc_results_res.GetFocusedItem()
+            responsive_status = self._rbx_feedack_res.GetStringSelection()
+            if responsive_status == 'Responsive': 
+                self._lc_results_res.SetStringItem(selected_doc_id, 3, 'Yes')
+                #self.ts_results[selected_doc_id][2] = 'Responsive'
+            elif responsive_status == 'Unresponsive': 
+                self._lc_results_res.SetStringItem(selected_doc_id, 3, 'No')
+                #self.ts_results[selected_doc_id][2] = 'Unresponsive'
+            else: 
+                self._lc_results_res.SetStringItem(selected_doc_id, 3, '')
+                #self.ts_results[selected_doc_id][2] = ''
+            
+        except Exception, e:
+            print e
+            
+    def _on_rbx_result_unresponsive_update(self, event):
+        
+        try:
+            selected_doc_id = self._lc_results_unres.GetFocusedItem()
+            responsive_status = self._rbx_feedack_unres.GetStringSelection()
+            if responsive_status == 'Responsive': 
+                self._lc_results_unres.SetStringItem(selected_doc_id, 3, 'Yes')
+                #self.ts_results[selected_doc_id][2] = 'Responsive'
+            elif responsive_status == 'Unresponsive': 
+                self._lc_results_unres.SetStringItem(selected_doc_id, 3, 'No')
+                #self.ts_results[selected_doc_id][2] = 'Unresponsive'
+            else: 
+                self._lc_results_unres.SetStringItem(selected_doc_id, 3, '')
+                #self.ts_results[selected_doc_id][2] = ''
+            
+        except Exception, e:
+            print e
     
     def _on_rbx_responsive_updated(self, event):
         '''
@@ -1130,8 +1246,35 @@ class SMARTeR (SMARTeRGUI):
             else: 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, '')
                 self.ts_results[selected_doc_id][2] = ''
+            self.update_results()
         except Exception, e:
             print e
+    def update_results(self):
+        
+        ###########
+        #Only for trec data set
+        ###########
+        tp = 0
+        tn = 0
+        fp = 0
+        fn = 0
+        for ts in self._init_results:
+            result = os.path.split(os.path.split(ts[1])[0])[1]
+            if  result == "1" and float(ts[10])>CUT_OFF:
+                tp=tp+1
+            #exit()
+            elif result == "1" and float(ts[10])<=CUT_OFF:
+                fn=fn+1
+            elif result == "0" and float(ts[10])>CUT_OFF:
+                fp=fp+1
+            else:
+                tn=tn+1
+        
+        self._st_false_negative.SetLabel(str(fn))
+        self._st_true_positive.SetLabel(str(tp))
+        self._st_true_negative.SetLabel(str(tn))
+        self._st_false_positive.SetLabel(str(fp))
+        
         
     def _init_confidence(self):
         '''
@@ -1141,13 +1284,21 @@ class SMARTeR (SMARTeRGUI):
         '''
         
         self.confidence_val = DEFAULT_CONFIDENCE_LEVEL / Decimal('100')
+        self.confidence_val_unres=self.confidence_val
         items = self._cbx_confidence_levels.GetItems()
+        items_unres=self._cbx_confidence_levels_unres.GetItems()
         index = -1
         try:
             index = items.index(str(DEFAULT_CONFIDENCE_LEVEL))
             self._cbx_confidence_levels.SetSelection(index)
         except ValueError:
             self._cbx_confidence_levels.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
+            
+        try:
+            index = items_unres.index(str(DEFAULT_CONFIDENCE_LEVEL))
+            self._cbx_confidence_levels_unres.SetSelection(index)
+        except ValueError:
+            self._cbx_confidence_levels_unres.ChangeValue(str(DEFAULT_CONFIDENCE_LEVEL))
     
         
         # Set default confidence interval 
@@ -1155,14 +1306,19 @@ class SMARTeR (SMARTeRGUI):
         str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
         self._tc_confidence_interval.ChangeValue(str_precision)
         
+        self.precision_val_unres = DEFAULT_CONFIDENCE_INTERVAL / 100
+        str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
+        self._tc_confidence_interval_unres.ChangeValue(str_precision)
 
         # Hides the status messages 
         self._st_num_samples_res.Show(False)
-        self._st_num_samples_unres.Show(False)            
+        self._st_num_samples_unres.Show(False)
+        #self._st_num_samples_ind_unres.Show(False)            
     
         
     def _on_click_continue(self, event):
         self._generate_file_samples()
+        self._generate_file_samples_unres()
         self._current_page = 4
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
@@ -1177,6 +1333,7 @@ class SMARTeR (SMARTeRGUI):
             self._cbx_confidence_levels.Clear()
             for cl in confidence_levels:
                 self._cbx_confidence_levels.Append(cl)
+                self._cbx_confidence_levels_unres.Append(cl)
         except Exception,e:
             self.error(e)
             
@@ -1203,6 +1360,8 @@ class SMARTeR (SMARTeRGUI):
                 return 
             
             self.get_precision_as_float()
+            if self._chk_toggle_cl_level.Value==True:
+                self.precision_val_unres=self.precision_val
             #self._tc_out_confidence_interval.ChangeValue(self._tc_confidence_interval.GetValue())
             #self.SetStatusText('Confidence interval is changed as ' + self._tc_confidence_interval.GetValue())
         except ValueError:
@@ -1210,6 +1369,38 @@ class SMARTeR (SMARTeRGUI):
             return None 
         
         self._generate_file_samples()
+        
+        
+    def _on_precision_changed_unres(self, event):
+        '''
+        Triggers an event and updates the sample list on precision - aka 
+        confidence interval change.
+        Arguments: Event of new precision value
+        Returns: Nothing
+        '''
+        
+        def show_precision_error():
+            self._show_error_message("Value Error!", "Please enter a confidence interval between 0 and 100.")
+            self._tc_confidence_interval.ChangeValue(str(int(DEFAULT_CONFIDENCE_INTERVAL))) # Sets the default value 
+            self._tc_confidence_interval.SetFocus()
+            
+
+        # Maybe intermittently null string, escaping 
+        try:
+            # Checks for positive values 
+            ci = float(self._tc_confidence_interval.GetValue())
+            if ci <= 0 or ci > 99:
+                show_precision_error()
+                return 
+            
+            self.get_precision_as_float_unres()
+            #self._tc_out_confidence_interval.ChangeValue(self._tc_confidence_interval.GetValue())
+            #self.SetStatusText('Confidence interval is changed as ' + self._tc_confidence_interval.GetValue())
+        except ValueError:
+            show_precision_error()
+            return None 
+        
+        self._generate_file_samples_unres()
         
     def _generate_file_samples(self):
         '''
@@ -1220,14 +1411,30 @@ class SMARTeR (SMARTeRGUI):
 
         # Generate samples
         self.sampled_files_responsive = random_sampler(self._responsive_files, self.confidence_val, self.precision_val, self.SEED)
-        self.sampled_files_unresponsive = random_sampler(self._unresponsive_files, self.confidence_val, self.precision_val, self.SEED)
-        print self.sampled_files_unresponsive
-        print self._unresponsive_files
+        if self._chk_toggle_cl_level.Value==True:
+            self.sampled_files_unresponsive = random_sampler(self._unresponsive_files, self.confidence_val, self.precision_val, self.SEED)
+        print self.confidence_val
         self._st_num_samples_res.SetLabel('Responsive: %d sample documents will be selected' % len(self.sampled_files_responsive))
         self._st_num_samples_res.Show()
         
-        self._st_num_samples_unres.SetLabel('Unresponsive: %d sample documents will be selected'% len(self.sampled_files_unresponsive))
-        self._st_num_samples_unres.Show()
+        if self._chk_toggle_cl_level.Value==True:
+            self._st_num_samples_unres.SetLabel('Unresponsive: %d sample documents will be selected'% len(self.sampled_files_unresponsive))
+            self._st_num_samples_unres.Show()
+        
+        
+    def _generate_file_samples_unres(self):
+        '''
+        This function generates file sample based on the 
+        class variables such as file_list, confidence_val, 
+        and precision_val and sets the sample status label     
+        '''
+
+        # Generate samples
+        
+        self.sampled_files_unresponsive = random_sampler(self._unresponsive_files, self.confidence_val_unres, self.precision_val_unres, self.SEED)
+        self._st_num_samples_ind_unres.SetLabel('Unresponsive: %d sample documents will be selected'% len(self.sampled_files_unresponsive))
+        self._st_num_samples_ind_unres.Show(True)
+
      
 #        # step 1: gets highly rated documents 
 #        
@@ -1278,6 +1485,19 @@ class SMARTeR (SMARTeRGUI):
             self.precision_val = float(int(self._tc_confidence_interval.GetValue())
                                        ) / 100.0
                                        
+    def get_precision_as_float_unres(self):
+        '''
+        Converts precision to float
+        Returns: Nothing
+        Arguments: Nothing
+        '''
+        try:
+            self.precision_val_unres = float(self._tc_confidence_interval_unres.GetValue()
+                                       ) / 100.0 
+        except ValueError:
+            self.precision_val_unres = float(int(self._tc_confidence_interval_unres.GetValue())
+                                       ) / 100.0
+                                       
     def _on_confidence_changed(self, event):
         '''
         Triggers an event and updates the sample list on confidence - aka 
@@ -1286,7 +1506,14 @@ class SMARTeR (SMARTeRGUI):
         Returns: Nothing
         '''
         self.confidence_val = Decimal(self._cbx_confidence_levels.GetValue()) / Decimal('100')
+        if self._chk_toggle_cl_level.Value==True:
+            self.confidence_val_unres=self.confidence_val
         self._generate_file_samples()
+        
+    def _on_confidence_changed_unres(self, event):
+        
+        self.confidence_val_unres = Decimal(self._cbx_confidence_levels_unres.GetValue()) / Decimal('100')
+        self._generate_file_samples_unres()
 
     def _on_click_cl_goback( self, event ):
         self._current_page = 3
@@ -1294,7 +1521,7 @@ class SMARTeR (SMARTeRGUI):
         self.SetStatusText('')
     
     def _on_click_cl_next( self, event ):
-        self._review_res = TaggingControlSmarter(self._panel_review_res, self._responsive_files,self._rbx_response_res,self._rbx_privilage_res,self._tc_preview_tags,self._panel_doc_tag_res)
+        self._review_res = TaggingControlSmarter(self._panel_review_res, self.sampled_files_responsive,self._rbx_response_res,self._rbx_privilage_res,self._tc_preview_tags,self._panel_doc_tag_res)
         self._review_res._setup_review_tab()
         self._current_page = 5
         self._notebook.ChangeSelection(self._current_page)
@@ -1341,6 +1568,20 @@ class SMARTeR (SMARTeRGUI):
         self._tc_project_name.SetValue('')
         self._data_dir_picker.SetPath('')
         self._application_dir_picker.SetPath('')
+        
+    def _on_click_change_unres_focus(self,event):
+        if self._chk_toggle_cl_level.Value==True:
+            self.precision_val_unres=self.precision_val
+            self.confidence_val_unres=self.confidence_val
+            self._generate_file_samples()
+            self._panel_unres_cl.Show(False)
+            self._st_num_samples_unres.Show(True)
+        else:
+            self.confidence_val_unres = Decimal(self._cbx_confidence_levels_unres.GetValue()) / Decimal('100')
+            self.precision_val_unres = float(self._tc_confidence_interval_unres.GetValue()) / 100.0
+            self._generate_file_samples_unres()
+            self._panel_unres_cl.Show(True)
+            self._st_num_samples_unres.Show(False)
         
     def _combine_lucene_tm_results(self, fs_results, ts_results):
         
@@ -1463,17 +1704,19 @@ class SMARTeR (SMARTeRGUI):
             self.error(e)
             
     def _btn_sample_back_res(self, event):
+        self._review_res.Destroy()
         self._current_page = 4
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
     def _btn_sample_back_unres(self, event):
+        self._review_unres.Destroy()
         self._current_page = 5
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
     def _on_click_sample_next( self, event ):
-        self._review_unres = TaggingControlSmarter(self._panel_review_unres, self._unresponsive_files,self._rbx_response_unres,self._rbx_privilage_unres,self._tc_preview_tags_unres,self._panel_doc_tag_unres)
+        self._review_unres = TaggingControlSmarter(self._panel_review_unres, self.sampled_files_unresponsive,self._rbx_response_unres,self._rbx_privilage_unres,self._tc_preview_tags_unres,self._panel_doc_tag_unres)
         self._review_unres._setup_review_tab()
         self._current_page = 6
         self._notebook.ChangeSelection(self._current_page)

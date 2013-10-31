@@ -75,6 +75,6 @@ class TaggingControlFeedback ( wx.ListCtrl, ListCtrlAutoWidthMixin):
             is_message_opened = True
         
         if is_message_opened:
-            sm._doc_feedback_preview.SetValue(str(msg_text))
+            sm._doc_feedback_preview.SetValue(msg_text)
         else:
             sm._doc_feedback_preview.SetValue('')
