@@ -132,7 +132,7 @@ def load_file_paths_index(index_file):
     with open(index_file) as fp:
         for line in fp: 
             (idx, root, file_name) = line.strip().split()
-            file_path_tuples.append((int(idx), root, file_name))
+            file_path_tuples.append((int(idx), os.path.normpath(root), file_name))
     
     return file_path_tuples
 

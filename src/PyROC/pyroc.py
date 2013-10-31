@@ -154,7 +154,7 @@ class ROCData(object):
 	def __init__(self,data,linestyle='rx-'):
 		""" Constructor takes the data and the line style for plotting the ROC Curve.
 			Parameters:
-				data: The data a listl of tuples t (l = [t_0,t_1,...t_n]) where:
+				data: The data a list of tuples t (l = [t_0,t_1,...t_n]) where:
 					  t[0] = 1 for positive class and 0 for negative class
 					  t[1] = a score
 			 		  t[2] = any label (optional)
@@ -253,7 +253,7 @@ class ROCData(object):
 						(Nn - 1.0) * (Q2 - area * area)) / (Na * Nn))
 							
 	
-	def plot(self, title='', include_baseline=False, equal_aspect=True, file_name='ROC_plot.png'):
+	def plot(self, title='', include_baseline=False, equal_aspect=True, file_name=''):
 		""" Method that generates a plot of the ROC curve 
 			Parameters:
 				title: Title of the chart
@@ -277,8 +277,10 @@ class ROCData(object):
 		pylab.ylabel('Sensitivity (Recall)')
 		pylab.title(title)
 		
-		pylab.savefig(file_name, bbox_inches=0)
-		# pylab.show()
+		if file_name == '':
+			pylab.show()
+		else: 
+			pylab.savefig(file_name, bbox_inches=0)
 		
 	
 	def confusion_matrix(self,threshold,do_print=False):
