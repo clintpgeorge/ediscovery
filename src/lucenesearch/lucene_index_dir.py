@@ -302,8 +302,8 @@ if __name__ == '__main__':
 
     # test_search("F:\\Research\\datasets\\trec2010\\project4\\lucene")
     
-    index_dir = "F:\\Research\\datasets\\trec2010\\project4\\lucene"
-    lucene_query = 'all:(+swap trans*)'
+    index_dir = "C:\\Users\\Sail\\SMARTeR\\Project201\\lucene"
+    lucene_query = 'all:(+swap trans*) or all:(+swap trans*)'
     record_limit = 1000 
     
     boolean_search_lucene_index(index_dir, lucene_query, record_limit)

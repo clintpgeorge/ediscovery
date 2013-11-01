@@ -64,7 +64,7 @@ class TaggingControlFeedback ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         #Show the preview
         msg_text = ''
         is_message_opened = False
-        src_file_path = sm.ts_results[selected_doc_id][1]
+        src_file_path = sm.ts_results[selected_doc_id][0]
         _, fileExtension = os.path.splitext(src_file_path)
         if fileExtension=="" or fileExtension==".txt":
             import unicodedata

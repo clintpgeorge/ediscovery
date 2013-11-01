@@ -748,7 +748,7 @@ def compare_true_retrieved_documents(m1_docs, m2_docs, positive_dir, score_thres
     print '\nFiles found only in Set 2:'
     print len(m2_pos_set - m1_pos_set)
     
-def lu_append_nonresp(docs, test_directory):
+def lu_append_nonresp(docs, root_dir):
     '''
     Used only for Lucene 
     '''
@@ -766,7 +766,7 @@ def lu_append_nonresp(docs, test_directory):
     
     min_score = np.min(score_list) * 0.1
     
-    for _, _, files in os.walk(test_directory):
+    for _, _, files in os.walk(root_dir):
         for file_name in files:
             if file_name not in result:
                 result_dict[file_name] = min_score

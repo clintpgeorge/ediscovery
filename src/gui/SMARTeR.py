@@ -15,6 +15,9 @@ from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin, \
     ColumnSorterMixin
 from gui.SMARTeRGUI import SMARTeRGUI, RatingControl, PreferencesDialog, NewProject
 from lucenesearch.lucene_index_dir import search_lucene_index, MetadataType, get_indexed_file_details
+from lucenesearch.lucene_index_dir import boolean_search_lucene_index, get_indexed_file_details
+from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_dominant_query_topics, print_lda_topics_on_entropy
+
 import re
 import webbrowser
 from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS, \
@@ -45,7 +48,10 @@ present_chunk = 0
 # Constants 
 SHELVE_DIR_NAME = 'shelf'
 USER_RATINGS_CUT_OFF = 5  # TODO: this needs to be learned
-CUT_OFF=0.5 
+CUT_OFF=0.01
+CUT_OFF_NORM=0.3
+TOP_K_TOPICS = 5
+LIMIT_LUCENE=1000
 
 ###########################################################################
 
@@ -877,7 +883,7 @@ class SMARTeR (SMARTeRGUI):
     def _on_click_add_to_query1(self, event):
         metadataSelected = self._cbx_meta_type1.GetValue()
         operatorSelected = self._cbx_meta_type2.GetValue()
-        queryBoxText = '"'+self._tc_query_input1.GetValue()+'"'
+        queryBoxText = '('+self._tc_query_input1.GetValue()+')'
         # Uncomment the below lines if it is decided that the conjunctions AND OR NOT should be there. 
         # if(self._rbtn_conjunction.Enabled) :
         # self._tc_query.AppendText(self._rbtn_compulsion_level.GetStringSelection() + " " + metadataSelected + ":" + queryBoxText + " ");
@@ -905,14 +911,118 @@ class SMARTeR (SMARTeRGUI):
         
     def _on_chbx_facet_search(self, event):
         self._chbx_topic_search.SetValue(False)
+        
+    def load_tm(self, mdl_cfg):
+    
+        dictionary_file = mdl_cfg['CORPUS']['dict_file']
+        path_index_file = mdl_cfg['CORPUS']['path_index_file']
+        lda_mdl_file = mdl_cfg['LDA']['lda_model_file']
+        lda_cos_index_file = mdl_cfg['LDA']['lda_cos_index_file']
+        root_dir = mdl_cfg['DATA']['root_dir']
+        lucene_index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+        if nexists(dictionary_file) and nexists(path_index_file):       
+            lda_file_path_index = load_file_paths_index(path_index_file)
+            lda_dictionary = load_dictionary(dictionary_file)
+            
+        if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
+            lda_mdl, lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
+            
+        return root_dir, lucene_index_dir ,lda_dictionary, lda_mdl, lda_index, lda_file_path_index
+    
+    def lu_append_nonresp(self, docs, test_directory):
+        '''
+        Used only for Lucene 
+        '''
+        
+        result_dict = dict()
+        result_list = []
+        result = dict()
+        score_list = []
+        
+        for doc in docs:
+            result[doc[0]] = True
+            result_list.append(doc)
+            result_dict[doc[0]] = [doc[1],doc[10]]
+            score_list.append(doc[10])
+        
+        import numpy as np
+        min_score = np.min(score_list) * 0.1
+        
+        for root, _, files in os.walk(test_directory):
+            for file_name in files:
+                if file_name not in result:
+                    result_dict[file_name] = [os.path.join(root,file_name),min_score]
+                    
+        return result_dict, result_list
+    
+    def search_tm_topics(self, topics_list, limit, mdl_cfg):   
+        '''
+        Performs search on the topic model using relevant  
+        topic indices 
+        '''
+        import numpy as np
+        EPS = 1e-24 # a constant 
+        lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
+        index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+        path_index_file = mdl_cfg['CORPUS']['path_index_file']    
+        lda_file_path_index = load_file_paths_index(path_index_file) # loads the file paths    
+        lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble) # loads the LDA theta from the model theta file 
+        num_docs, num_topics = lda_theta.shape
+        
+        print 'LDA-theta is loaded: number of documents: ', num_docs, ' number of topics: ', num_topics  
+        
+        unsel_topic_idx = [idx for idx in range(0, num_topics) if idx not in topics_list]
+        sel = np.log(lda_theta[:, topics_list] + EPS)
+        unsel = np.log(1.0 - lda_theta[:, unsel_topic_idx] + EPS)
+        ln_score = sel.sum(axis=1) + unsel.sum(axis=1)  
+        sorted_idx = ln_score.argsort(axis=0)[::-1]
+        # score = np.exp(ln_score)
+        
+        # Normalize the topic index search score 
+        # TODO: this is an adhoc method right now. May come back later... 
+        min_ln_score = min(ln_score)
+        n_ln_score = (1.0 - ln_score / min_ln_score)
+    
+        ts_results = []
+        for i in range(0, min(limit, num_docs)):
+            ts_results.append([lda_file_path_index[sorted_idx[i]][0], # document id  
+                              lda_file_path_index[sorted_idx[i]][1], # document directory path   
+                              lda_file_path_index[sorted_idx[i]][2], # document name
+                              n_ln_score[sorted_idx[i]]]) # similarity score 
+            # print lda_file_path_index[sorted_idx[i]], ln_score[sorted_idx[i]], n_ln_score[sorted_idx[i]], score[sorted_idx[i]] 
+            
+    
+        # grabs the files details from the index     
+        ts_results = get_indexed_file_details(ts_results, index_dir) 
+        
+        results = [[row[0], float(row[10])] for row in ts_results] # Note: we need a float conversion because it's retrieving as string 
+        
+        return results
+    
+    def fuse_lucene_tm_scores(self,results_lucene, results_tm):
+        '''
+        This method fuse document relevancy scores from 
+        Lucene with topic modeling based ranking scores. 
+        Currently, it's based on Geometric mean of both 
+        scores. 
+        '''
+        
+        result = []
+        for res_tm in results_tm:
+            lu_score = results_lucene[res_tm[0]]
+            mult_score = float(lu_score[1]) * float(res_tm[1]) 
+            result.append([res_tm[0], mult_score])
+    
+        #result = sorted(result, key=lambda student: student[1])
+        
+        return result
     
     def _on_click_run_query(self, event):
         # 1. Parse the query
         
         global dictionary_of_rows
         dictionary_of_rows = OrderedDict()
-        queryText = self._tc_query.GetValue().strip() 
-        print queryText
+        queryText = self._tc_query1.GetValue().strip() 
         
         # 0. Validations 
         if not self._is_lucene_index_available:
@@ -939,40 +1049,49 @@ class SMARTeR (SMARTeRGUI):
             topic_key.append(keywords.strip()[:-1])
         
         
-        queries = []
-        fields = []
-        clauses = []
-        filteredQuery = re.split(' ', queryText)
+        filteredQuery = queryText.splitlines(True)
+        luceneQuery = ""
+        topicQuery =""
         
         for l in filteredQuery:
-            res = re.split(':', l)
-            print res 
+            luceneQuery += l.strip()
+            
+            res = re.split(':', l) 
             if len(res) > 1:
-                fields.append(res[0])
-                queries.append(res[1])
-                if res[2] is 'MUST':
-                    clauses.append(BooleanClause.Occur.MUST)
-                elif res[2] is 'MUST_NOT':
-                    clauses.append(BooleanClause.Occur.MUST_NOT)
-                else:
-                    clauses.append(BooleanClause.Occur.SHOULD)
-        
-        query_text = ' '.join(queries)  # combines all the text in a query model 
+                topicQuery += res[1].strip()[1:][:-1]
+        '''
+ 
         ts_results = search_lda_model(query_text, self.lda_dictionary,
                                           self.lda_mdl, self.lda_index,
                                           self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
+        '''
+        mdl_cfg = read_config(self.cfg_file_name)
+        root_dir, lucene_index_dir,lda_dictionary, lda_mdl, _, _ = self.load_tm(mdl_cfg)#sahil
+        dominant_topics = get_dominant_query_topics(topicQuery, lda_dictionary, lda_mdl, TOP_K_TOPICS)
+        dominant_topics_idx = [idx for (idx, _) in dominant_topics] # get the topic indices
+        
+        lu_docs = boolean_search_lucene_index(lucene_index_dir,luceneQuery, LIMIT_LUCENE)
+        lu_docs_dict, _ = self.lu_append_nonresp(lu_docs, root_dir)
+        
+        lda_tts_docs = self.search_tm_topics(dominant_topics_idx, LIMIT_LUCENE, mdl_cfg)
+        final_docs_tts = self.fuse_lucene_tm_scores(lu_docs_dict, lda_tts_docs)
             # # ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
-        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir)  # grabs the files details from the index
+        ts_results = final_docs_tts
+        #get_indexed_file_details(final_docs_tts, mdl_cfg['LUCENE']['lucene_index_dir'])  # grabs the files details from the index
         
         self.ts_results = []
         i = 0
+        
+        
         for ts in ts_results:
-            self.ts_results.append([ts[0], ts[1], ''])
+            print ts
+            self.ts_results.append([lu_docs_dict[ts[0]][0], ts[1], ''])
             i += 1
             if i == 100:
                 break
-        self._init_results = ts_results
         
+        self._init_results = self.ts_results
+#        self.ts_results = final_docs_tts
         self.load_document_feedback()
         
         self._current_page = 2
@@ -1055,16 +1174,9 @@ class SMARTeR (SMARTeRGUI):
             # # ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
         ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir)  # grabs the files details from the index 
             
-        # if facet_search and not topic_search: 
-            # 2. Run Lucene query
-        #    rows = fs_results
-        # elif not facet_search and topic_search: 
+     
         rows = ts_results
-        # elif facet_search and topic_search: 
-            # Combine results  
-            # rows = self._combine_lucene_tm_results(fs_results, ts_results)
-         #   print 'TODO'
-          #  return 
+        
             
         if len(rows) == 0: 
             self.SetStatusText('No documents found.')
@@ -1079,7 +1191,7 @@ class SMARTeR (SMARTeRGUI):
             file_details = row  # values of the defined MetadataTypes 
             file_details.append('0')  # Add a 'relevance' value of '0' to each search-result
             
-            if float(file_details[10])>=CUT_OFF:
+            if float(file_details[10])>=CUT_OFF_NORM:
                 self._responsive_files.append([file_details[1],"",""])
                 self._responsive_files_display.append([file_details[0],file_details[1],file_details[10],""])
             else:
@@ -1133,6 +1245,10 @@ class SMARTeR (SMARTeRGUI):
         dlg = wx.MessageDialog(self, "Information is recorded, Thank you", "Update Results", wx.OK)
         dlg.ShowModal()  # Shows it
         dlg.Destroy()  # finally destroy it when finished.
+        
+        self._current_page = 1
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
         
     def load_contextual_feedback(self, topic_list):
         _bgd_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1254,26 +1370,28 @@ class SMARTeR (SMARTeRGUI):
         ###########
         #Only for trec data set
         ###########
-        tp = 0
-        tn = 0
-        fp = 0
-        fn = 0
-        for ts in self._init_results:
-            result = os.path.split(os.path.split(ts[1])[0])[1]
-            if  result == "1" and float(ts[10])>CUT_OFF:
-                tp=tp+1
-            #exit()
-            elif result == "1" and float(ts[10])<=CUT_OFF:
-                fn=fn+1
-            elif result == "0" and float(ts[10])>CUT_OFF:
-                fp=fp+1
-            else:
-                tn=tn+1
+        self.tp = 0
+        self.tn = 0
+        self.fp = 0
+        self.fn = 0
         
-        self._st_false_negative.SetLabel(str(fn))
-        self._st_true_positive.SetLabel(str(tp))
-        self._st_true_negative.SetLabel(str(tn))
-        self._st_false_positive.SetLabel(str(fp))
+        
+        for ts in self._init_results:
+            result = os.path.split(os.path.split(ts[0])[0])[1]
+            if  result == "1" and float(ts[1])>CUT_OFF:
+                self.tp=self.tp+1
+            #exit()
+            elif result == "1" and float(ts[1])<=CUT_OFF:
+                self.fn=self.fn+1
+            elif result == "0" and float(ts[1])>CUT_OFF:
+                self.fp=self.fp+1
+            else:
+                self.tn=self.tn+1
+        
+        self._st_false_negative.SetLabel(str(self.fn))
+        self._st_true_positive.SetLabel(str(self.tp))
+        self._st_true_negative.SetLabel(str(self.tn))
+        self._st_false_positive.SetLabel(str(self.fp))
         
         
     def _init_confidence(self):
@@ -1555,9 +1673,9 @@ class SMARTeR (SMARTeRGUI):
                 
     def _on_set_existing_project(self,event):
         project_name = self._cbx_project_title.GetValue()
-        cfg_file_name = os.path.join(self._cfg_dir,project_name+".cfg")
-        self.project_name = cfg_file_name
-        self._load_model(cfg_file_name)
+        self.cfg_file_name = os.path.join(self._cfg_dir,project_name+".cfg")
+        self.project_name = self.cfg_file_name
+        self._load_model(self.cfg_file_name)
               
     def _on_click_clear_project_details(self, event):
         '''
