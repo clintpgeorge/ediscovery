@@ -533,6 +533,8 @@ class SMARTeR (SMARTeRGUI):
                 self._cbx_project_title.Append(project)
         self._load_cbx_confidence_levels()
         self._init_confidence()
+        self._notebook.ChangeSelection(0)
+        self._notebook.RemovePage(3)
         self.Show(True)
         
     def _reset_defaults_indexing_preferences(self):
@@ -995,7 +997,7 @@ class SMARTeR (SMARTeRGUI):
         # grabs the files details from the index     
         ts_results = get_indexed_file_details(ts_results, index_dir) 
         
-        results = [[row[0], float(row[10])] for row in ts_results] # Note: we need a float conversion because it's retrieving as string 
+        results = [[row[0], int(row[9]), float(row[10])] for row in ts_results] # Note: we need a float conversion because it's retrieving as string 
         
         return results
     
@@ -1011,7 +1013,7 @@ class SMARTeR (SMARTeRGUI):
         for res_tm in results_tm:
             lu_score = results_lucene[res_tm[0]]
             mult_score = float(lu_score[1]) * float(res_tm[1]) 
-            result.append([res_tm[0], mult_score])
+            result.append([res_tm[1],lu_score[0],res_tm[0], mult_score])
     
         #result = sorted(result, key=lambda student: student[1])
         
@@ -1072,25 +1074,24 @@ class SMARTeR (SMARTeRGUI):
         
         lu_docs = boolean_search_lucene_index(lucene_index_dir,luceneQuery, LIMIT_LUCENE)
         lu_docs_dict, _ = self.lu_append_nonresp(lu_docs, root_dir)
-        
         lda_tts_docs = self.search_tm_topics(dominant_topics_idx, LIMIT_LUCENE, mdl_cfg)
         final_docs_tts = self.fuse_lucene_tm_scores(lu_docs_dict, lda_tts_docs)
-            # # ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
-        ts_results = final_docs_tts
-        #get_indexed_file_details(final_docs_tts, mdl_cfg['LUCENE']['lucene_index_dir'])  # grabs the files details from the index
+        print final_docs_tts
+        #print lu_docs
+        #get_indexed_file_details(lu_docs, mdl_cfg['LUCENE']['lucene_index_dir'])  # grabs the files details from the index
         
         self.ts_results = []
         i = 0
         
         
-        for ts in ts_results:
-            print ts
-            self.ts_results.append([lu_docs_dict[ts[0]][0], ts[1], ''])
+        for ts in final_docs_tts:
+            
+            self.ts_results.append(ts)
+            self.ts_results[i].append('')
             i += 1
             if i == 100:
                 break
-        
-        self._init_results = self.ts_results
+        self._init_results = final_docs_tts
 #        self.ts_results = final_docs_tts
         self.load_document_feedback()
         
@@ -1114,68 +1115,11 @@ class SMARTeR (SMARTeRGUI):
         
         # 1. Parse the query
         
-        global dictionary_of_rows
-        dictionary_of_rows = OrderedDict()
-        queryText = self._tc_query.GetValue().strip() 
-
-        # 0. Validations 
-        if not self._is_lucene_index_available:
-            # Lucene index is mandatory 
-            self._show_error_message('Run Query Error!', 'Please select a valid index for searching.')
-            return  
-        elif queryText == '':
-            self._show_error_message('Run Query Error!', 'Please enter a valid query.')
-            return 
-        elif not self._is_tm_index_available:
-            self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
-            return 
-        elif not self._is_lucene_index_available:
-            self._show_error_message('Run Query Error!', 'Lucene index is not available for facet search.')
-            return
+        #print self.ts_results
         
-        # queryText has Queries, Fields, BooleanClauses
-        queries = []
-        fields = []
-        clauses = []
-        filteredQuery = re.split(' ', queryText)
-        
-        for l in filteredQuery:
-            res = re.split(':', l)
-            print res 
-            if len(res) > 1:
-                fields.append(res[0])
-                queries.append(res[1])
-                if res[2] is 'MUST':
-                    clauses.append(BooleanClause.Occur.MUST)
-                elif res[2] is 'MUST_NOT':
-                    clauses.append(BooleanClause.Occur.MUST_NOT)
-                else:
-                    clauses.append(BooleanClause.Occur.SHOULD)
-        
-        queryList = []
-        queryList.append(queries)
-        queryList.append(fields)
-        queryList.append(clauses)
-
-        rows = [] 
-        fs_results = []
-        ts_results = [] 
-
-        
-        
-        fs_results = search_lucene_index(self.lucene_index_dir,
-                                             queryList, SEARCH_RESULTS_LIMIT)
-            
-         
-        query_text = ' '.join(queries)  # combines all the text in a query model 
-        ts_results = search_lda_model(query_text, self.lda_dictionary,
-                                          self.lda_mdl, self.lda_index,
-                                          self.lda_file_path_index, SEARCH_RESULTS_LIMIT)
-            # # ts_results are in this format  [doc_id, doc_dir_path, doc_name, score] 
-        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir)  # grabs the files details from the index 
-            
+                    
      
-        rows = ts_results
+        rows = self._init_results
         
             
         if len(rows) == 0: 
@@ -1191,16 +1135,19 @@ class SMARTeR (SMARTeRGUI):
             file_details = row  # values of the defined MetadataTypes 
             file_details.append('0')  # Add a 'relevance' value of '0' to each search-result
             
-            if float(file_details[10])>=CUT_OFF_NORM:
+            if float(file_details[3])>=CUT_OFF_NORM:
                 self._responsive_files.append([file_details[1],"",""])
-                self._responsive_files_display.append([file_details[0],file_details[1],file_details[10],""])
+                #self._responsive_files_display.append([file_details[0],file_details[1],file_details[10],""])
             else:
                 self._unresponsive_files.append([file_details[1],"",""])
-                self._unresponsive_files_display.append([file_details[0],file_details[1],file_details[10],""])
+                #self._unresponsive_files_display.append([file_details[0],file_details[1],file_details[10],""])
             
             dictionary_of_rows.__setitem__(str(key), file_details)
             key += 1
-            
+        
+        self._generate_file_samples()
+        self._generate_file_samples_unres()
+        '''    
         self._lc_results_res._set_shelve_dir(self._shelve_dir)
         self._lc_results_res.itemDataMap = dictionary_of_rows
         self._lc_results_res.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results_res._on_header_column_click)
@@ -1219,7 +1166,7 @@ class SMARTeR (SMARTeRGUI):
         self._lc_results_res._populate_results(present_chunk,self._responsive_files_display)
         self._lc_results_unres._populate_results(present_chunk,self._unresponsive_files_display)
         self._tc_file_preview_pane.SetValue('')
-        
+        '''
         
         # Goes to the results tab 
         self._current_page = 3
@@ -1288,7 +1235,7 @@ class SMARTeR (SMARTeRGUI):
         _bgd_sizer.Fit(self._panel_topics)
         
     def _on_click_skip_contextual_feed(self, event):
-        self._current_page = 3
+        self._current_page = 4
         self.load_document_feedback()
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
@@ -1355,43 +1302,15 @@ class SMARTeR (SMARTeRGUI):
             responsive_status = self._rbx_responsive.GetStringSelection()
             if responsive_status == 'Responsive': 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'Yes')
-                self.ts_results[selected_doc_id][2] = 'Responsive'
+                self.ts_results[selected_doc_id][4] = 'Responsive'
             elif responsive_status == 'Unresponsive': 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'No')
-                self.ts_results[selected_doc_id][2] = 'Unresponsive'
+                self.ts_results[selected_doc_id][4] = 'Unresponsive'
             else: 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, '')
-                self.ts_results[selected_doc_id][2] = ''
-            self.update_results()
+                self.ts_results[selected_doc_id][4] = ''
         except Exception, e:
             print e
-    def update_results(self):
-        
-        ###########
-        #Only for trec data set
-        ###########
-        self.tp = 0
-        self.tn = 0
-        self.fp = 0
-        self.fn = 0
-        
-        
-        for ts in self._init_results:
-            result = os.path.split(os.path.split(ts[0])[0])[1]
-            if  result == "1" and float(ts[1])>CUT_OFF:
-                self.tp=self.tp+1
-            #exit()
-            elif result == "1" and float(ts[1])<=CUT_OFF:
-                self.fn=self.fn+1
-            elif result == "0" and float(ts[1])>CUT_OFF:
-                self.fp=self.fp+1
-            else:
-                self.tn=self.tn+1
-        
-        self._st_false_negative.SetLabel(str(self.fn))
-        self._st_true_positive.SetLabel(str(self.tp))
-        self._st_true_negative.SetLabel(str(self.tn))
-        self._st_false_positive.SetLabel(str(self.fp))
         
         
     def _init_confidence(self):
@@ -1437,7 +1356,7 @@ class SMARTeR (SMARTeRGUI):
     def _on_click_continue(self, event):
         self._generate_file_samples()
         self._generate_file_samples_unres()
-        self._current_page = 4
+        self._current_page = 3
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -1634,14 +1553,14 @@ class SMARTeR (SMARTeRGUI):
         self._generate_file_samples_unres()
 
     def _on_click_cl_goback( self, event ):
-        self._current_page = 3
+        self._current_page = 2
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
     def _on_click_cl_next( self, event ):
-        self._review_res = TaggingControlSmarter(self._panel_review_res, self.sampled_files_responsive,self._rbx_response_res,self._rbx_privilage_res,self._tc_preview_tags,self._panel_doc_tag_res)
-        self._review_res._setup_review_tab()
-        self._current_page = 5
+        self._review_unres = TaggingControlSmarter(self._panel_review_unres, self.sampled_files_unresponsive,self._rbx_response_unres,self._rbx_privilage_unres,self._tc_preview_tags_unres,self._panel_doc_tag_unres)
+        self._review_unres._setup_review_tab()
+        self._current_page = 4
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
 
@@ -1829,14 +1748,14 @@ class SMARTeR (SMARTeRGUI):
         
     def _btn_sample_back_unres(self, event):
         self._review_unres.Destroy()
-        self._current_page = 5
+        self._current_page = 3
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
     def _on_click_sample_next( self, event ):
-        self._review_unres = TaggingControlSmarter(self._panel_review_unres, self.sampled_files_unresponsive,self._rbx_response_unres,self._rbx_privilage_unres,self._tc_preview_tags_unres,self._panel_doc_tag_unres)
-        self._review_unres._setup_review_tab()
-        self._current_page = 6
+        self._review_res = TaggingControlSmarter(self._panel_review_res, self.sampled_files_responsive,self._rbx_response_res,self._rbx_privilage_res,self._tc_preview_tags,self._panel_doc_tag_res)
+        self._review_res._setup_review_tab()
+        self._current_page = 5
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         

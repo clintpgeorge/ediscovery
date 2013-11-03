@@ -33,8 +33,8 @@ class TaggingControlFeedback ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         file_id = 0
         for fs in sm.ts_results:
             self.InsertStringItem(file_id, str(file_id + 1))
-            self.SetStringItem(file_id, 1, fs[0])
-            self.SetStringItem(file_id, 2, fs[2])           
+            self.SetStringItem(file_id, 1, str(fs[2]))
+            self.SetStringItem(file_id, 2, str(fs[4]))           
             file_id += 1            
         
             
@@ -47,24 +47,24 @@ class TaggingControlFeedback ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         if selected_doc_id < 0: return 
         
-        responsive = sm.ts_results[selected_doc_id][2]    
+        responsive = sm.ts_results[selected_doc_id][4]    
         # Handles the document tags check boxes 
         
         if responsive == 'Responsive':
             sm._rbx_responsive.SetSelection(0)
-            sm.ts_results[selected_doc_id][2] = 'Responsive'
+            sm.ts_results[selected_doc_id][4] = 'Responsive'
         elif responsive == 'Unresponsive':
             sm._rbx_responsive.SetSelection(1)
-            sm.ts_results[selected_doc_id][2] = 'Unresponsive'
+            sm.ts_results[selected_doc_id][4] = 'Unresponsive'
         else:
             sm._rbx_responsive.SetSelection(2)
-            sm.ts_results[selected_doc_id][2] = ''
+            sm.ts_results[selected_doc_id][4] = ''
                          
         
         #Show the preview
         msg_text = ''
         is_message_opened = False
-        src_file_path = sm.ts_results[selected_doc_id][0]
+        src_file_path = sm.ts_results[selected_doc_id][1]
         _, fileExtension = os.path.splitext(src_file_path)
         if fileExtension=="" or fileExtension==".txt":
             import unicodedata
