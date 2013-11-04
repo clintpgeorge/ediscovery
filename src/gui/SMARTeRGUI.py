@@ -91,7 +91,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self._panel_index.SetSizer( bSizer5 )
 		self._panel_index.Layout()
-		self._notebook.AddPage( self._panel_index, _(u"Index Data"), False )
+		self._notebook.AddPage( self._panel_index, _(u"Index Data"), True )
 		self._panel_query = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._panel_query.SetMinSize( wx.Size( 950,300 ) )
 		
@@ -174,59 +174,6 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		
 		gbSizer8.Add( bSizer81, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
-		
-		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self._panel_feedback, wx.ID_ANY, _(u"Confusion Matrix") ), wx.VERTICAL )
-		
-		sbSizer9.SetMinSize( wx.Size( 50,50 ) ) 
-		gbSizer15 = wx.GridBagSizer( 0, 0 )
-		gbSizer15.SetFlexibleDirection( wx.BOTH )
-		gbSizer15.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self.m_staticText24 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"True"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText24.Wrap( -1 )
-		gbSizer15.Add( self.m_staticText24, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self.m_staticText25 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Positive"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText25.Wrap( -1 )
-		gbSizer15.Add( self.m_staticText25, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self.m_staticText26 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Negative"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText26.Wrap( -1 )
-		gbSizer15.Add( self.m_staticText26, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._st_true_positive = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"0"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_true_positive.Wrap( 0 )
-		self._st_true_positive.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
-		
-		gbSizer15.Add( self._st_true_positive, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._st_false_positive = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"0"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_false_positive.Wrap( -1 )
-		self._st_false_positive.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
-		
-		gbSizer15.Add( self._st_false_positive, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self.m_staticText29 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"False"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText29.Wrap( -1 )
-		gbSizer15.Add( self.m_staticText29, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._st_true_negative = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"0"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_true_negative.Wrap( -1 )
-		self._st_true_negative.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
-		
-		gbSizer15.Add( self._st_true_negative, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._st_false_negative = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"0"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_false_negative.Wrap( -1 )
-		self._st_false_negative.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
-		
-		gbSizer15.Add( self._st_false_negative, wx.GBPosition( 2, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		
-		sbSizer9.Add( gbSizer15, 1, wx.EXPAND, 5 )
-		
-		
-		gbSizer8.Add( sbSizer9, wx.GBPosition( 0, 5 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
 		
 		
 		sbSizer7.Add( gbSizer8, 1, wx.EXPAND, 5 )
@@ -363,7 +310,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_query_results.SetSizer( sbSizer11 )
 		self._panel_query_results.Layout()
 		sbSizer11.Fit( self._panel_query_results )
-		self._notebook.AddPage( self._panel_query_results, _(u"Query Results"), True )
+		self._notebook.AddPage( self._panel_query_results, _(u"Query Results"), False )
 		self._panel_sample_conf = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self._panel_sample_conf.Hide()
 		
