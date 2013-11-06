@@ -53,8 +53,7 @@ CUT_OFF_NORM=0.3
 TOP_K_TOPICS = 5
 LIMIT_LUCENE=1000
 
-RESPONSIVE_CLASS_ID = 1
-UNRESPONSIVE_CLASS_ID = -1
+
 
 
 ###########################################################################
@@ -506,6 +505,10 @@ class SMARTeR (SMARTeRGUI):
         self._is_tm_index_available = False
         self._current_page = 0
         
+        self.NEUTRAL_CLASS_ID = 0
+        self.RESPONSIVE_CLASS_ID = 1
+        self.UNRESPONSIVE_CLASS_ID = -1
+        self._doc_true_class_ids = {} # this keeps documents' TRUE classes (from user feedback or from a TRUTH file)
         self._shelve_dir = ''
         self._shelve_file_names = []  # this keeps all of the shelf files path 
         self._responsive_files = []
@@ -827,13 +830,19 @@ class SMARTeR (SMARTeRGUI):
             model_cfg_file - the model configuration file  
         
         '''
-        print model_cfg_file
+        
+        print 'Project configuration file:', model_cfg_file
+        
         self.mdl_cfg = read_config(model_cfg_file)
         self._tc_data_fld.SetValue(self.mdl_cfg['DATA']['root_dir'])
+        
         self._shelve_dir = os.path.join(self.mdl_cfg['DATA']['project_dir'], SHELVE_DIR_NAME)
-        print self._shelve_dir
         if not os.path.exists(self._shelve_dir): 
             os.makedirs(self._shelve_dir)
+        print 'Project shelf directory:', self._shelve_dir
+        
+        
+        self.data_dir_name = self.mdl_cfg['DATA']['root_dir']
         
         # Retrieve topic model file names 
         
@@ -853,6 +862,17 @@ class SMARTeR (SMARTeRGUI):
             self.lda_dictionary = load_dictionary(dictionary_file)
             self.lda_num_files = len(self.lda_file_path_index)
             self.lda_vocab_size = len(self.lda_dictionary)        
+            
+            # Loads documents' TRUE classes
+            # TODO: hard coding for the TRUTH data. This needs to be removed from the final version 
+            
+            positive_dir = os.path.normpath(os.path.join(self.data_dir_name, "1")) # TRUE positive documents  
+            for doc_id, dirname, _ in self.lda_file_path_index:
+                if dirname == positive_dir:
+                    self._doc_true_class_ids[doc_id] = self.RESPONSIVE_CLASS_ID 
+                else: 
+                    self._doc_true_class_ids[doc_id] = self.UNRESPONSIVE_CLASS_ID 
+            
             
             # loads LDA model details 
             if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
@@ -912,28 +932,28 @@ class SMARTeR (SMARTeRGUI):
         dlg.ShowModal()
     
     
-    def _on_chbx_topic_search(self, event):
-        self._chbx_facet_search.SetValue(False)
-        
-    def _on_chbx_facet_search(self, event):
-        self._chbx_topic_search.SetValue(False)
-        
-    def load_tm(self, mdl_cfg):
-    
-        dictionary_file = mdl_cfg['CORPUS']['dict_file']
-        path_index_file = mdl_cfg['CORPUS']['path_index_file']
-        lda_mdl_file = mdl_cfg['LDA']['lda_model_file']
-        lda_cos_index_file = mdl_cfg['LDA']['lda_cos_index_file']
-        root_dir = mdl_cfg['DATA']['root_dir']
-        lucene_index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
-        if nexists(dictionary_file) and nexists(path_index_file):       
-            lda_file_path_index = load_file_paths_index(path_index_file)
-            lda_dictionary = load_dictionary(dictionary_file)
-            
-        if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
-            lda_mdl, lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
-            
-        return root_dir, lucene_index_dir ,lda_dictionary, lda_mdl, lda_index, lda_file_path_index
+#    def _on_chbx_topic_search(self, event):
+#        self._chbx_facet_search.SetValue(False)
+#        
+#    def _on_chbx_facet_search(self, event):
+#        self._chbx_topic_search.SetValue(False)
+#        
+#    def load_tm(self, mdl_cfg):
+#    
+#        dictionary_file = mdl_cfg['CORPUS']['dict_file']
+#        path_index_file = mdl_cfg['CORPUS']['path_index_file']
+#        lda_mdl_file = mdl_cfg['LDA']['lda_model_file']
+#        lda_cos_index_file = mdl_cfg['LDA']['lda_cos_index_file']
+#        root_dir = mdl_cfg['DATA']['root_dir']
+#        lucene_index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+#        if nexists(dictionary_file) and nexists(path_index_file):       
+#            lda_file_path_index = load_file_paths_index(path_index_file)
+#            lda_dictionary = load_dictionary(dictionary_file)
+#            
+#        if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
+#            lda_mdl, lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
+#            
+#        return root_dir, lucene_index_dir ,lda_dictionary, lda_mdl, lda_index, lda_file_path_index
     
     def lu_append_nonresp(self, docs, test_directory):
         '''
@@ -969,9 +989,9 @@ class SMARTeR (SMARTeRGUI):
         import numpy as np
         EPS = 1e-24 # a constant 
         lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
-        index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
-        path_index_file = mdl_cfg['CORPUS']['path_index_file']    
-        lda_file_path_index = load_file_paths_index(path_index_file) # loads the file paths    
+        # index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
+        # path_index_file = mdl_cfg['CORPUS']['path_index_file']    
+        # lda_file_path_index = load_file_paths_index(path_index_file) # loads the file paths    
         lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble) # loads the LDA theta from the model theta file 
         num_docs, num_topics = lda_theta.shape
         
@@ -991,15 +1011,15 @@ class SMARTeR (SMARTeRGUI):
     
         ts_results = []
         for i in range(0, min(limit, num_docs)):
-            ts_results.append([lda_file_path_index[sorted_idx[i]][0], # document id  
-                              lda_file_path_index[sorted_idx[i]][1], # document directory path   
-                              lda_file_path_index[sorted_idx[i]][2], # document name
+            ts_results.append([self.lda_file_path_index[sorted_idx[i]][0], # document id  
+                              self.lda_file_path_index[sorted_idx[i]][1], # document directory path   
+                              self.lda_file_path_index[sorted_idx[i]][2], # document name
                               n_ln_score[sorted_idx[i]]]) # similarity score 
             # print lda_file_path_index[sorted_idx[i]], ln_score[sorted_idx[i]], n_ln_score[sorted_idx[i]], score[sorted_idx[i]] 
             
     
         # grabs the files details from the index     
-        ts_results = get_indexed_file_details(ts_results, index_dir) 
+        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) 
         
         results = [[row[0], int(row[9]), float(row[10])] for row in ts_results] # Note: we need a float conversion because it's retrieving as string 
         
@@ -1025,6 +1045,16 @@ class SMARTeR (SMARTeRGUI):
         
         return result
     
+    def __is_responsive(self, class_id):
+        if class_id == self.RESPONSIVE_CLASS_ID: return 'Yes'
+        elif class_id == self.UNRESPONSIVE_CLASS_ID: return 'No'
+        else: return '' # Neutral 
+    
+    def __convert_to_class_id(self, feedback_label):
+        if feedback_label == 'Yes': return self.RESPONSIVE_CLASS_ID
+        elif feedback_label == 'No': return self.UNRESPONSIVE_CLASS_ID
+        else: return self.NEUTRAL_CLASS_ID  
+    
     def _on_click_run_query(self, event):
         """
         Actions to be done when the "Run Query" button is clicked
@@ -1048,17 +1078,17 @@ class SMARTeR (SMARTeRGUI):
             self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
             return 
         
-        topics = self.lda_mdl.show_topics(topics= -1, topn=10, log=False, formatted=False)
-        topic_key = []
-        for topic in topics:
-            cnt = 0
-            keywords = ""
-            for tuple_ele in topic:
-                keywords = keywords + tuple_ele[1] + ", "
-                cnt += 1
-                if(cnt == 5):
-                    break
-            topic_key.append(keywords.strip()[:-1])
+#        topics = self.lda_mdl.show_topics(topics= -1, topn=10, log=False, formatted=False)
+#        topic_key = []
+#        for topic in topics:
+#            cnt = 0
+#            keywords = ""
+#            for tuple_ele in topic:
+#                keywords = keywords + tuple_ele[1] + ", "
+#                cnt += 1
+#                if(cnt == 5):
+#                    break
+#            topic_key.append(keywords.strip()[:-1])
         
         
         #------------------------------------------------------ Parses the query
@@ -1073,27 +1103,15 @@ class SMARTeR (SMARTeRGUI):
 
         #---------------------- Document Lucene and topic modeling-based ranking
         
-        root_dir, lucene_index_dir,lda_dictionary, lda_mdl, _, file_paths_index = self.load_tm(self.mdl_cfg) # sahil
-        dominant_topics = get_dominant_query_topics(topicQuery, lda_dictionary, lda_mdl, TOP_K_TOPICS)
+        dominant_topics = get_dominant_query_topics(topicQuery, self.lda_dictionary, self.lda_mdl, TOP_K_TOPICS)
         dominant_topics_idx = [idx for (idx, _) in dominant_topics] # gets the topic indices
         
-        lu_docs = boolean_search_lucene_index(lucene_index_dir,luceneQuery, LIMIT_LUCENE) # lucene search 
-        lu_docs_dict, _ = self.lu_append_nonresp(lu_docs, root_dir) # TODO: need to use file_paths_index list to append the unidentified files  
+        lu_docs = boolean_search_lucene_index(self.lucene_index_dir, luceneQuery, LIMIT_LUCENE) # lucene search 
+        lu_docs_dict, _ = self.lu_append_nonresp(lu_docs, self.data_dir_name) # TODO: need to use file_paths_index list to append the unidentified files  
         lda_tts_docs = self.search_tm_topics(dominant_topics_idx, LIMIT_LUCENE, self.mdl_cfg) # topic index search 
         final_docs_tts = self.fuse_lucene_tm_scores(lu_docs_dict, lda_tts_docs) # fuses LDA and Lucene 
         self._init_results = final_docs_tts
 
-        #----------------------------------------------- Loads documents' TRUE classes
-        # TODO: hard coding for the TRUTH data. This needs to be removed from the final version 
-        
-        positive_dir = os.path.normpath(os.path.join(root_dir, "1")) # TRUE positive documents  
-        
-        true_class_ids = {}
-        for doc_id, dirname, _ in file_paths_index:
-            if dirname == positive_dir:
-                true_class_ids[doc_id] = RESPONSIVE_CLASS_ID 
-            else: 
-                true_class_ids[doc_id] = UNRESPONSIVE_CLASS_ID 
 
 
         #------------- Selecting seed documents from the initial ranking results
@@ -1102,16 +1120,10 @@ class SMARTeR (SMARTeRGUI):
         # documents (based on k-Means clustering on ranking scores)
         
         
-        def __is_responsive(class_id):
-            if class_id == 1: return 'Yes'
-            else: return 'No'
-        
-        
-        self.ts_results = []
-
+        self._seed_docs_details = []
         for i, doc_details in enumerate(final_docs_tts):
             doc_id, doc_path, doc_name, doc_score = doc_details
-            self.ts_results.append([doc_id, doc_path, doc_name, doc_score, __is_responsive(true_class_ids[doc_id])])
+            self._seed_docs_details.append([doc_id, doc_path, doc_name, doc_score, self.__is_responsive(self._doc_true_class_ids[doc_id])])
             if i+1 == 100: break
             
         self.load_document_feedback()
@@ -1127,12 +1139,15 @@ class SMARTeR (SMARTeRGUI):
         """
         Actions to be done when the "SMARTeR Ranking" button is clicked
 
+        TODO: 
+            1. Add Lucene & TM ranking score into the SVM model  
+            
         """
         
         
         #-------------------------------- Train the SVM model for classification
         # 
-        # Note: self.ts_results has the seed documents details 
+        # Note: self._seed_docs_details has the seed documents details 
         #       from the document feedback tab. This is a tuple 
         #       list of [file_id, file_path, file_name, file_score, class_id] 
         #       
@@ -1145,14 +1160,13 @@ class SMARTeR (SMARTeRGUI):
                 
         import numpy as np 
         from libsvm.python.svmutil import svm_problem, svm_parameter, svm_train, svm_predict
-        
-        def __convert_to_svm_label(feedback_label):
-            if feedback_label == 'Yes': return RESPONSIVE_CLASS_ID
-            else: return UNRESPONSIVE_CLASS_ID  
+        SVM_C = 32 
+        SVM_g = 0.5
 
-        self._reviewed_seed_docs = [seed_doc for seed_doc in self.ts_results if seed_doc[4] in ['Yes', 'No']]
+
+        self._reviewed_seed_docs = [seed_doc for seed_doc in self._seed_docs_details if seed_doc[4] in ['Yes', 'No']]
         reviewed_seed_docs_id = [seed_doc[0] for seed_doc in self._reviewed_seed_docs]
-        reviewed_seed_docs_cls = [__convert_to_svm_label(seed_doc[4]) for seed_doc in self._reviewed_seed_docs]
+        reviewed_seed_docs_cls = [self.__convert_to_class_id(seed_doc[4]) for seed_doc in self._reviewed_seed_docs]
         
         print 'Number of reviewed seed documents (which are responsive or unresponsive):', len(self._reviewed_seed_docs)
         
@@ -1166,10 +1180,8 @@ class SMARTeR (SMARTeRGUI):
             
             # SVM train 
             
-            C = 32
-            g = 0.5
             train_prob  = svm_problem(reviewed_seed_docs_cls, reviewed_seed_docs_theta.tolist())
-            train_param = svm_parameter('-t 2 -c 0 -b 1 -c %f -g %f' % (C, g))
+            train_param = svm_parameter('-t 2 -c 0 -b 1 -c %f -g %f' % (SVM_C, SVM_g))
             self._seed_docs_svm_mdl = svm_train(train_prob, train_param)
             
             # SVM prediction for all the documents in the results 
@@ -1193,15 +1205,14 @@ class SMARTeR (SMARTeRGUI):
             return 
         
         
-        def __convert_to_display_label(svm_label):
-            if svm_label == RESPONSIVE_CLASS_ID: return 'Responsive'
+        def __convert_to_display_label(class_id):
+            if class_id == self.RESPONSIVE_CLASS_ID: return 'Responsive'
             else: return 'Unresponsive'   
             
         def __classify_by_threshold(doc_score):
             if float(doc_details[3]) >= CUT_OFF_NORM: return 'Responsive'
             else: return 'Unresponsive'                   
             
-        
 #        key = 0 
         for doc_details in self._init_results:
             
@@ -1210,13 +1221,13 @@ class SMARTeR (SMARTeRGUI):
             
             # display_doc_details = [doc_id, doc_path, doc_name, doc_score, __convert_to_display_label(svm_predicted_class)]
             
-            print doc_path, doc_score, __convert_to_display_label(svm_predicted_class), __classify_by_threshold(doc_score) 
+            print doc_name, doc_score, self._doc_true_class_ids[doc_id], svm_predicted_class, __classify_by_threshold(doc_score) 
             
-            if svm_predicted_class == 1: # float(display_doc_details[3]) >= CUT_OFF_NORM:
-                self._responsive_files.append([doc_path, "", ""])
+            if svm_predicted_class == self.RESPONSIVE_CLASS_ID: # float(display_doc_details[3]) >= CUT_OFF_NORM:
+                self._responsive_files.append([doc_path, self.__is_responsive(self._doc_true_class_ids[doc_id]), ""])
                 #self._responsive_files_display.append([display_doc_details[0],display_doc_details[1],display_doc_details[10],""])
             else:
-                self._unresponsive_files.append([doc_path, "", ""])
+                self._unresponsive_files.append([doc_path, self.__is_responsive(self._doc_true_class_ids[doc_id]), ""])
                 #self._unresponsive_files_display.append([display_doc_details[0],display_doc_details[1],display_doc_details[10],""])
             
 #            # Put the results to the dictionary_of_rows
@@ -1263,7 +1274,7 @@ class SMARTeR (SMARTeRGUI):
         and search for similar documents.  
         
         '''
-        from datetime import datetime
+
         self.shelf_query = shelve.open(os.path.join(self._shelve_dir, str("rating" + SHELVE_FILE_EXTENSION)), writeback=True)  # open -- file may get suffix added by low-level
         self.shelf_query['query'] = self._tc_query.GetValue().strip() 
         for row in dictionary_of_rows:
@@ -1344,13 +1355,13 @@ class SMARTeR (SMARTeRGUI):
             responsive_status = self._rbx_feedack_res.GetStringSelection()
             if responsive_status == 'Responsive': 
                 self._lc_results_res.SetStringItem(selected_doc_id, 3, 'Yes')
-                #self.ts_results[selected_doc_id][2] = 'Responsive'
+                #self._seed_docs_details[selected_doc_id][2] = 'Responsive'
             elif responsive_status == 'Unresponsive': 
                 self._lc_results_res.SetStringItem(selected_doc_id, 3, 'No')
-                #self.ts_results[selected_doc_id][2] = 'Unresponsive'
+                #self._seed_docs_details[selected_doc_id][2] = 'Unresponsive'
             else: 
                 self._lc_results_res.SetStringItem(selected_doc_id, 3, '')
-                #self.ts_results[selected_doc_id][2] = ''
+                #self._seed_docs_details[selected_doc_id][2] = ''
             
         except Exception, e:
             print e
@@ -1362,35 +1373,45 @@ class SMARTeR (SMARTeRGUI):
             responsive_status = self._rbx_feedack_unres.GetStringSelection()
             if responsive_status == 'Responsive': 
                 self._lc_results_unres.SetStringItem(selected_doc_id, 3, 'Yes')
-                #self.ts_results[selected_doc_id][2] = 'Responsive'
+                #self._seed_docs_details[selected_doc_id][2] = 'Responsive'
             elif responsive_status == 'Unresponsive': 
                 self._lc_results_unres.SetStringItem(selected_doc_id, 3, 'No')
-                #self.ts_results[selected_doc_id][2] = 'Unresponsive'
+                #self._seed_docs_details[selected_doc_id][2] = 'Unresponsive'
             else: 
                 self._lc_results_unres.SetStringItem(selected_doc_id, 3, '')
-                #self.ts_results[selected_doc_id][2] = ''
+                #self._seed_docs_details[selected_doc_id][2] = ''
             
         except Exception, e:
             print e
     
     def _on_rbx_responsive_updated(self, event):
         '''
-        Handles the selected document responsive check box 
-        check and uncheck events 
+        Handles the document feedback tab, selected seed 
+        document's 'Responsive' radio button group changes 
          
+        Note: If you make any changes in this function, 
+        you may consider reviewing the custom class 
+        TaggingControlFeedback 
+                
+        TODO: All exceptions should be captured and logged 
+        using the main logging method, instead of printing 
+        them to the command line.  
         '''
         try:
             selected_doc_id = self.panel_feedback_doc.GetFocusedItem()
             responsive_status = self._rbx_responsive.GetStringSelection()
             if responsive_status == 'Responsive': 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'Yes')
-                self.ts_results[selected_doc_id][4] = 'Yes'
+                self._seed_docs_details[selected_doc_id][4] = 'Yes'
+                self._doc_true_class_ids[selected_doc_id] = self.RESPONSIVE_CLASS_ID
             elif responsive_status == 'Unresponsive': 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'No')
-                self.ts_results[selected_doc_id][4] = 'No'
+                self._seed_docs_details[selected_doc_id][4] = 'No'
+                self._doc_true_class_ids[selected_doc_id] = self.UNRESPONSIVE_CLASS_ID
             else: 
                 self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, '')
-                self.ts_results[selected_doc_id][4] = ''
+                self._seed_docs_details[selected_doc_id][4] = ''
+                self._doc_true_class_ids[selected_doc_id] = self.NEUTRAL_CLASS_ID
         except Exception, e:
             print e
         

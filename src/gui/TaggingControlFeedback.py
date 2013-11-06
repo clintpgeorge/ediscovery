@@ -1,18 +1,23 @@
 import wx
 import os
-import webbrowser 
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-from file_utils import get_destination_file_path
 
-class TaggingControlFeedback ( wx.ListCtrl, ListCtrlAutoWidthMixin):
+
+
+class TaggingControlFeedback(wx.ListCtrl, ListCtrlAutoWidthMixin):
+    '''
+    This control handles the seed documents table in 
+    the 'Document Feedback' tab   
+    
+    '''
+    
+    
     def __init__(self, parent, sm):
         
         wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size( 420,200 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
         ListCtrlAutoWidthMixin.__init__(self)
         self.smarter = sm
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected)
-        #self.Bind(wx.EVT_LEFT_DCLICK, self._on_review_list_item_activated)
-        #self.Bind(wx.EVT_CONTEXT_MENU, rs.on_right_click_menu)
         self.Layout()
         
     def _setup_review_tab(self):
@@ -31,7 +36,7 @@ class TaggingControlFeedback ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         #samples_lst = rs.shelf['samples']
         file_id = 0
-        for fs in sm.ts_results:
+        for fs in sm._seed_docs_details:
             self.InsertStringItem(file_id, str(file_id + 1))
             self.SetStringItem(file_id, 1, str(fs[2]))
             self.SetStringItem(file_id, 2, str(fs[4]))           
@@ -47,34 +52,47 @@ class TaggingControlFeedback ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         if selected_doc_id < 0: return 
         
-        responsive = sm.ts_results[selected_doc_id][4]    
-        # Handles the document tags check boxes 
+        responsive = sm._seed_docs_details[selected_doc_id][4]    
         
-        if responsive == 'Responsive':
+        # Handles the document tags check boxes 
+        # TODO: Need to verify whether the following 
+        # code snippet is necessary 
+        
+        if responsive == 'Yes':
             sm._rbx_responsive.SetSelection(0)
-            sm.ts_results[selected_doc_id][4] = 'Responsive'
-        elif responsive == 'Unresponsive':
+            sm._seed_docs_details[selected_doc_id][4] = 'Yes'
+            sm._doc_true_class_ids[selected_doc_id] = sm.RESPONSIVE_CLASS_ID
+        elif responsive == 'No':
             sm._rbx_responsive.SetSelection(1)
-            sm.ts_results[selected_doc_id][4] = 'Unresponsive'
+            sm._seed_docs_details[selected_doc_id][4] = 'No'
+            sm._doc_true_class_ids[selected_doc_id] = sm.UNRESPONSIVE_CLASS_ID
         else:
             sm._rbx_responsive.SetSelection(2)
-            sm.ts_results[selected_doc_id][4] = ''
+            sm._seed_docs_details[selected_doc_id][4] = ''
+            sm._doc_true_class_ids[selected_doc_id] = sm.NEUTRAL_CLASS_ID
                          
         
-        #Show the preview
+        # Show the preview of the selected file in the Text Window  
+
         msg_text = ''
         is_message_opened = False
-        src_file_path = sm.ts_results[selected_doc_id][1]
-        _, fileExtension = os.path.splitext(src_file_path)
-        if fileExtension=="" or fileExtension==".txt":
-            import unicodedata
-            with open(src_file_path) as fp:
-                for line in fp:
-                    msg_text = msg_text+line
-                #msg_text = unicodedata.normalize('NFKD', msg_text).encode('ascii','ignore') # converts to ascii 
-            is_message_opened = True
+        
+        try:  
+            src_file_path = sm._seed_docs_details[selected_doc_id][1]
+            file_extension = os.path.splitext(src_file_path)[1]
+            if file_extension == "" or file_extension == ".txt":
+                with open(src_file_path) as fp:
+                    # TODO: fp.read() returns entire contents of the file; 
+                    #       there will be a problem if the file is twice as 
+                    #       large as the machine's memory
+                    msg_text = fp.read()
+                is_message_opened = True
+        except: 
+            print 'File open failed!' 
         
         if is_message_opened:
             sm._doc_feedback_preview.SetValue(msg_text)
         else:
             sm._doc_feedback_preview.SetValue('')
+            
+            
