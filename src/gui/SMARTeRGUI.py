@@ -9,6 +9,7 @@
 
 import wx
 import wx.xrc
+import wx.grid
 
 import gettext
 _ = gettext.gettext
@@ -91,7 +92,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self._panel_index.SetSizer( bSizer5 )
 		self._panel_index.Layout()
-		self._notebook.AddPage( self._panel_index, _(u"Index Data"), True )
+		self._notebook.AddPage( self._panel_index, _(u"Index Data"), False )
 		self._panel_query = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._panel_query.SetMinSize( wx.Size( 950,300 ) )
 		
@@ -107,8 +108,18 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_query1.Wrap( -1 )
 		_gbsizer_query1.Add( self._st_query1, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
+		self.m_staticText34 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Query History"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText34.Wrap( -1 )
+		self.m_staticText34.SetFont( wx.Font( 8, 74, 93, 92, False, "Tahoma" ) )
+		
+		_gbsizer_query1.Add( self.m_staticText34, wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
 		self._tc_query_input1 = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )
 		_gbsizer_query1.Add( self._tc_query_input1, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_list_query_historyChoices = []
+		self._list_query_history = wx.ListBox( self._panel_query, wx.ID_ANY, wx.DefaultPosition, wx.Size( 370,150 ), _list_query_historyChoices, 0 )
+		_gbsizer_query1.Add( self._list_query_history, wx.GBPosition( 4, 3 ), wx.GBSpan( 3, 2 ), wx.ALL, 5 )
 		
 		self._btn_add_to_query1 = wx.Button( self._panel_query, wx.ID_ANY, _(u"Add To Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_query1.Add( self._btn_add_to_query1, wx.GBPosition( 0, 4 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -117,8 +128,8 @@ class SMARTeRGUI ( wx.Frame ):
 		self._cbx_meta_type1 = wx.ComboBox( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_meta_type1Choices, wx.CB_READONLY|wx.CB_SORT )
 		_gbsizer_query1.Add( self._cbx_meta_type1, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_query1 = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,150 ), wx.TE_MULTILINE )
-		_gbsizer_query1.Add( self._tc_query1, wx.GBPosition( 2, 1 ), wx.GBSpan( 2, 2 ), wx.ALL, 5 )
+		self._tc_query1 = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,250 ), wx.TE_MULTILINE )
+		_gbsizer_query1.Add( self._tc_query1, wx.GBPosition( 2, 1 ), wx.GBSpan( 5, 2 ), wx.ALL, 5 )
 		
 		self._btn_run_query1 = wx.Button( self._panel_query, wx.ID_ANY, _(u"Start Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_query1.Add( self._btn_run_query1, wx.GBPosition( 2, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -127,11 +138,6 @@ class SMARTeRGUI ( wx.Frame ):
 		self._cbx_meta_type2 = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"OR"), wx.DefaultPosition, wx.Size( 80,-1 ), _cbx_meta_type2Choices, wx.CB_DROPDOWN|wx.CB_READONLY )
 		self._cbx_meta_type2.SetSelection( 1 )
 		_gbsizer_query1.Add( self._cbx_meta_type2, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._tc_query = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,50 ), wx.TE_MULTILINE )
-		self._tc_query.Hide()
-		
-		_gbsizer_query1.Add( self._tc_query, wx.GBPosition( 5, 1 ), wx.GBSpan( 2, 2 ), wx.ALL, 5 )
 		
 		
 		_sbsizer_query_model1.Add( _gbsizer_query1, 1, wx.EXPAND, 10 )
@@ -143,7 +149,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_query.SetSizer( _bsizer_query )
 		self._panel_query.Layout()
 		_bsizer_query.Fit( self._panel_query )
-		self._notebook.AddPage( self._panel_query, _(u"Query"), False )
+		self._notebook.AddPage( self._panel_query, _(u"Query"), True )
 		self._panel_feedback = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer8 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -169,8 +175,11 @@ class SMARTeRGUI ( wx.Frame ):
 		self._rbx_responsive.SetSelection( 2 )
 		bSizer81.Add( self._rbx_responsive, 0, wx.ALL, 5 )
 		
-		self._btn_recalculate_results = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"SMARTeR Ranking"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_recalculate_results = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"SMARTeR Ranking"), wx.DefaultPosition, wx.Size( 110,-1 ), 0 )
 		bSizer81.Add( self._btn_recalculate_results, 0, wx.ALL, 5 )
+		
+		self._btn_feedback_back = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.Size( 110,-1 ), 0 )
+		bSizer81.Add( self._btn_feedback_back, 0, wx.ALL, 5 )
 		
 		
 		gbSizer8.Add( bSizer81, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
@@ -484,20 +493,14 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self.m_staticText151 = wx.StaticText( self._panel_random_unresponsive, wx.ID_ANY, _(u"Select a tag"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText151.Wrap( -1 )
-		self.m_staticText151.Hide()
-		
 		gbSizer121.Add( self.m_staticText151, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		_cmb_tags_unresChoices = [ _(u"Responsive"), _(u"Privileged"), _(u"All") ]
-		self._cmb_tags_unres = wx.ComboBox( self._panel_random_unresponsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cmb_tags_unresChoices, wx.CB_READONLY )
-		self._cmb_tags_unres.SetSelection( 2 )
-		self._cmb_tags_unres.Hide()
-		
-		gbSizer121.Add( self._cmb_tags_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_cbx_report_types_unresChoices = [ _(u"Responsive"), _(u"Privileged"), _(u"All") ]
+		self._cbx_report_types_unres = wx.ComboBox( self._panel_random_unresponsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_report_types_unresChoices, wx.CB_READONLY )
+		self._cbx_report_types_unres.SetSelection( 2 )
+		gbSizer121.Add( self._cbx_report_types_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._btn_gen_report_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Generate Report"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._btn_gen_report_unres.Hide()
-		
 		gbSizer121.Add( self._btn_gen_report_unres, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -580,7 +583,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_back_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer11.Add( self._btn_back_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_next_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_next_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer11.Add( self._btn_next_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -592,20 +595,14 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self.m_staticText15 = wx.StaticText( self._panel_random_responsive, wx.ID_ANY, _(u"Select a tag"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText15.Wrap( -1 )
-		self.m_staticText15.Hide()
-		
 		gbSizer12.Add( self.m_staticText15, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		_cmb_tags_resChoices = [ _(u"Responsive"), _(u"Privileged"), _(u"All") ]
-		self._cmb_tags_res = wx.ComboBox( self._panel_random_responsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cmb_tags_resChoices, wx.CB_READONLY )
-		self._cmb_tags_res.SetSelection( 2 )
-		self._cmb_tags_res.Hide()
-		
-		gbSizer12.Add( self._cmb_tags_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_cbx_report_types_resChoices = [ _(u"Responsive"), _(u"Privileged"), _(u"All") ]
+		self._cbx_report_types_res = wx.ComboBox( self._panel_random_responsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_report_types_resChoices, wx.CB_READONLY )
+		self._cbx_report_types_res.SetSelection( 2 )
+		gbSizer12.Add( self._cbx_report_types_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._btn_gen_report_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Generate Report"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._btn_gen_report_res.Hide()
-		
 		gbSizer12.Add( self._btn_gen_report_res, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -616,6 +613,64 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_random_responsive.Layout()
 		_gbsizer_review_res.Fit( self._panel_random_responsive )
 		self._notebook.AddPage( self._panel_random_responsive, _(u"Sample Responsive"), False )
+		self._panel_accuracy = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self._panel_accuracy, wx.ID_ANY, _(u"Overall Report") ), wx.VERTICAL )
+		
+		gbSizer211 = wx.GridBagSizer( 0, 0 )
+		gbSizer211.SetFlexibleDirection( wx.BOTH )
+		gbSizer211.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._grid_query_accuracy = wx.grid.Grid( self._panel_accuracy, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,300 ), 0 )
+		
+		# Grid
+		self._grid_query_accuracy.CreateGrid( 0, 2 )
+		self._grid_query_accuracy.EnableEditing( True )
+		self._grid_query_accuracy.EnableGridLines( True )
+		self._grid_query_accuracy.EnableDragGridSize( False )
+		self._grid_query_accuracy.SetMargins( 0, 0 )
+		
+		# Columns
+		self._grid_query_accuracy.SetColSize( 0, 342 )
+		self._grid_query_accuracy.SetColSize( 1, 78 )
+		self._grid_query_accuracy.EnableDragColMove( False )
+		self._grid_query_accuracy.EnableDragColSize( True )
+		self._grid_query_accuracy.SetColLabelSize( 30 )
+		self._grid_query_accuracy.SetColLabelValue( 0, _(u"Query") )
+		self._grid_query_accuracy.SetColLabelValue( 1, _(u"Accuracy") )
+		self._grid_query_accuracy.SetColLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
+		
+		# Rows
+		self._grid_query_accuracy.EnableDragRowSize( True )
+		self._grid_query_accuracy.SetRowLabelSize( 80 )
+		self._grid_query_accuracy.SetRowLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
+		
+		# Label Appearance
+		
+		# Cell Defaults
+		self._grid_query_accuracy.SetDefaultCellAlignment( wx.ALIGN_LEFT, wx.ALIGN_TOP )
+		gbSizer211.Add( self._grid_query_accuracy, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		gbSizer112 = wx.GridBagSizer( 0, 0 )
+		gbSizer112.SetFlexibleDirection( wx.BOTH )
+		gbSizer112.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self._btn_back_sample_res = wx.Button( self._panel_accuracy, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer112.Add( self._btn_back_sample_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_exit = wx.Button( self._panel_accuracy, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer112.Add( self._btn_exit, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		gbSizer211.Add( gbSizer112, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		
+		
+		sbSizer9.Add( gbSizer211, 1, wx.EXPAND, 5 )
+		
+		
+		self._panel_accuracy.SetSizer( sbSizer9 )
+		self._panel_accuracy.Layout()
+		sbSizer9.Fit( self._panel_accuracy )
+		self._notebook.AddPage( self._panel_accuracy, _(u"Report"), False )
 		
 		_bsizer_main.Add( self._notebook, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -634,10 +689,12 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_index_data.Bind( wx.EVT_BUTTON, self._on_click_index_data )
 		self._cbx_project_title.Bind( wx.EVT_COMBOBOX, self._on_set_existing_project )
 		self._btn_new_project.Bind( wx.EVT_BUTTON, self._on_click_new_project )
+		self._list_query_history.Bind( wx.EVT_LISTBOX, self._on_click_history_select )
 		self._btn_add_to_query1.Bind( wx.EVT_BUTTON, self._on_click_add_to_query1 )
 		self._btn_run_query1.Bind( wx.EVT_BUTTON, self._on_click_run_query )
 		self._rbx_responsive.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated )
 		self._btn_recalculate_results.Bind( wx.EVT_BUTTON, self._on_click_recalculate )
+		self._btn_feedback_back.Bind( wx.EVT_BUTTON, self._on_click_back_query )
 		self._rbx_feedack_res.Bind( wx.EVT_RADIOBOX, self._on_rbx_result_responsive_update )
 		self._btn_next_res_res.Bind( wx.EVT_BUTTON, self._on_click_next_res )
 		self._btn_prev_res_res.Bind( wx.EVT_BUTTON, self._on_click_previous_res )
@@ -656,13 +713,17 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_clear_unres.Bind( wx.EVT_BUTTON, self._on_click_clear_all_doc_tags_unres )
 		self._btn_back_unres.Bind( wx.EVT_BUTTON, self._btn_sample_back_unres )
 		self._btn_next_unres.Bind( wx.EVT_BUTTON, self._on_click_sample_next )
+		self._btn_gen_report_unres.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report_unres )
 		self._rbx_response_unres.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated_unres )
 		self._rbx_privilage_unres.Bind( wx.EVT_RADIOBOX, self._on_rbx_privileged_updated_unres )
 		self._btn_clear_res.Bind( wx.EVT_BUTTON, self._on_click_clear_all_doc_tags_res )
 		self._rbx_response_res.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated_res )
 		self._rbx_privilage_res.Bind( wx.EVT_RADIOBOX, self._on_rbx_privileged_updated_res )
 		self._btn_back_res.Bind( wx.EVT_BUTTON, self._btn_sample_back_unres )
-		self._btn_gen_report_res.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report )
+		self._btn_next_res.Bind( wx.EVT_BUTTON, self._on_click_show_report )
+		self._btn_gen_report_res.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report_res )
+		self._btn_back_sample_res.Bind( wx.EVT_BUTTON, self._on_click_report_back_sample )
+		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_exit )
 	
 	def __del__( self ):
 		pass
@@ -693,6 +754,9 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_click_new_project( self, event ):
 		event.Skip()
 	
+	def _on_click_history_select( self, event ):
+		event.Skip()
+	
 	def _on_click_add_to_query1( self, event ):
 		event.Skip()
 	
@@ -703,6 +767,9 @@ class SMARTeRGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_click_recalculate( self, event ):
+		event.Skip()
+	
+	def _on_click_back_query( self, event ):
 		event.Skip()
 	
 	def _on_rbx_result_responsive_update( self, event ):
@@ -759,6 +826,9 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_click_sample_next( self, event ):
 		event.Skip()
 	
+	def _on_click_review_gen_report_unres( self, event ):
+		event.Skip()
+	
 	def _on_rbx_responsive_updated_unres( self, event ):
 		event.Skip()
 	
@@ -775,7 +845,16 @@ class SMARTeRGUI ( wx.Frame ):
 		event.Skip()
 	
 	
-	def _on_click_review_gen_report( self, event ):
+	def _on_click_show_report( self, event ):
+		event.Skip()
+	
+	def _on_click_review_gen_report_res( self, event ):
+		event.Skip()
+	
+	def _on_click_report_back_sample( self, event ):
+		event.Skip()
+	
+	def _on_click_exit( self, event ):
 		event.Skip()
 	
 

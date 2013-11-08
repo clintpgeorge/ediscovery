@@ -8,11 +8,14 @@ import wx
 import shelve
 import os 
 import mimetypes
+import wx.grid
 
 
 from lucene import BooleanClause
+from datetime import datetime
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin, \
     ColumnSorterMixin
+from wx import grid
 from gui.SMARTeRGUI import SMARTeRGUI, RatingControl, PreferencesDialog, NewProject
 from lucenesearch.lucene_index_dir import search_lucene_index, MetadataType, get_indexed_file_details
 from lucenesearch.lucene_index_dir import boolean_search_lucene_index, get_indexed_file_details
@@ -20,6 +23,7 @@ from tm.process_query import load_lda_variables, load_dictionary, search_lda_mod
 
 import re
 import webbrowser
+from gui.HTML import Table, TableRow, TableCell, link
 from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS, \
     CHAR_LIMIT_IN_RESULTS_TAB_CELLS, SHELVE_CHUNK_SIZE, SHELVE_FILE_EXTENSION, \
     COLUMN_NUMBER_OF_RATING
@@ -29,7 +33,7 @@ from tm.process_query import load_lda_variables, load_dictionary, \
     search_lda_model, load_lsi_variables, get_lda_query_td, \
     compute_topic_similarities
 from const import SEARCH_RESULTS_LIMIT
-from index_data import index_data
+from index_data import index_data#, project_name
 from decimal import Decimal
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
 from gui.TaggingControlGUI import TaggingControlGUI
@@ -37,6 +41,35 @@ from gui.TaggingControlSmarter import TaggingControlSmarter
 from gui.TaggingControlFeedback import TaggingControlFeedback
 from matplotlib.backend_bases import Event
 
+
+'''
+To generate HTML reports 
+'''
+def rstatus(val):
+    if val.strip() == '':
+        return 'NA'
+    else:
+        return val.strip() 
+    
+def row_status(resp, priv):            
+    if resp.strip() == '' and priv.strip() == '':
+        return 'NA'
+    else: 
+        return 'R'
+
+resp_colors = {}
+resp_colors['Yes'] = '#2EFE9A'
+resp_colors['No'] = '#58ACFA'
+resp_colors['NA'] = '#D8D8D8'
+
+priv_colors = {}
+priv_colors['Yes'] = '#F78181'
+priv_colors['No'] = '#F3F781'
+priv_colors['NA'] = '#D8D8D8'
+
+row_colors = {}
+row_colors['R'] = '#F8E0E6' 
+row_colors['NA'] = '#D8D8D8'
 
 ###########################################################################
 # # This global dictionary is used to keep track of the query-results 
@@ -52,6 +85,11 @@ CUT_OFF=0.01
 CUT_OFF_NORM=0.3
 TOP_K_TOPICS = 5
 LIMIT_LUCENE=1000
+
+REPORT_COMPLETE = 'complete_report.html'
+REPORT_RESPONSIVE = 'responsiveness_docs_report.html' 
+REPORT_PRIVILEGED = 'privileged_docs_report.html'
+
 
 
 
@@ -497,7 +535,7 @@ class Preferences (PreferencesDialog):
 class SMARTeR (SMARTeRGUI):
 
     def __init__(self, parent):
-
+        
         # Calls the parent class's method 
         super(SMARTeR, self).__init__(parent)
         self.SEED = 2013  
@@ -517,7 +555,11 @@ class SMARTeR (SMARTeRGUI):
         self._unresponsive_files_display = []
         self._build_query_results_panel()
         self._populate_metadata_fields()
-        self._reset_defaults_indexing_preferences()    
+        self._reset_defaults_indexing_preferences()
+        
+        self._query_history = []    
+        self._choose_history = False
+        self._choice_history = -1
         
         self._lda_num_topics = self._num_topics
         self._init_results = []     
@@ -916,13 +958,18 @@ class SMARTeR (SMARTeRGUI):
         # else :
         # self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":");
         #    self._rbtn_conjunction.Enable()
-        self._tc_query.AppendText(metadataSelected + ":" + self._tc_query_input1.GetValue() + ":MUST")
+#        self._tc_query.AppendText(metadataSelected + ":" + self._tc_query_input1.GetValue() + ":MUST")
         if(self._tc_query1.GetValue()==""):   
             self._tc_query1.AppendText(metadataSelected + ":" + queryBoxText)
         else:
             self._tc_query1.AppendText("\n"+operatorSelected + "\n" )
             self._tc_query1.AppendText(metadataSelected + ":" + queryBoxText)
+        self._tc_query_input1.SetValue('')
     
+    def _on_click_history_select(self,event):
+        selection = self._list_query_history.GetSelection()
+        self._tc_query1.SetValue(self._query_history[selection][0])
+        
     def _show_error_message(self, _header, _message):
         '''
         Shows error messages in a pop up 
@@ -1125,10 +1172,27 @@ class SMARTeR (SMARTeRGUI):
             doc_id, doc_path, doc_name, doc_score = doc_details
             self._seed_docs_details.append([doc_id, doc_path, doc_name, doc_score, self.__is_responsive(self._doc_true_class_ids[doc_id])])
             if i+1 == 100: break
-            
+        self._responsive_files = []
+        self._responsive_files_display = []
+        self._unresponsive_files = []
+        self._unresponsive_files_display = []
+        self.sampled_files_responsive = []
+        self.sampled_files_unresponsive = []
         self.load_document_feedback()
+        flag = True
+        cnt  = 0
+        for query in self._list_query_history.GetItems():
+            if query == luceneQuery:
+                flag = False
+                self._choice_history= cnt
+                break
+            cnt += 1
+        if flag:
+            self._list_query_history.Append(luceneQuery)
+            self._query_history.append([luceneQuery,-1])
+            self._choice_history = cnt
         
-        
+        self._tc_query1.SetValue('')
         #------------------------------------------------------- Change of focus
         
         self._current_page = 2
@@ -1236,6 +1300,27 @@ class SMARTeR (SMARTeRGUI):
         
         #------------------------------------------------------ Generate samples
         
+        
+        seed_dict = dict()
+        for seed in self._seed_docs_details:
+            seed_dict[seed[1]] = seed[4]
+        
+        correct_files = 0
+        print float(correct_files)
+        for doc in self._responsive_files:
+            if seed_dict.has_key(doc[0]):
+                if seed_dict[doc[0]] == 'Yes':
+                    correct_files += 1
+            
+        for doc in self._unresponsive_files:
+            if seed_dict.has_key(doc[0]):
+                if seed_dict[doc[0]] == 'No':
+                    correct_files += 1
+        print float(correct_files)
+        print len(self._seed_docs_details)
+        print float(correct_files)/len(self._seed_docs_details) 
+        self._query_history[self._choice_history][1] = float(correct_files)/len(self._seed_docs_details)     
+        self._setup_grid()
         self._generate_file_samples()
         self._generate_file_samples_unres()
         
@@ -1266,6 +1351,17 @@ class SMARTeR (SMARTeRGUI):
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
                   
+    def _setup_grid(self):
+        if self._grid_query_accuracy.NumberRows!=len(self._query_history):
+            self._grid_query_accuracy.InsertRows(0,len(self._query_history)-self._grid_query_accuracy.NumberRows)
+        row = 0
+        print self._query_history
+        for query in self._query_history:
+            self._grid_query_accuracy.SetCellValue(row,0,query[0])
+            if query[1]!=-1:
+                self._grid_query_accuracy.SetCellValue(row,1,str(query[1]))
+            row = row +1
+            
     def _on_click_update_results(self, event):
         '''
         This function incorporates the user ratings into 
@@ -1679,6 +1775,7 @@ class SMARTeR (SMARTeRGUI):
     
         project_name = self._cbx_project_title.GetValue()
         #ADD
+        self.output_dir=os.path.join(self.directory,project_name)
         if project_name=="":
             self._show_error_message("Missing input", "Please enter or select a project.")
         else:
@@ -1758,14 +1855,19 @@ class SMARTeR (SMARTeRGUI):
         check and uncheck events 
          
         '''
-        responsive_status = self._rbx_response_res.GetStringSelection() 
-        if responsive_status == 'Yes': 
-            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 2, 'Yes')
-        elif responsive_status == 'No': 
-            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 2, 'No')
-        elif responsive_status == 'Unknown': 
-            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 2, '')
-
+        selected_doc_id = self._review_res.GetFocusedItem()
+        if(selected_doc_id != -1):
+            responsive_status = self._rbx_response_res.GetStringSelection() 
+            if responsive_status == 'Yes': 
+                self._review_res.SetStringItem(selected_doc_id, 2, 'Yes')
+                self.sampled_files_responsive[selected_doc_id][1]='Yes'
+            elif responsive_status == 'No': 
+                self._review_res.SetStringItem(selected_doc_id, 2, 'No')
+                self.sampled_files_responsive[selected_doc_id][1]='No'
+            elif responsive_status == 'Unknown': 
+                self._review_res.SetStringItem(selected_doc_id, 2, '')
+                self.sampled_files_responsive[selected_doc_id][1]=''
+            
     
     
     def _on_rbx_privileged_updated_res( self, event ):
@@ -1774,13 +1876,18 @@ class SMARTeR (SMARTeRGUI):
         check and uncheck events 
          
         '''
-        privileged_status = self._rbx_privilage_res.GetStringSelection() 
-        if privileged_status == 'Yes': 
-            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'Yes')
-        elif privileged_status == 'No': 
-            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'No')
-        elif privileged_status == 'Unknown': 
-            self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, '')
+        selected_doc_id = self._review_res.GetFocusedItem()
+        if(selected_doc_id != -1):
+            privileged_status = self._rbx_privilage_res.GetStringSelection() 
+            if privileged_status == 'Yes': 
+                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'Yes')
+                self.sampled_files_responsive[selected_doc_id][2]='Yes'
+            elif privileged_status == 'No': 
+                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'No')
+                self.sampled_files_responsive[selected_doc_id][2]='No'
+            elif privileged_status == 'Unknown': 
+                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, '')
+                self.sampled_files_responsive[selected_doc_id][2]=''
 
     def _on_click_clear_all_doc_tags_res( self, event ):
         '''
@@ -1790,12 +1897,12 @@ class SMARTeR (SMARTeRGUI):
             for i in range(0, len(self.sampled_files_responsive)):
                 self._review_res.SetStringItem(i, 2, '')
                 self._review_res.SetStringItem(i, 3, '')       
+                self.sampled_files_responsive[i][1]=''
+                self.sampled_files_responsive[i][2]=''
             
             self._rbx_response_res.SetStringSelection('Unknown')    
             self._rbx_privilage_res.SetStringSelection('Unknown')  
-                
-    
-            self._is_rt_updated = True
+            
         except Exception,e:
             self.error(e)
 
@@ -1841,7 +1948,261 @@ class SMARTeR (SMARTeRGUI):
     
             self._is_rt_updated = True
         except Exception,e:
-            self.error(e)
+            print e
+            
+    def _on_click_review_gen_report_res( self, event ):
+            
+            self.confidence_val_rep = self.confidence_val
+            self.precision_val_rep =self.precision_val
+            self.file_list = self._responsive_files
+            self.sampled_files = self.sampled_files_responsive
+            self._gen_report(self.sampled_files_responsive,self._cbx_report_types_res.GetValue(),'responsive_sample_')
+    
+    def _on_click_review_gen_report_unres( self, event ):
+            
+            self.confidence_val_rep = self.confidence_val_unres
+            self.precision_val_rep =self.precision_val_unres
+            self.file_list = self._unresponsive_files
+            self.sampled_files = self.sampled_files_unresponsive
+            self._gen_report(self.sampled_files_unresponsive,self._cbx_report_types_unres.GetValue(),'unresponsive_sample_')
+    
+    def _gen_report( self,  samples_lst, report_type, file_type):
+        try:
+            if report_type == 'Responsive':
+                file_name = os.path.join(self.output_dir, file_type+REPORT_RESPONSIVE)   
+                responsive = []
+                for fs in samples_lst: 
+                    if fs[1] == 'Yes': 
+                        responsive.append(fs)
+                if len(responsive) == 0:
+                    self._show_error_message('Report Generation', 'There are no responsive documents available.')
+                    return 
+                html_body = self._gen_responsive_html_report(responsive)
+            elif report_type == 'Privileged':
+                file_name = os.path.join(self.output_dir, file_type+REPORT_PRIVILEGED)   
+                privileged = []
+                for fs in samples_lst: 
+                    if fs[2] == 'Yes': 
+                        privileged.append(fs)
+                if len(privileged) == 0:
+                    self._show_error_message('Report Generation', 'There are no privileged documents available.')
+                    return 
+                html_body = self._gen_privileged_html_report(privileged)
+            elif report_type == 'All':
+                file_name = os.path.join(self.output_dir, file_type+REPORT_COMPLETE)   
+                responsive = []
+                privileged = []
+                for fs in samples_lst: 
+                    if fs[1] == 'Yes': 
+                        responsive.append(fs)
+                    if fs[2] == 'Yes': 
+                        privileged.append(fs)
+                html_body = self._gen_complete_html_report(samples_lst, responsive, privileged)
+            
+            
+            # Saves into a file path 
+            self._save_html_report(html_body, file_name)
+            
+            # Open the HTML report in the default web browser 
+            webbrowser.open(file_name)
+        except Exception,e:
+            # Report generation failed 
+            print e 
+                    
+    def _save_html_report(self, html_body, file_name):
+        '''
+        Stores into a file 
+        '''
+        
+        try:
+            with open(file_name, "w") as hw: 
+                hw.write(unicode(
+                """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+                <html>
+                <head>
+                    <title>Document Sample Review Report</title>
+                </head>
+                <body style="font-family:verdana,helvetica;font-size:9pt">
+                <h2>Document Sample Review Report</h2>
+                
+                Report overview: 
+                
+                <br/><br/>
+                """))
+                
+                hw.write(unicode(self._gen_specifications_html()))
+    
+                hw.write(unicode(html_body))
+
+                hw.write(unicode(
+                """
+                <hr/>
+                <p>Report is generated on: %s</p>
+                </body>
+                </html>""" % datetime.now().strftime("%A, %d. %B %Y %I:%M%p")))
+        except Exception, e:
+            print e
+            
+
+    def _gen_specifications_html(self): 
+        try:
+            hrow = TableRow(cells=['Sampler Specifications', 'Entries'], bgcolor='#6E6E6E')
+            setting_table = Table(header_row=hrow, border=0)
+            '''
+            config_cell = TableCell("Source document folder", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(self.dir_path, bgcolor = '#CEF6F5', align = 'left')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("Sampled output folder", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(self.output_dir_path, bgcolor = '#CEF6F5', align = 'left')
+            setting_table.rows.append([config_cell, setting_cell])
+            '''
+            config_cell = TableCell("Confidence level (%)", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(self.confidence_val_rep*100, bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("Confidence interval (%)", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(self.precision_val_rep*100, bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("Total documents in the source document folder", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(len(self.file_list), bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("The sample size", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(len(self.sampled_files), bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            return str(setting_table)
+        except Exception,e:
+            print e
+        
+    def _gen_complete_html_report(self, samples, responsive, privileged):
+        try:
+            # Generate HTML tags for all documents 
+            hrow = TableRow(cells=['#', 'File Name', 'Responsive', 'Privileged'], bgcolor='#6E6E6E')
+            all_table = Table(header_row=hrow)
+            cnt = 1
+            for fs in samples:
+                
+                rc_colr = resp_colors[rstatus(fs[1])]
+                pc_colr = priv_colors[rstatus(fs[2])]
+                r_colr = row_colors[row_status(fs[1], fs[2])]
+                num_cell = TableCell(cnt, bgcolor=r_colr, align='center')
+                file_name = link(fs[0], fs[0])
+                fn_cell = TableCell(file_name, bgcolor=r_colr)
+                resp_cell = TableCell(fs[1], bgcolor=rc_colr, align='center')
+                priv_cell = TableCell(fs[2], bgcolor=pc_colr, align='center')
+                
+                all_table.rows.append([num_cell, fn_cell, resp_cell, priv_cell])
+                cnt = cnt + 1
+            
+            html_body = """
+            %s 
+    
+            %s 
+    
+            <hr/>
+            <h3>Complete Sample</h3>
+            %s 
+            <br/>
+            """ % (self._gen_responsive_html_report(responsive), self._gen_privileged_html_report(privileged), str(all_table))
+            
+            return html_body
+        except Exception,e:
+            print e
+       
+    def _gen_responsive_html_report(self, responsive):
+        '''
+        Generate HTML tags for responsive documents 
+        '''
+        try:
+            if len(responsive) == 0: return ''
+            hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
+            resp_table = Table(header_row=hrow)
+            cnt = 1
+            for fs in responsive:
+                r_colr = resp_colors['Yes']
+                num_cell = TableCell(cnt, bgcolor=r_colr, align='center')
+                file_name = link(fs[0], fs[0])
+                fn_cell = TableCell(file_name, bgcolor=r_colr)
+                resp_table.rows.append([num_cell, fn_cell])
+                cnt = cnt + 1
+                
+            html_body = """
+            <hr/>
+            <h3>Responsive Documents</h3>
+            %s 
+            <br/>
+            """ % str(resp_table)
+            
+            return html_body
+        except Exception,e:
+            print e
+      
+    def _gen_privileged_html_report(self, privileged):
+        '''
+        Generate HTML tags for privileged documents 
+        '''
+        try:
+            if len(privileged) == 0: return ''
+            
+            hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
+            priv_table = Table(header_row=hrow)
+            cnt = 1
+            for fs in privileged:
+                r_colr = priv_colors['Yes']
+                num_cell = TableCell(cnt, bgcolor=r_colr, align='center')
+                file_name = link(fs[0], fs[0])
+                fn_cell = TableCell(file_name, bgcolor=r_colr)
+                priv_table.rows.append([num_cell, fn_cell])
+                cnt = cnt + 1
+            html_body = """
+            <hr/>
+            <h3>Privileged Documents</h3>
+            %s 
+            <br/>
+            """ % str(priv_table)
+            
+            return html_body
+        except Exception,e:
+            print e
+        
+    #********************************************* END Review Tab Handling *******************************************************  
+
+    def _on_click_out_exit( self, event ):
+        '''
+        Exits
+        Arguments: Nothing
+        Returns: Nothing
+        '''
+        try:
+            self._on_close()
+        except Exception,e:
+            print e   
+   
+    def _on_close(self):
+        '''
+        Closes the Application after confirming with user
+        Arguments: Nothing
+        Returns: Nothing
+        '''
+        try:
+            dlg = wx.MessageDialog(self,
+                                   "Do you really want to close this application?",
+                                   "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
+            if dlg.ShowModal() == wx.ID_OK:
+                
+                # Handles the shelf 
+                if self.shelf is not None:
+                    if self._is_rt_updated:
+                        self._shelf_update_review_tab_state()
+                    self.shelf.close()
+                
+                self.Destroy()
+        except Exception,e:
+            print e
+
             
     def _btn_sample_back_res(self, event):
         self._review_res.Destroy()
@@ -1861,6 +2222,25 @@ class SMARTeR (SMARTeRGUI):
         self._current_page = 5
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
+        
+    def _on_click_show_report( self, event ):
+        self._current_page = 6
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+    
+    def _on_click_report_back_sample( self, event ):
+        self._current_page = 5
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
+    def _on_click_back_query(self,event):
+        self._current_page = 1
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
+    def _on_click_exit( self, event ):
+        exit()    
+        
         
     def _btn_sample_exit(self, Event):
         exit()
