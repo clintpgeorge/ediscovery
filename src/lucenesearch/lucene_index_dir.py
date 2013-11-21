@@ -78,6 +78,7 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize =
     else: 
         logging.info('Loading files in the data folder %s...' % data_folder)
         file_tuples = get_file_paths_index(data_folder)
+    
         logging.info('%d email documents found.' % len(file_tuples))
     
         store_file_paths_index(path_index_file, file_tuples)

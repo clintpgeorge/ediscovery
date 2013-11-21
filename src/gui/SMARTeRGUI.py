@@ -21,9 +21,9 @@ _ = gettext.gettext
 class SMARTeRGUI ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = _(u"SMARTeR"), pos = wx.DefaultPosition, size = wx.Size( 1044,600 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.FRAME_SHAPED|wx.ICONIZE|wx.MAXIMIZE|wx.MAXIMIZE_BOX|wx.MINIMIZE|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.STAY_ON_TOP|wx.SYSTEM_MENU|wx.TAB_TRAVERSAL, name = u"SMARTeR" )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = _(u"SMARTeR"), pos = wx.DefaultPosition, size = wx.Size( 1100,768 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.FRAME_SHAPED|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.SYSTEM_MENU|wx.TAB_TRAVERSAL, name = u"SMARTeR" )
 		
-		self.SetSizeHintsSz( wx.Size( 1000,600 ), wx.DefaultSize )
+		self.SetSizeHintsSz( wx.Size( 1100,768 ), wx.DefaultSize )
 		self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 		
 		self._satusbar = self.CreateStatusBar( 1, wx.ST_SIZEGRIP, wx.ID_ANY )
@@ -58,30 +58,42 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self.m_staticText5 = wx.StaticText( self._panel_index, wx.ID_ANY, _(u"Project Name"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText5.Wrap( -1 )
-		gbsizer_project.Add( self.m_staticText5, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbsizer_project.Add( self.m_staticText5, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticText6 = wx.StaticText( self._panel_index, wx.ID_ANY, _(u"Input Data Folder"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText6.Wrap( -1 )
-		gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_data_fld = wx.TextCtrl( self._panel_index, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), wx.TE_READONLY )
-		gbsizer_project.Add( self._tc_data_fld, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._tc_data_fld = wx.TextCtrl( self._panel_index, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 350,-1 ), wx.TE_READONLY )
+		self._tc_data_fld.SetToolTipString( _(u"Select a project") )
+		
+		gbsizer_project.Add( self._tc_data_fld, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticline3 = wx.StaticLine( self._panel_index, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		gbsizer_project.Add( self.m_staticline3, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
+		gbsizer_project.Add( self.m_staticline3, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self._btn_clear_project_details = wx.Button( self._panel_index, wx.ID_ANY, _(u"Clear"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_project.Add( self._btn_clear_project_details, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_index_go_to_search = wx.Button( self._panel_index, wx.ID_ANY, _(u"Go to Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_index_go_to_search.SetToolTipString( _(u"Click to go to the Start Search tab") )
 		
-		self._btn_index_data = wx.Button( self._panel_index, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_project.Add( self._btn_index_data, wx.GBPosition( 3, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbsizer_project.Add( self._btn_index_go_to_search, wx.GBPosition( 4, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		_cbx_project_titleChoices = []
 		self._cbx_project_title = wx.ComboBox( self._panel_index, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), _cbx_project_titleChoices, wx.CB_DROPDOWN|wx.CB_READONLY|wx.TE_PROCESS_ENTER )
-		gbsizer_project.Add( self._cbx_project_title, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._cbx_project_title.SetToolTipString( _(u"Select a project") )
 		
-		self._btn_new_project = wx.Button( self._panel_index, wx.ID_ANY, _(u"New Project"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_project.Add( self._btn_new_project, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbsizer_project.Add( self._cbx_project_title, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_index_new_project = wx.Button( self._panel_index, wx.ID_ANY, _(u"New Project"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_index_new_project.SetToolTipString( _(u"Click to create a new project") )
+		
+		gbsizer_project.Add( self._btn_index_new_project, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._st_search_in1 = wx.StaticText( self._panel_index, wx.ID_ANY, _(u"Select a project"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_search_in1.Wrap( -1 )
+		self._st_search_in1.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_search_in1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		gbsizer_project.Add( self._st_search_in1, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.LEFT|wx.RIGHT|wx.TOP, 5 )
 		
 		
 		sbsizer_project.Add( gbsizer_project, 1, wx.EXPAND, 5 )
@@ -100,105 +112,152 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_sbsizer_query_model1 = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Query Processing") ), wx.VERTICAL )
 		
-		_gbsizer_query1 = wx.GridBagSizer( 5, 5 )
+		_gbsizer_query1 = wx.GridBagSizer( 0, 5 )
 		_gbsizer_query1.SetFlexibleDirection( wx.BOTH )
 		_gbsizer_query1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
 		self._st_query1 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Enter Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_query1.Wrap( -1 )
-		_gbsizer_query1.Add( self._st_query1, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_query1.Add( self._st_query1, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.BOTTOM|wx.LEFT|wx.RIGHT, 5 )
 		
-		self.m_staticText34 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Query History"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText34 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Search History"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText34.Wrap( -1 )
-		self.m_staticText34.SetFont( wx.Font( 8, 74, 93, 92, False, "Tahoma" ) )
+		self.m_staticText34.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
 		
-		_gbsizer_query1.Add( self.m_staticText34, wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_query1.Add( self.m_staticText34, wx.GBPosition( 4, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_query_input1 = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )
-		_gbsizer_query1.Add( self._tc_query_input1, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._tc_query_terms = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )
+		self._tc_query_terms.SetToolTipString( _(u"Enter search keywords") )
+		
+		_gbsizer_query1.Add( self._tc_query_terms, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.ALIGN_TOP|wx.ALL, 5 )
 		
 		_list_query_historyChoices = []
 		self._list_query_history = wx.ListBox( self._panel_query, wx.ID_ANY, wx.DefaultPosition, wx.Size( 370,150 ), _list_query_historyChoices, 0 )
-		_gbsizer_query1.Add( self._list_query_history, wx.GBPosition( 4, 3 ), wx.GBSpan( 3, 2 ), wx.ALL, 5 )
+		_gbsizer_query1.Add( self._list_query_history, wx.GBPosition( 5, 3 ), wx.GBSpan( 3, 2 ), wx.ALL, 5 )
 		
-		self._btn_add_to_query1 = wx.Button( self._panel_query, wx.ID_ANY, _(u"Add To Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_query1.Add( self._btn_add_to_query1, wx.GBPosition( 0, 4 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_search_add_to_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Add To Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_search_add_to_query.SetToolTipString( _(u"Click to add the query clause to the aggregated query") )
 		
-		_cbx_meta_type1Choices = []
-		self._cbx_meta_type1 = wx.ComboBox( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_meta_type1Choices, wx.CB_READONLY|wx.CB_SORT )
-		_gbsizer_query1.Add( self._cbx_meta_type1, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_query1.Add( self._btn_search_add_to_query, wx.GBPosition( 1, 4 ), wx.GBSpan( 1, 1 ), wx.ALIGN_TOP|wx.ALL, 5 )
 		
-		self._tc_query1 = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,250 ), wx.TE_MULTILINE )
-		_gbsizer_query1.Add( self._tc_query1, wx.GBPosition( 2, 1 ), wx.GBSpan( 5, 2 ), wx.ALL, 5 )
+		_cbx_query_data_fieldsChoices = []
+		self._cbx_query_data_fields = wx.ComboBox( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_query_data_fieldsChoices, wx.CB_READONLY|wx.CB_SORT )
+		self._cbx_query_data_fields.SetToolTipString( _(u"Select a data field") )
 		
-		self._btn_run_query1 = wx.Button( self._panel_query, wx.ID_ANY, _(u"Start Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_query1.Add( self._btn_run_query1, wx.GBPosition( 2, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_query1.Add( self._cbx_query_data_fields, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
 		
-		_cbx_meta_type2Choices = [ _(u"AND"), _(u"OR"), _(u"NOT") ]
-		self._cbx_meta_type2 = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"OR"), wx.DefaultPosition, wx.Size( 80,-1 ), _cbx_meta_type2Choices, wx.CB_DROPDOWN|wx.CB_READONLY )
-		self._cbx_meta_type2.SetSelection( 1 )
-		_gbsizer_query1.Add( self._cbx_meta_type2, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._tc_query_aggregated = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,250 ), wx.TE_MULTILINE )
+		_gbsizer_query1.Add( self._tc_query_aggregated, wx.GBPosition( 3, 1 ), wx.GBSpan( 5, 2 ), wx.ALL, 5 )
+		
+		self._btn_query_start_search = wx.Button( self._panel_query, wx.ID_ANY, _(u"Start Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_query_start_search.SetToolTipString( _(u"Click to start SMART search") )
+		
+		_gbsizer_query1.Add( self._btn_query_start_search, wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_cbx_query_conjunctionsChoices = [ _(u"AND"), _(u"OR"), _(u"NOT") ]
+		self._cbx_query_conjunctions = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"OR"), wx.DefaultPosition, wx.Size( 80,-1 ), _cbx_query_conjunctionsChoices, wx.CB_DROPDOWN|wx.CB_READONLY )
+		self._cbx_query_conjunctions.SetSelection( 1 )
+		self._cbx_query_conjunctions.Enable( False )
+		self._cbx_query_conjunctions.SetToolTipString( _(u"Select a Boolean connector") )
+		
+		_gbsizer_query1.Add( self._cbx_query_conjunctions, wx.GBPosition( 1, 3 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.ALIGN_TOP|wx.ALL, 5 )
+		
+		self._st_search_in = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Search in"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_search_in.Wrap( -1 )
+		self._st_search_in.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_search_in.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		_gbsizer_query1.Add( self._st_search_in, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		
+		self._st_search_keywords = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Enter search keywords"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_search_keywords.Wrap( -1 )
+		self._st_search_keywords.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_search_keywords.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		_gbsizer_query1.Add( self._st_search_keywords, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		
+		self._st_search_keywords1 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Select a Boolean connector"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_search_keywords1.Wrap( -1 )
+		self._st_search_keywords1.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_search_keywords1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		_gbsizer_query1.Add( self._st_search_keywords1, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.TOP, 5 )
 		
 		
 		_sbsizer_query_model1.Add( _gbsizer_query1, 1, wx.EXPAND, 10 )
 		
 		
-		_bsizer_query.Add( _sbsizer_query_model1, 0, wx.ALL|wx.EXPAND, 10 )
+		_bsizer_query.Add( _sbsizer_query_model1, 1, wx.ALL|wx.EXPAND, 10 )
 		
 		
 		self._panel_query.SetSizer( _bsizer_query )
 		self._panel_query.Layout()
 		_bsizer_query.Fit( self._panel_query )
-		self._notebook.AddPage( self._panel_query, _(u"Query"), True )
+		self._notebook.AddPage( self._panel_query, _(u"Start Search"), False )
 		self._panel_feedback = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer8 = wx.BoxSizer( wx.VERTICAL )
 		
-		sbSizer7 = wx.StaticBoxSizer( wx.StaticBox( self._panel_feedback, wx.ID_ANY, _(u"Feedback") ), wx.VERTICAL )
+		sbSizer7 = wx.StaticBoxSizer( wx.StaticBox( self._panel_feedback, wx.ID_ANY, _(u"Enter Feedback") ), wx.VERTICAL )
 		
-		self.m_staticText32 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Please review all 100 documents to increase the accuracy of document retrieval."), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText32.Wrap( -1 )
-		self.m_staticText32.SetFont( wx.Font( 8, 74, 93, 92, False, "Tahoma" ) )
+		self._st_document_feedback_title = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Please review all 100 documents to increase the accuracy of document retrieval"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_document_feedback_title.Wrap( -1 )
+		self._st_document_feedback_title.SetFont( wx.Font( 9, 70, 90, 90, False, wx.EmptyString ) )
+		self._st_document_feedback_title.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		sbSizer7.Add( self.m_staticText32, 0, wx.ALL, 5 )
+		sbSizer7.Add( self._st_document_feedback_title, 0, wx.ALL, 5 )
 		
 		gbSizer8 = wx.GridBagSizer( 0, 0 )
 		gbSizer8.SetFlexibleDirection( wx.BOTH )
 		gbSizer8.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._panel_feedback_doc = wx.Panel( self._panel_feedback, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,200 ), wx.TAB_TRAVERSAL )
-		gbSizer8.Add( self._panel_feedback_doc, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
+		self._panel_feedback_doc = wx.Panel( self._panel_feedback, wx.ID_ANY, wx.DefaultPosition, wx.Size( 600,200 ), wx.TAB_TRAVERSAL )
+		gbSizer8.Add( self._panel_feedback_doc, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
 		
 		bSizer81 = wx.BoxSizer( wx.VERTICAL )
 		
-		_rbx_responsiveChoices = [ _(u"Responsive"), _(u"Unresponsive"), _(u"Uncertain") ]
-		self._rbx_responsive = wx.RadioBox( self._panel_feedback, wx.ID_ANY, _(u"Feedback"), wx.DefaultPosition, wx.DefaultSize, _rbx_responsiveChoices, 1, wx.RA_SPECIFY_COLS )
-		self._rbx_responsive.SetSelection( 2 )
-		bSizer81.Add( self._rbx_responsive, 0, wx.ALL, 5 )
+		_rbx_doc_feedbackChoices = [ _(u"Yes"), _(u"No"), _(u"Uncertain"), _(u"Not Reviewed") ]
+		self._rbx_doc_feedback = wx.RadioBox( self._panel_feedback, wx.ID_ANY, _(u"Relevant?"), wx.DefaultPosition, wx.DefaultSize, _rbx_doc_feedbackChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_doc_feedback.SetSelection( 3 )
+		bSizer81.Add( self._rbx_doc_feedback, 0, wx.ALL, 5 )
 		
-		self._btn_recalculate_results = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"SMARTeR Ranking"), wx.DefaultPosition, wx.Size( 110,-1 ), 0 )
-		bSizer81.Add( self._btn_recalculate_results, 0, wx.ALL, 5 )
+		self._btn_feedback_smart_ranking = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Check Ranking"), wx.DefaultPosition, wx.Size( 110,-1 ), 0 )
+		bSizer81.Add( self._btn_feedback_smart_ranking, 0, wx.ALL, 5 )
 		
 		self._btn_feedback_back = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.Size( 110,-1 ), 0 )
 		bSizer81.Add( self._btn_feedback_back, 0, wx.ALL, 5 )
 		
 		
-		gbSizer8.Add( bSizer81, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		gbSizer8.Add( bSizer81, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALL, 5 )
+		
+		self._st_revew_pane_help1 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"* Please click each document line to review."), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_revew_pane_help1.Wrap( -1 )
+		self._st_revew_pane_help1.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_revew_pane_help1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		gbSizer8.Add( self._st_revew_pane_help1, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.LEFT, 5 )
+		
+		self._doc_feedback_preview = wx.TextCtrl( self._panel_feedback, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
+		self._doc_feedback_preview.SetMinSize( wx.Size( 985,190 ) )
+		
+		gbSizer8.Add( self._doc_feedback_preview, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 5 ), wx.ALL, 5 )
+		
+		self.m_staticText1411 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText1411.Wrap( -1 )
+		self.m_staticText1411.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		
+		gbSizer8.Add( self.m_staticText1411, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 5 ), wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		
+		self.m_staticText1311 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Documents to be Reviewed*"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText1311.Wrap( -1 )
+		self.m_staticText1311.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		
+		gbSizer8.Add( self.m_staticText1311, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.LEFT|wx.RIGHT|wx.TOP, 5 )
 		
 		
 		sbSizer7.Add( gbSizer8, 1, wx.EXPAND, 5 )
 		
-		bSizer10 = wx.BoxSizer( wx.VERTICAL )
 		
-		self._doc_feedback_preview = wx.TextCtrl( self._panel_feedback, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
-		self._doc_feedback_preview.SetMinSize( wx.Size( 1010,225 ) )
-		
-		bSizer10.Add( self._doc_feedback_preview, 0, wx.ALL, 5 )
-		
-		
-		sbSizer7.Add( bSizer10, 1, wx.EXPAND, 5 )
-		
-		
-		bSizer8.Add( sbSizer7, 1, wx.EXPAND, 5 )
+		bSizer8.Add( sbSizer7, 1, wx.ALL|wx.EXPAND, 10 )
 		
 		
 		self._panel_feedback.SetSizer( bSizer8 )
@@ -331,15 +390,6 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer13.SetFlexibleDirection( wx.BOTH )
 		gbSizer13.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self.m_staticText19 = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Select Confidence Interval and Confidence Level to compute sample size. "), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText19.Wrap( -1 )
-		self.m_staticText19.SetFont( wx.Font( 8, 74, 93, 92, False, "Tahoma" ) )
-		
-		gbSizer13.Add( self.m_staticText19, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
-		
-		self.m_staticline8 = wx.StaticLine( self._panel_sample_conf, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		gbSizer13.Add( self.m_staticline8, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
-		
 		self.m_staticText20 = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Confidence Level(%)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText20.Wrap( -1 )
 		gbSizer13.Add( self.m_staticText20, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -356,24 +406,21 @@ class SMARTeRGUI ( wx.Frame ):
 		self._tc_confidence_interval = wx.TextCtrl( self._panel_sample_conf, wx.ID_ANY, _(u"5"), wx.DefaultPosition, wx.Size( 50,-1 ), 0 )
 		gbSizer13.Add( self._tc_confidence_interval, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self.m_staticline10 = wx.StaticLine( self._panel_sample_conf, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		gbSizer13.Add( self.m_staticline10, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 4 ), wx.EXPAND |wx.ALL, 5 )
-		
 		self._st_num_samples_res = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Responsive: 0 of 0 documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_num_samples_res.Wrap( -1 )
-		self._st_num_samples_res.SetFont( wx.Font( 8, 74, 93, 90, False, "Tahoma" ) )
+		self._st_num_samples_res.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
 		self._st_num_samples_res.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		gbSizer13.Add( self._st_num_samples_res, wx.GBPosition( 5, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._st_num_samples_unres = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Unresponsive: 0 of 0 documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_num_samples_unres.Wrap( -1 )
-		self._st_num_samples_unres.SetFont( wx.Font( 8, 74, 93, 90, False, "Tahoma" ) )
+		self._st_num_samples_unres.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
 		self._st_num_samples_unres.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		gbSizer13.Add( self._st_num_samples_unres, wx.GBPosition( 6, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._chk_toggle_cl_level = wx.CheckBox( self._panel_sample_conf, wx.ID_ANY, _(u"In addtion, apply to unresponsive documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._chk_toggle_cl_level = wx.CheckBox( self._panel_sample_conf, wx.ID_ANY, _(u"Check this button to apply the same Confidence Level and Confidence Interval to irrelevant documents "), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer13.Add( self._chk_toggle_cl_level, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._panel_unres_cl = wx.Panel( self._panel_sample_conf, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
@@ -399,14 +446,14 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self._st_num_samples_ind_unres = wx.StaticText( self._panel_unres_cl, wx.ID_ANY, _(u"Unresponsive: 0 of 0 documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_num_samples_ind_unres.Wrap( -1 )
-		self._st_num_samples_ind_unres.SetFont( wx.Font( 8, 74, 93, 90, False, "Tahoma" ) )
+		self._st_num_samples_ind_unres.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
 		self._st_num_samples_ind_unres.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		gbSizer131.Add( self._st_num_samples_ind_unres, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self.m_staticText53 = wx.StaticText( self._panel_unres_cl, wx.ID_ANY, _(u"For Unresponsive documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText53 = wx.StaticText( self._panel_unres_cl, wx.ID_ANY, _(u"For irrelevant documents:"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText53.Wrap( -1 )
-		self.m_staticText53.SetFont( wx.Font( 8, 74, 93, 92, False, "Tahoma" ) )
+		self.m_staticText53.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
 		gbSizer131.Add( self.m_staticText53, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
@@ -414,10 +461,19 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_unres_cl.SetSizer( gbSizer131 )
 		self._panel_unres_cl.Layout()
 		gbSizer131.Fit( self._panel_unres_cl )
-		gbSizer13.Add( self._panel_unres_cl, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
+		gbSizer13.Add( self._panel_unres_cl, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_staticline10 = wx.StaticLine( self._panel_sample_conf, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbSizer13.Add( self.m_staticline10, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 4 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_staticText531 = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Select Confidence Interval and Confidence Level to compute sample size. "), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText531.Wrap( -1 )
+		self.m_staticText531.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		gbSizer13.Add( self.m_staticText531, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
 		
-		sbSizer6.Add( gbSizer13, 1, wx.EXPAND, 5 )
+		sbSizer6.Add( gbSizer13, 1, 0, 5 )
 		
 		gbSizer21 = wx.GridBagSizer( 0, 0 )
 		gbSizer21.SetFlexibleDirection( wx.BOTH )
@@ -440,187 +496,207 @@ class SMARTeRGUI ( wx.Frame ):
 		sbSizer6.Add( gbSizer14, 1, wx.EXPAND, 5 )
 		
 		
-		bSizer101.Add( sbSizer6, 1, wx.EXPAND, 5 )
+		bSizer101.Add( sbSizer6, 1, wx.ALL|wx.EXPAND, 10 )
 		
 		
 		self._panel_sample_conf.SetSizer( bSizer101 )
 		self._panel_sample_conf.Layout()
 		bSizer101.Fit( self._panel_sample_conf )
 		self._notebook.AddPage( self._panel_sample_conf, _(u"Sample Confidence"), False )
-		self._panel_random_unresponsive = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		_gbsizer_review_unres = wx.GridBagSizer( 0, 0 )
-		_gbsizer_review_unres.SetFlexibleDirection( wx.BOTH )
-		_gbsizer_review_unres.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		self._panel_review_unresp = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		_bsizer_review_unresp = wx.BoxSizer( wx.VERTICAL )
 		
-		self.m_staticText131 = wx.StaticText( self._panel_random_unresponsive, wx.ID_ANY, _(u"Documents to be Reviewed\nDouble click on a file to open it"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_sbsizer_review_unrep = wx.StaticBoxSizer( wx.StaticBox( self._panel_review_unresp, wx.ID_ANY, _(u"Sample of Irrelevant Documents") ), wx.VERTICAL )
+		
+		self.m_staticText49 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"Click Next if you pass the confidence test.\n"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText49.Wrap( -1 )
+		self.m_staticText49.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		_sbsizer_review_unrep.Add( self.m_staticText49, 0, wx.ALL, 5 )
+		
+		_gbsizer_review_unresp = wx.GridBagSizer( 0, 0 )
+		_gbsizer_review_unresp.SetFlexibleDirection( wx.BOTH )
+		_gbsizer_review_unresp.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self.m_staticText131 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"Documents to be Reviewed*"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText131.Wrap( -1 )
-		self.m_staticText131.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		self.m_staticText131.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
-		_gbsizer_review_unres.Add( self.m_staticText131, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_review_unresp.Add( self.m_staticText131, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_clear_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Clear Tags"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_review_unres.Add( self._btn_clear_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_clear_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Clear All Tags"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_clear_unres.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
 		
-		self._panel_review_unres = wx.Panel( self._panel_random_unresponsive, wx.ID_ANY, wx.DefaultPosition, wx.Size( 400,250 ), wx.TAB_TRAVERSAL )
-		_gbsizer_review_unres.Add( self._panel_review_unres, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
+		_gbsizer_review_unresp.Add( self._btn_clear_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_RIGHT|wx.ALIGN_TOP, 0 )
 		
-		self._tc_preview_tags_unres = wx.TextCtrl( self._panel_random_unresponsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 400,250 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
-		_gbsizer_review_unres.Add( self._tc_preview_tags_unres, wx.GBPosition( 1, 3 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
+		self._panel_review_unres = wx.Panel( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.Size( 410,240 ), wx.TAB_TRAVERSAL )
+		_gbsizer_review_unresp.Add( self._panel_review_unres, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_staticText141 = wx.StaticText( self._panel_random_unresponsive, wx.ID_ANY, _(u"File Preview"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._tc_preview_tags_unres = wx.TextCtrl( self._panel_review_unresp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 450,250 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
+		_gbsizer_review_unresp.Add( self._tc_preview_tags_unres, wx.GBPosition( 1, 3 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
+		
+		self.m_staticText141 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText141.Wrap( -1 )
-		_gbsizer_review_unres.Add( self.m_staticText141, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self.m_staticText141.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
-		self.m_staticline61 = wx.StaticLine( self._panel_random_unresponsive, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		_gbsizer_review_unres.Add( self.m_staticline61, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
+		_gbsizer_review_unresp.Add( self.m_staticText141, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticline61 = wx.StaticLine( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		_gbsizer_review_unresp.Add( self.m_staticline61, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
 		
 		gbSizer111 = wx.GridBagSizer( 0, 0 )
 		gbSizer111.SetFlexibleDirection( wx.BOTH )
 		gbSizer111.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_back_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_back_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer111.Add( self._btn_back_unres, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_next_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_next_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer111.Add( self._btn_next_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
-		_gbsizer_review_unres.Add( gbSizer111, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		_gbsizer_review_unresp.Add( gbSizer111, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
 		
-		gbSizer121 = wx.GridBagSizer( 0, 0 )
-		gbSizer121.SetFlexibleDirection( wx.BOTH )
-		gbSizer121.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self.m_staticText151 = wx.StaticText( self._panel_random_unresponsive, wx.ID_ANY, _(u"Select a tag"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText151.Wrap( -1 )
-		gbSizer121.Add( self.m_staticText151, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		_cbx_report_types_unresChoices = [ _(u"Responsive"), _(u"Privileged"), _(u"All") ]
-		self._cbx_report_types_unres = wx.ComboBox( self._panel_random_unresponsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_report_types_unresChoices, wx.CB_READONLY )
-		self._cbx_report_types_unres.SetSelection( 2 )
-		gbSizer121.Add( self._cbx_report_types_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_gen_report_unres = wx.Button( self._panel_random_unresponsive, wx.ID_ANY, _(u"Generate Report"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer121.Add( self._btn_gen_report_unres, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		
-		_gbsizer_review_unres.Add( gbSizer121, wx.GBPosition( 5, 5 ), wx.GBSpan( 1, 2 ), wx.EXPAND, 5 )
-		
-		self._panel_doc_tag_unres = wx.Panel( self._panel_random_unresponsive, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self._panel_doc_tag_unres = wx.Panel( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer12 = wx.BoxSizer( wx.VERTICAL )
 		
-		_rbx_response_unresChoices = [ _(u"Yes"), _(u"No"), _(u"Unknown") ]
-		self._rbx_response_unres = wx.RadioBox( self._panel_doc_tag_unres, wx.ID_ANY, _(u"Responsive"), wx.DefaultPosition, wx.DefaultSize, _rbx_response_unresChoices, 1, wx.RA_SPECIFY_COLS )
-		self._rbx_response_unres.SetSelection( 2 )
-		bSizer12.Add( self._rbx_response_unres, 0, wx.ALL, 5 )
-		
-		_rbx_privilage_unresChoices = [ _(u"Yes"), _(u"No"), _(u"Unknown") ]
-		self._rbx_privilage_unres = wx.RadioBox( self._panel_doc_tag_unres, wx.ID_ANY, _(u"Privilage"), wx.DefaultPosition, wx.DefaultSize, _rbx_privilage_unresChoices, 1, wx.RA_SPECIFY_COLS )
-		self._rbx_privilage_unres.SetSelection( 0 )
-		bSizer12.Add( self._rbx_privilage_unres, 0, wx.ALL, 5 )
+		_rbx_response_unresChoices = [ _(u"Yes"), _(u"No"), _(u"Uncertain"), _(u"Not Reviewed") ]
+		self._rbx_response_unres = wx.RadioBox( self._panel_doc_tag_unres, wx.ID_ANY, _(u"Irrelevant?"), wx.DefaultPosition, wx.DefaultSize, _rbx_response_unresChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_response_unres.SetSelection( 3 )
+		bSizer12.Add( self._rbx_response_unres, 0, wx.ALL, 0 )
 		
 		
 		self._panel_doc_tag_unres.SetSizer( bSizer12 )
 		self._panel_doc_tag_unres.Layout()
 		bSizer12.Fit( self._panel_doc_tag_unres )
-		_gbsizer_review_unres.Add( self._panel_doc_tag_unres, wx.GBPosition( 1, 6 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
+		_gbsizer_review_unresp.Add( self._panel_doc_tag_unres, wx.GBPosition( 1, 6 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self._st_revew_doc_help = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"* Double click on a document to open it in the default system viewer."), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_revew_doc_help.Wrap( -1 )
+		self._st_revew_doc_help.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_revew_doc_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		_gbsizer_review_unresp.Add( self._st_revew_doc_help, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
+		
+		self._st_revew_pane_help = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"* Text files only"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_revew_pane_help.Wrap( -1 )
+		self._st_revew_pane_help.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_revew_pane_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		_gbsizer_review_unresp.Add( self._st_revew_pane_help, wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
-		self._panel_random_unresponsive.SetSizer( _gbsizer_review_unres )
-		self._panel_random_unresponsive.Layout()
-		_gbsizer_review_unres.Fit( self._panel_random_unresponsive )
-		self._notebook.AddPage( self._panel_random_unresponsive, _(u"Sample Unresponsive"), False )
-		self._panel_random_responsive = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		_sbsizer_review_unrep.Add( _gbsizer_review_unresp, 1, wx.EXPAND, 5 )
+		
+		
+		_bsizer_review_unresp.Add( _sbsizer_review_unrep, 1, wx.ALL|wx.EXPAND, 10 )
+		
+		
+		self._panel_review_unresp.SetSizer( _bsizer_review_unresp )
+		self._panel_review_unresp.Layout()
+		_bsizer_review_unresp.Fit( self._panel_review_unresp )
+		self._notebook.AddPage( self._panel_review_unresp, _(u"Sample Irrelevant"), False )
+		self._panel_review_resp = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		_bsizer_review_resp = wx.BoxSizer( wx.VERTICAL )
+		
+		_sbsizer_review_resp = wx.StaticBoxSizer( wx.StaticBox( self._panel_review_resp, wx.ID_ANY, _(u"Sample of Relevant Documents") ), wx.VERTICAL )
+		
+		self.m_staticText491 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"Click Next if you pass the confidence test.\n"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText491.Wrap( -1 )
+		self.m_staticText491.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		_sbsizer_review_resp.Add( self.m_staticText491, 0, wx.ALL, 5 )
+		
 		_gbsizer_review_res = wx.GridBagSizer( 0, 0 )
 		_gbsizer_review_res.SetFlexibleDirection( wx.BOTH )
 		_gbsizer_review_res.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self.m_staticText13 = wx.StaticText( self._panel_random_responsive, wx.ID_ANY, _(u"Documents to be Reviewed\nDouble click on a file to open it"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText13 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"Documents to be Reviewed*"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText13.Wrap( -1 )
-		self.m_staticText13.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		self.m_staticText13.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
-		_gbsizer_review_res.Add( self.m_staticText13, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_review_res.Add( self.m_staticText13, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALL, 5 )
 		
-		self._btn_clear_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Clear Tags"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_review_res.Add( self._btn_clear_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_clear_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Clear All Tags"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_review_res.Add( self._btn_clear_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_RIGHT|wx.ALL, 0 )
 		
-		self._panel_review_res = wx.Panel( self._panel_random_responsive, wx.ID_ANY, wx.DefaultPosition, wx.Size( 400,250 ), wx.TAB_TRAVERSAL )
+		self._panel_review_res = wx.Panel( self._panel_review_resp, wx.ID_ANY, wx.DefaultPosition, wx.Size( 410,240 ), wx.TAB_TRAVERSAL )
 		_gbsizer_review_res.Add( self._panel_review_res, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self._tc_preview_tags = wx.TextCtrl( self._panel_random_responsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 400,250 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
+		self._tc_preview_tags = wx.TextCtrl( self._panel_review_resp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 450,250 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
 		_gbsizer_review_res.Add( self._tc_preview_tags, wx.GBPosition( 1, 3 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
 		
-		self.m_staticText14 = wx.StaticText( self._panel_random_responsive, wx.ID_ANY, _(u"File Preview"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText14 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText14.Wrap( -1 )
-		_gbsizer_review_res.Add( self.m_staticText14, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self.m_staticText14.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
-		self._panel_doc_tag_res = wx.Panel( self._panel_random_responsive, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		_gbsizer_review_res.Add( self.m_staticText14, wx.GBPosition( 0, 3 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALL, 5 )
+		
+		self._panel_doc_tag_res = wx.Panel( self._panel_review_resp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer11 = wx.BoxSizer( wx.VERTICAL )
 		
-		_rbx_response_resChoices = [ _(u"Yes"), _(u"No"), _(u"Unknown") ]
-		self._rbx_response_res = wx.RadioBox( self._panel_doc_tag_res, wx.ID_ANY, _(u"Responsive"), wx.DefaultPosition, wx.DefaultSize, _rbx_response_resChoices, 1, wx.RA_SPECIFY_COLS )
-		self._rbx_response_res.SetSelection( 2 )
-		bSizer11.Add( self._rbx_response_res, 0, wx.ALL, 5 )
-		
-		_rbx_privilage_resChoices = [ _(u"Yes"), _(u"No"), _(u"Unknown") ]
-		self._rbx_privilage_res = wx.RadioBox( self._panel_doc_tag_res, wx.ID_ANY, _(u"Privilage"), wx.DefaultPosition, wx.DefaultSize, _rbx_privilage_resChoices, 1, wx.RA_SPECIFY_COLS )
-		self._rbx_privilage_res.SetSelection( 2 )
-		bSizer11.Add( self._rbx_privilage_res, 0, wx.ALL, 5 )
+		_rbx_response_resChoices = [ _(u"Yes"), _(u"No"), _(u"Uncertain"), _(u"Not Reviewed") ]
+		self._rbx_response_res = wx.RadioBox( self._panel_doc_tag_res, wx.ID_ANY, _(u"Relevant?"), wx.DefaultPosition, wx.DefaultSize, _rbx_response_resChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_response_res.SetSelection( 3 )
+		bSizer11.Add( self._rbx_response_res, 0, wx.ALL, 0 )
 		
 		
 		self._panel_doc_tag_res.SetSizer( bSizer11 )
 		self._panel_doc_tag_res.Layout()
 		bSizer11.Fit( self._panel_doc_tag_res )
-		_gbsizer_review_res.Add( self._panel_doc_tag_res, wx.GBPosition( 1, 7 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
+		_gbsizer_review_res.Add( self._panel_doc_tag_res, wx.GBPosition( 1, 6 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_staticline6 = wx.StaticLine( self._panel_random_responsive, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		self.m_staticline6 = wx.StaticLine( self._panel_review_resp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		_gbsizer_review_res.Add( self.m_staticline6, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
 		
 		gbSizer11 = wx.GridBagSizer( 0, 0 )
 		gbSizer11.SetFlexibleDirection( wx.BOTH )
 		gbSizer11.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_back_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_back_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer11.Add( self._btn_back_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_next_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_next_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer11.Add( self._btn_next_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		_gbsizer_review_res.Add( gbSizer11, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
 		
-		gbSizer12 = wx.GridBagSizer( 0, 0 )
-		gbSizer12.SetFlexibleDirection( wx.BOTH )
-		gbSizer12.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		self._st_resp_revew_doc_help = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"* Double click on a document to open it in the default system viewer."), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_resp_revew_doc_help.Wrap( -1 )
+		self._st_resp_revew_doc_help.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_resp_revew_doc_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		self.m_staticText15 = wx.StaticText( self._panel_random_responsive, wx.ID_ANY, _(u"Select a tag"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText15.Wrap( -1 )
-		gbSizer12.Add( self.m_staticText15, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_review_res.Add( self._st_resp_revew_doc_help, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
-		_cbx_report_types_resChoices = [ _(u"Responsive"), _(u"Privileged"), _(u"All") ]
-		self._cbx_report_types_res = wx.ComboBox( self._panel_random_responsive, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_report_types_resChoices, wx.CB_READONLY )
-		self._cbx_report_types_res.SetSelection( 2 )
-		gbSizer12.Add( self._cbx_report_types_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._st_resp_revew_pane_help = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"* Text files only"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_resp_revew_pane_help.Wrap( -1 )
+		self._st_resp_revew_pane_help.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._st_resp_revew_pane_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		self._btn_gen_report_res = wx.Button( self._panel_random_responsive, wx.ID_ANY, _(u"Generate Report"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer12.Add( self._btn_gen_report_res, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_review_res.Add( self._st_resp_revew_pane_help, wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
-		_gbsizer_review_res.Add( gbSizer12, wx.GBPosition( 5, 5 ), wx.GBSpan( 1, 2 ), wx.EXPAND, 5 )
+		_sbsizer_review_resp.Add( _gbsizer_review_res, 1, wx.EXPAND, 5 )
 		
 		
-		self._panel_random_responsive.SetSizer( _gbsizer_review_res )
-		self._panel_random_responsive.Layout()
-		_gbsizer_review_res.Fit( self._panel_random_responsive )
-		self._notebook.AddPage( self._panel_random_responsive, _(u"Sample Responsive"), False )
-		self._panel_accuracy = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self._panel_accuracy, wx.ID_ANY, _(u"Overall Report") ), wx.VERTICAL )
+		_bsizer_review_resp.Add( _sbsizer_review_resp, 1, wx.ALL|wx.EXPAND, 10 )
+		
+		
+		self._panel_review_resp.SetSizer( _bsizer_review_resp )
+		self._panel_review_resp.Layout()
+		_bsizer_review_resp.Fit( self._panel_review_resp )
+		self._notebook.AddPage( self._panel_review_resp, _(u"Sample Relevant"), False )
+		self._panel_search_report = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		_bsizer_comprehensive_report = wx.BoxSizer( wx.VERTICAL )
+		
+		_sbsizer_comprehensive_report = wx.StaticBoxSizer( wx.StaticBox( self._panel_search_report, wx.ID_ANY, _(u"Comprehensive Report") ), wx.VERTICAL )
 		
 		gbSizer211 = wx.GridBagSizer( 0, 0 )
 		gbSizer211.SetFlexibleDirection( wx.BOTH )
 		gbSizer211.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._grid_query_accuracy = wx.grid.Grid( self._panel_accuracy, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,300 ), 0 )
+		self._grid_query_accuracy = wx.grid.Grid( self._panel_search_report, wx.ID_ANY, wx.DefaultPosition, wx.Size( 520,200 ), wx.NO_BORDER )
 		
 		# Grid
 		self._grid_query_accuracy.CreateGrid( 0, 2 )
@@ -630,13 +706,13 @@ class SMARTeRGUI ( wx.Frame ):
 		self._grid_query_accuracy.SetMargins( 0, 0 )
 		
 		# Columns
-		self._grid_query_accuracy.SetColSize( 0, 342 )
-		self._grid_query_accuracy.SetColSize( 1, 78 )
+		self._grid_query_accuracy.SetColSize( 0, 350 )
+		self._grid_query_accuracy.SetColSize( 1, 85 )
 		self._grid_query_accuracy.EnableDragColMove( False )
 		self._grid_query_accuracy.EnableDragColSize( True )
 		self._grid_query_accuracy.SetColLabelSize( 30 )
-		self._grid_query_accuracy.SetColLabelValue( 0, _(u"Query") )
-		self._grid_query_accuracy.SetColLabelValue( 1, _(u"Accuracy") )
+		self._grid_query_accuracy.SetColLabelValue( 0, _(u"Boolean Query") )
+		self._grid_query_accuracy.SetColLabelValue( 1, _(u"Accuracy*") )
 		self._grid_query_accuracy.SetColLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
 		
 		# Rows
@@ -648,29 +724,106 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		# Cell Defaults
 		self._grid_query_accuracy.SetDefaultCellAlignment( wx.ALIGN_LEFT, wx.ALIGN_TOP )
-		gbSizer211.Add( self._grid_query_accuracy, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer211.Add( self._grid_query_accuracy, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
 		gbSizer112 = wx.GridBagSizer( 0, 0 )
 		gbSizer112.SetFlexibleDirection( wx.BOTH )
 		gbSizer112.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_back_sample_res = wx.Button( self._panel_accuracy, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_exit = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer112.Add( self._btn_exit, wx.GBPosition( 0, 4 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_report_restart_search = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Restart Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer112.Add( self._btn_report_restart_search, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_back_sample_res = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer112.Add( self._btn_back_sample_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_exit = wx.Button( self._panel_accuracy, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer112.Add( self._btn_exit, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_export_files = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Export Files"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer112.Add( self._btn_export_files, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
-		gbSizer211.Add( gbSizer112, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		gbSizer211.Add( gbSizer112, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
+		
+		self._st_search_history = wx.StaticText( self._panel_search_report, wx.ID_ANY, _(u"Seach History"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_search_history.Wrap( -1 )
+		self._st_search_history.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		
+		gbSizer211.Add( self._st_search_history, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALL, 5 )
+		
+		self._search_history_help = wx.StaticText( self._panel_search_report, wx.ID_ANY, _(u"* Accuracy is computed based on the labeled seed documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._search_history_help.Wrap( -1 )
+		self._search_history_help.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
+		self._search_history_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		
+		gbSizer211.Add( self._search_history_help, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticline9 = wx.StaticLine( self._panel_search_report, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbSizer211.Add( self.m_staticline9, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 4 ), wx.EXPAND |wx.ALL, 5 )
+		
+		self._st_generate_reports = wx.StaticText( self._panel_search_report, wx.ID_ANY, _(u"Generate Custom Reports"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_generate_reports.Wrap( -1 )
+		self._st_generate_reports.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		
+		gbSizer211.Add( self._st_generate_reports, wx.GBPosition( 6, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		gbSizer12 = wx.GridBagSizer( 0, 0 )
+		gbSizer12.SetFlexibleDirection( wx.BOTH )
+		gbSizer12.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self.m_staticText15 = wx.StaticText( self._panel_search_report, wx.ID_ANY, _(u"Select a tag"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText15.Wrap( -1 )
+		gbSizer12.Add( self.m_staticText15, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_cbx_report_types_resChoices = [ _(u"Responsive"), _(u"All") ]
+		self._cbx_report_types_res = wx.ComboBox( self._panel_search_report, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_report_types_resChoices, wx.CB_READONLY )
+		self._cbx_report_types_res.SetSelection( 1 )
+		gbSizer12.Add( self._cbx_report_types_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_gen_report_res = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Generate Report"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer12.Add( self._btn_gen_report_res, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
-		sbSizer9.Add( gbSizer211, 1, wx.EXPAND, 5 )
+		gbSizer211.Add( gbSizer12, wx.GBPosition( 7, 1 ), wx.GBSpan( 1, 3 ), wx.EXPAND, 5 )
+		
+		self._st_resp = wx.StaticText( self._panel_search_report, wx.ID_ANY, _(u"Sample of Responsive Documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_resp.Wrap( -1 )
+		gbSizer211.Add( self._st_resp, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		gbSizer121 = wx.GridBagSizer( 0, 0 )
+		gbSizer121.SetFlexibleDirection( wx.BOTH )
+		gbSizer121.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		
+		self.m_staticText151 = wx.StaticText( self._panel_search_report, wx.ID_ANY, _(u"Select a tag"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText151.Wrap( -1 )
+		gbSizer121.Add( self.m_staticText151, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_cbx_report_types_unresChoices = [ _(u"Responsive"), _(u"All") ]
+		self._cbx_report_types_unres = wx.ComboBox( self._panel_search_report, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_report_types_unresChoices, wx.CB_READONLY )
+		self._cbx_report_types_unres.SetSelection( 1 )
+		gbSizer121.Add( self._cbx_report_types_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_gen_report_unres = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Generate Report"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer121.Add( self._btn_gen_report_unres, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
-		self._panel_accuracy.SetSizer( sbSizer9 )
-		self._panel_accuracy.Layout()
-		sbSizer9.Fit( self._panel_accuracy )
-		self._notebook.AddPage( self._panel_accuracy, _(u"Report"), False )
+		gbSizer211.Add( gbSizer121, wx.GBPosition( 8, 1 ), wx.GBSpan( 1, 3 ), wx.EXPAND, 5 )
+		
+		self._st_resp1 = wx.StaticText( self._panel_search_report, wx.ID_ANY, _(u"Sample of Unresponsive Documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_resp1.Wrap( -1 )
+		gbSizer211.Add( self._st_resp1, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		
+		_sbsizer_comprehensive_report.Add( gbSizer211, 1, wx.EXPAND, 5 )
+		
+		
+		_bsizer_comprehensive_report.Add( _sbsizer_comprehensive_report, 1, wx.ALL|wx.EXPAND, 10 )
+		
+		
+		self._panel_search_report.SetSizer( _bsizer_comprehensive_report )
+		self._panel_search_report.Layout()
+		_bsizer_comprehensive_report.Fit( self._panel_search_report )
+		self._notebook.AddPage( self._panel_search_report, _(u"Search Report"), True )
 		
 		_bsizer_main.Add( self._notebook, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -685,16 +838,16 @@ class SMARTeRGUI ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self._on_menu_sel_about, id = self._mitem_about.GetId() )
 		self.Bind( wx.EVT_MENU, self._on_menu_sel_help, id = self._mitem_help.GetId() )
 		self._notebook.Bind( wx.EVT_NOTEBOOK_PAGE_CHANGED, self._on_notebook_page_changed )
-		self._btn_clear_project_details.Bind( wx.EVT_BUTTON, self._on_click_clear_project_details )
-		self._btn_index_data.Bind( wx.EVT_BUTTON, self._on_click_index_data )
-		self._cbx_project_title.Bind( wx.EVT_COMBOBOX, self._on_set_existing_project )
-		self._btn_new_project.Bind( wx.EVT_BUTTON, self._on_click_new_project )
-		self._list_query_history.Bind( wx.EVT_LISTBOX, self._on_click_history_select )
-		self._btn_add_to_query1.Bind( wx.EVT_BUTTON, self._on_click_add_to_query1 )
-		self._btn_run_query1.Bind( wx.EVT_BUTTON, self._on_click_run_query )
-		self._rbx_responsive.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated )
-		self._btn_recalculate_results.Bind( wx.EVT_BUTTON, self._on_click_recalculate )
-		self._btn_feedback_back.Bind( wx.EVT_BUTTON, self._on_click_back_query )
+		self._btn_index_go_to_search.Bind( wx.EVT_BUTTON, self._on_click_index_go_to_search )
+		self._cbx_project_title.Bind( wx.EVT_COMBOBOX, self._on_set_index_existing_project )
+		self._btn_index_new_project.Bind( wx.EVT_BUTTON, self._on_click_index_new_project )
+		self._tc_query_terms.Bind( wx.EVT_TEXT, self._on_text_search_query_terms )
+		self._list_query_history.Bind( wx.EVT_LISTBOX, self._on_click_search_query_history )
+		self._btn_search_add_to_query.Bind( wx.EVT_BUTTON, self._on_click_search_add_to_query )
+		self._btn_query_start_search.Bind( wx.EVT_BUTTON, self._on_click_search_start )
+		self._rbx_doc_feedback.Bind( wx.EVT_RADIOBOX, self._on_rbx_doc_feedback_updated )
+		self._btn_feedback_smart_ranking.Bind( wx.EVT_BUTTON, self._on_click_feedback_smart_ranking )
+		self._btn_feedback_back.Bind( wx.EVT_BUTTON, self._on_click_feedback_back )
 		self._rbx_feedack_res.Bind( wx.EVT_RADIOBOX, self._on_rbx_result_responsive_update )
 		self._btn_next_res_res.Bind( wx.EVT_BUTTON, self._on_click_next_res )
 		self._btn_prev_res_res.Bind( wx.EVT_BUTTON, self._on_click_previous_res )
@@ -710,20 +863,20 @@ class SMARTeRGUI ( wx.Frame ):
 		self._tc_confidence_interval_unres.Bind( wx.EVT_KILL_FOCUS, self._on_precision_changed_unres )
 		self._btn_conf_back.Bind( wx.EVT_BUTTON, self._on_click_cl_goback )
 		self._btn_conf_next.Bind( wx.EVT_BUTTON, self._on_click_cl_next )
-		self._btn_clear_unres.Bind( wx.EVT_BUTTON, self._on_click_clear_all_doc_tags_unres )
-		self._btn_back_unres.Bind( wx.EVT_BUTTON, self._btn_sample_back_unres )
+		self._btn_clear_unres.Bind( wx.EVT_BUTTON, self._on_click_irrelevant_clear_tags )
+		self._btn_back_unres.Bind( wx.EVT_BUTTON, self._on_click_irrelevant_back )
 		self._btn_next_unres.Bind( wx.EVT_BUTTON, self._on_click_sample_next )
-		self._btn_gen_report_unres.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report_unres )
-		self._rbx_response_unres.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated_unres )
-		self._rbx_privilage_unres.Bind( wx.EVT_RADIOBOX, self._on_rbx_privileged_updated_unres )
-		self._btn_clear_res.Bind( wx.EVT_BUTTON, self._on_click_clear_all_doc_tags_res )
-		self._rbx_response_res.Bind( wx.EVT_RADIOBOX, self._on_rbx_responsive_updated_res )
-		self._rbx_privilage_res.Bind( wx.EVT_RADIOBOX, self._on_rbx_privileged_updated_res )
-		self._btn_back_res.Bind( wx.EVT_BUTTON, self._btn_sample_back_unres )
+		self._rbx_response_unres.Bind( wx.EVT_RADIOBOX, self._on_rbx_irrelevant_feeback )
+		self._btn_clear_res.Bind( wx.EVT_BUTTON, self._on_click_relevant_clear_tags )
+		self._rbx_response_res.Bind( wx.EVT_RADIOBOX, self._on_rbx_relevant_feeback )
+		self._btn_back_res.Bind( wx.EVT_BUTTON, self._on_click_relevant_back )
 		self._btn_next_res.Bind( wx.EVT_BUTTON, self._on_click_show_report )
-		self._btn_gen_report_res.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report_res )
+		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_report_exit )
+		self._btn_report_restart_search.Bind( wx.EVT_BUTTON, self._btn_click_restart_search )
 		self._btn_back_sample_res.Bind( wx.EVT_BUTTON, self._on_click_report_back_sample )
-		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_exit )
+		self._btn_export_files.Bind( wx.EVT_BUTTON, self._on_click_export_files )
+		self._btn_gen_report_res.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report_res )
+		self._btn_gen_report_unres.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report_unres )
 	
 	def __del__( self ):
 		pass
@@ -742,34 +895,34 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_notebook_page_changed( self, event ):
 		event.Skip()
 	
-	def _on_click_clear_project_details( self, event ):
+	def _on_click_index_go_to_search( self, event ):
 		event.Skip()
 	
-	def _on_click_index_data( self, event ):
+	def _on_set_index_existing_project( self, event ):
 		event.Skip()
 	
-	def _on_set_existing_project( self, event ):
+	def _on_click_index_new_project( self, event ):
 		event.Skip()
 	
-	def _on_click_new_project( self, event ):
+	def _on_text_search_query_terms( self, event ):
 		event.Skip()
 	
-	def _on_click_history_select( self, event ):
+	def _on_click_search_query_history( self, event ):
 		event.Skip()
 	
-	def _on_click_add_to_query1( self, event ):
+	def _on_click_search_add_to_query( self, event ):
 		event.Skip()
 	
-	def _on_click_run_query( self, event ):
+	def _on_click_search_start( self, event ):
 		event.Skip()
 	
-	def _on_rbx_responsive_updated( self, event ):
+	def _on_rbx_doc_feedback_updated( self, event ):
 		event.Skip()
 	
-	def _on_click_recalculate( self, event ):
+	def _on_click_feedback_smart_ranking( self, event ):
 		event.Skip()
 	
-	def _on_click_back_query( self, event ):
+	def _on_click_feedback_back( self, event ):
 		event.Skip()
 	
 	def _on_rbx_result_responsive_update( self, event ):
@@ -817,44 +970,46 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_click_cl_next( self, event ):
 		event.Skip()
 	
-	def _on_click_clear_all_doc_tags_unres( self, event ):
+	def _on_click_irrelevant_clear_tags( self, event ):
 		event.Skip()
 	
-	def _btn_sample_back_unres( self, event ):
+	def _on_click_irrelevant_back( self, event ):
 		event.Skip()
 	
 	def _on_click_sample_next( self, event ):
 		event.Skip()
 	
-	def _on_click_review_gen_report_unres( self, event ):
+	def _on_rbx_irrelevant_feeback( self, event ):
 		event.Skip()
 	
-	def _on_rbx_responsive_updated_unres( self, event ):
+	def _on_click_relevant_clear_tags( self, event ):
 		event.Skip()
 	
-	def _on_rbx_privileged_updated_unres( self, event ):
+	def _on_rbx_relevant_feeback( self, event ):
 		event.Skip()
 	
-	def _on_click_clear_all_doc_tags_res( self, event ):
+	def _on_click_relevant_back( self, event ):
 		event.Skip()
-	
-	def _on_rbx_responsive_updated_res( self, event ):
-		event.Skip()
-	
-	def _on_rbx_privileged_updated_res( self, event ):
-		event.Skip()
-	
 	
 	def _on_click_show_report( self, event ):
 		event.Skip()
 	
-	def _on_click_review_gen_report_res( self, event ):
+	def _on_click_report_exit( self, event ):
+		event.Skip()
+	
+	def _btn_click_restart_search( self, event ):
 		event.Skip()
 	
 	def _on_click_report_back_sample( self, event ):
 		event.Skip()
 	
-	def _on_click_exit( self, event ):
+	def _on_click_export_files( self, event ):
+		event.Skip()
+	
+	def _on_click_review_gen_report_res( self, event ):
+		event.Skip()
+	
+	def _on_click_review_gen_report_unres( self, event ):
 		event.Skip()
 	
 

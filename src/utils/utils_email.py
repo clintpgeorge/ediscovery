@@ -17,6 +17,7 @@ import email
 from nltk.tokenize import PunktWordTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem import SnowballStemmer
+from calendar import main
 
 '''
 Global variables 
@@ -76,8 +77,10 @@ def punkt_word_tokenizer(text):
         a string to tokenized 
     
     '''
-
-    text = ' '.join(text.lower().split()) # removes newline, tab, and white space        
+    try: 
+        text = ' '.join(text.lower().split()) # removes newline, tab, and white space
+    except Exception:
+        pass        
     tokens = tokenizer.tokenize(text)
     # tokens = [cleanup(w) for w in tokens]
     # tokens = [w for w in tokens if w not in REMOVE_LIST]
@@ -199,10 +202,13 @@ def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem =
         bcc = xstr(msg['bcc']) # Subodh - Rahul - Get BCC attribute from the email 
         subject = xstr(msg['subject'])
         date = xstr(msg['date'])
-        body_text = msg.get_payload()
+        body_text = str(msg.get_payload())
+        print file_path
+    
         
         if tokenize:
-            tokens = punkt_word_tokenizer(body_text)
+            
+            tokens = punkt_word_tokenizer(str(msg))
             if lemmatize: tokens = lemmatize_tokens(tokens)
             if stem: tokens = stem_tokens(tokens)
             
@@ -215,7 +221,10 @@ def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem =
                     except UnicodeDecodeError:
                         pass
             else:
-                body_text = ' '.join(tokens)
+                try:
+                    body_text = ' '.join(tokens)
+                except Exception:
+                    pass
         else:
             # If message is multi-part, we only want the text version of 
             # the body, this walks the message and gets the body.
@@ -239,4 +248,5 @@ def parse_plain_text_email(file_path, tokenize = True, lemmatize = False, stem =
     
     return ret
     
-
+if __name__ == '__main__':
+    parse_plain_text_email("C:\\Users\\Sail\\SMARTeR\\23456\\files\\albert_meyers_000_1_1\\Personal folders\\meyers-a\\ExMerge - Meyers, Albert\\Contacts\\2")

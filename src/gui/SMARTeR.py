@@ -9,6 +9,9 @@ import shelve
 import os 
 import mimetypes
 import wx.grid
+import wx.animate
+import numpy as np 
+import shutil
 
 
 from lucene import BooleanClause
@@ -17,9 +20,7 @@ from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin, \
     ColumnSorterMixin
 from wx import grid
 from gui.SMARTeRGUI import SMARTeRGUI, RatingControl, PreferencesDialog, NewProject
-from lucenesearch.lucene_index_dir import search_lucene_index, MetadataType, get_indexed_file_details
-from lucenesearch.lucene_index_dir import boolean_search_lucene_index, get_indexed_file_details
-from tm.process_query import load_lda_variables, load_dictionary, search_lda_model, search_lsi_model, load_lsi_variables, get_dominant_query_topics, print_lda_topics_on_entropy
+from lucenesearch.lucene_index_dir import boolean_search_lucene_index, MetadataType, get_indexed_file_details
 
 import re
 import webbrowser
@@ -29,17 +30,14 @@ from const import NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS, \
     COLUMN_NUMBER_OF_RATING
 from collections import OrderedDict
 from utils.utils_file import read_config, load_file_paths_index, nexists
-from tm.process_query import load_lda_variables, load_dictionary, \
-    search_lda_model, load_lsi_variables, get_lda_query_td, \
-    compute_topic_similarities
-from const import SEARCH_RESULTS_LIMIT
-from index_data import index_data#, project_name
+from tm.process_query import load_lda_variables, load_dictionary, get_dominant_query_topics
+from index_data import index_data 
 from decimal import Decimal
 from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAULT_CONFIDENCE_INTERVAL, DEFAULT_CONFIDENCE_LEVEL
-from gui.TaggingControlGUI import TaggingControlGUI
 from gui.TaggingControlSmarter import TaggingControlSmarter
 from gui.TaggingControlFeedback import TaggingControlFeedback
-from matplotlib.backend_bases import Event
+import shutil
+from fileinput import filename
 
 
 '''
@@ -58,8 +56,8 @@ def row_status(resp, priv):
         return 'R'
 
 resp_colors = {}
-resp_colors['Yes'] = '#2EFE9A'
-resp_colors['No'] = '#58ACFA'
+resp_colors['Yes'] = 'blue'
+resp_colors['No'] = 'orange'
 resp_colors['NA'] = '#D8D8D8'
 
 priv_colors = {}
@@ -74,7 +72,7 @@ row_colors['NA'] = '#D8D8D8'
 ###########################################################################
 # # This global dictionary is used to keep track of the query-results 
 dictionary_of_rows = OrderedDict()
-
+APP_DIR=os.getcwd()
 # Global variables to keep track of the chunk of results displayed
 present_chunk = 0
 
@@ -90,7 +88,7 @@ REPORT_COMPLETE = 'complete_report.html'
 REPORT_RESPONSIVE = 'responsiveness_docs_report.html' 
 REPORT_PRIVILEGED = 'privileged_docs_report.html'
 
-
+CONFIGURATION_FILE_EXT = '.cfg'
 
 
 
@@ -372,7 +370,7 @@ class CreateProject (NewProject):
         self.Show(True)
 '''
         
-class NewProject1 ( wx.Dialog ):
+class CreateProjectPopup ( wx.Dialog ):
     smarter=None
     def __init__( self, parent ):
         wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = (u"Create New Project"), pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
@@ -396,7 +394,7 @@ class NewProject1 ( wx.Dialog ):
         self.m_staticText6.Wrap( -1 )
         gbsizer_project.Add( self.m_staticText6, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
         
-        self._data_dir_picker = wx.DirPickerCtrl( self, wx.ID_ANY, wx.EmptyString, (u"Select a folder"), wx.DefaultPosition, wx.Size( -1,-1 ), wx.DIRP_DEFAULT_STYLE )
+        self._data_dir_picker = wx.DirPickerCtrl( self, wx.ID_ANY, wx.EmptyString, (u"Select the Input Data Folder"), wx.DefaultPosition, wx.Size( -1,-1 ), wx.DIRP_DEFAULT_STYLE )
         gbsizer_project.Add( self._data_dir_picker, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
         
         self.m_staticline3 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
@@ -428,9 +426,8 @@ class NewProject1 ( wx.Dialog ):
         # Connect Events
         self._btn_clear_project_details.Bind( wx.EVT_BUTTON, self._on_click_cancel )
         self._btn_index_data.Bind( wx.EVT_BUTTON, self._on_click_index_data )
-        self._tc_project_name.Bind( wx.EVT_KILL_FOCUS, self._on_focus_kill_chk_dup )
         
-        self.smarter=parent
+        self.smarter = parent
     
     def __del__( self ):
         pass
@@ -438,30 +435,117 @@ class NewProject1 ( wx.Dialog ):
     
     # Virtual event handlers, overide them in your derived class
     def _on_click_cancel( self, event ):
+        self.smarter.SetStatusText('Project creation is cancelled. Please select a project from the project drop down.')
         self.Destroy()
     
     def _on_click_index_data( self, event ):
         
-        project_name=self._tc_project_name.GetValue()
+        project_name = self._tc_project_name.GetValue().strip()
+        data_folder = self._data_dir_picker.GetPath().strip()
+        
+        if project_name == '' or not os.path.exists(data_folder):
+            self.smarter._show_error_message("Missing Project Details!", "Please enter the required project specifications.")
+            return 
         if project_name in self.smarter._cbx_project_title.GetStrings():
-            self.smarter._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
+            self.smarter._show_error_message("Duplicate Project!", "Project name already exists! Enter a different project name.")
             self._tc_project_name.SetValue("")
         else:
-            data_folder = self._data_dir_picker.GetPath()
-            project_name = ""
-            #     print project_name, data_folder, output_folder, self._num_topics, self._num_passes, self._min_token_freq, self._min_token_len
-            project_name = self._tc_project_name.GetValue()
-            index_data(data_folder, self.smarter.directory, project_name, self.smarter._cfg_dir, self.smarter._num_topics, self.smarter._num_passes, self.smarter._min_token_freq, self.smarter._min_token_len, log_to_file=True)
-            self.smarter._cbx_project_title.Append(project_name)        
-            print 'Indexing is completed.'
-            self.Destroy()
+            msg_dialog=LoadDialog(None,-1)
+            msg_dialog.Show()
+            msg_dialog.Update()
+            tmp_files=os.path.join(self.smarter._SMARTeR_dir_path,project_name,"files")
+            if os.path.exists(tmp_files)==True:
+                shutil.rmtree(tmp_files)
+            shutil.copytree(data_folder,tmp_files)
             
-    def _on_focus_kill_chk_dup( self, event ):
-        event.Skip()
-        project_name=self._tc_project_name.GetValue()
-        if project_name in self.smarter._cbx_project_title.GetStrings():
-            self.smarter._show_error_message("Duplicate Project!", "Project already exists, Enter a unique name")
-            self._tc_project_name.SetValue("")
+            for root, _ , files in os.walk(tmp_files):
+                for file_name in files:
+                    name, ext = os.path.splitext(file_name)
+                    if ext == ".pst":
+                        pstTemp=os.path.join(root,os.path.basename(name))
+                        if os.path.exists(pstTemp)==False:
+                            os.mkdir(pstTemp)
+                        
+                        shutil.copy(os.path.join(root,file_name), os.path.abspath(pstTemp))
+                        temp=os.path.basename(file_name)
+                        pstTempFile=os.path.join(pstTemp,temp)
+                        print pstTempFile
+                        try:
+                            self.convert_pst(pstTempFile, pstTemp)
+                        except Exception,e:
+                            print e
+                        print os.path.join(root,file_name)
+                        os.remove(os.path.join(root,file_name))
+            
+            print tmp_files
+            
+            index_data(tmp_files, self.smarter._SMARTeR_dir_path, 
+                       project_name, self.smarter._cfg_dir_path, 
+                       self.smarter._num_topics, self.smarter._num_passes, 
+                       self.smarter._min_token_freq, self.smarter._min_token_len, 
+                       log_to_file = True)
+            self.smarter._cbx_project_title.Append(project_name)        
+            self.smarter.SetStatusText('The project %s indexing is completed. Please select a project from the project drop down.' % project_name)
+            msg_dialog.Destroy()
+            self.Destroy()
+    
+    def convert_pst(self, pstfilename,temp):
+        '''
+        This method will be a little creative 
+        '''        
+        #ToDo....NOT SAFE
+        import subprocess
+        subprocess.check_output(['readpst', '-o', os.path.abspath(temp), '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
+
+        #print response
+        for root, _, files in os.walk(temp):
+            for file_name in files:
+                filename=os.path.join(root, file_name)
+                _, fileExtension = os.path.splitext(filename)
+                if fileExtension!="":
+                    os.remove(filename)
+            
+    
+
+            
+class LoadDialog ( wx.Dialog ):
+    
+    def __init__( self, parent,id ):
+        wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Loading File", pos = wx.DefaultPosition, size = wx.Size( 400,85 ), style = wx.DEFAULT_DIALOG_STYLE )
+        
+        self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+        self.SetFont( wx.Font( 8, 74, 93, 90, False, "Tahoma" ) )
+        
+        gbSizer = wx.GridBagSizer( 0, 0 )
+        gbSizer.SetFlexibleDirection( wx.BOTH )
+        gbSizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+        
+        gif_fname = os.path.join(APP_DIR,"hourglass1.gif")
+        gif = wx.animate.GIFAnimationCtrl(self, id, gif_fname, pos=(10, 10))
+        gif.GetPlayer().UseBackgroundColour(True)        
+        self._gif_ld_image = gif
+        gbSizer.Add( self._gif_ld_image, wx.GBPosition( 0, 0 ), wx.GBSpan( 2, 1 ), wx.ALL, 5 )
+        self._gif_ld_image.Play()
+        
+        
+        self.m_staticText24 = wx.StaticText( self, wx.ID_ANY, u"Indexing the files. Please wait...", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText24.Wrap( -1 )
+        gbSizer.Add( self.m_staticText24, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        #self.m_staticText25 = wx.StaticText( self, wx.ID_ANY, u"Note: 1000000 documents approximately take 10 minutes to count\n(The time may vary depending on the system configuration)", wx.DefaultPosition, wx.DefaultSize, 0 )
+        #self.m_staticText25.Wrap( -1 )
+        #self.m_staticText25.SetFont( wx.Font( 7, 74, 93, 90, False, "Tahoma" ) )
+        
+       # gbSizer.Add( self.m_staticText25, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+        
+        
+        self.SetSizer( gbSizer )
+        self.Layout()
+        
+        self.Centre( wx.BOTH )
+    
+    def __del__( self ):
+        pass
             
         
 
@@ -533,6 +617,8 @@ class Preferences (PreferencesDialog):
 ###########################################################################
 
 class SMARTeR (SMARTeRGUI):
+    
+    #---------------------------------------------------- Class specific methods
 
     def __init__(self, parent):
         
@@ -543,9 +629,11 @@ class SMARTeR (SMARTeRGUI):
         self._is_tm_index_available = False
         self._current_page = 0
         
+        self.NOTREVIEWED_CLASS_ID = -99
         self.NEUTRAL_CLASS_ID = 0
         self.RESPONSIVE_CLASS_ID = 1
         self.UNRESPONSIVE_CLASS_ID = -1
+        self.RELEVANCY_COLOR_HEX = {'not_reviewed':'#C8C8C8', 'uncertain':'#00FF33', 'relevant':'#0066CC', 'irrelevant':'#FF6600'}  
         self._doc_true_class_ids = {} # this keeps documents' TRUE classes (from user feedback or from a TRUTH file)
         self._shelve_dir = ''
         self._shelve_file_names = []  # this keeps all of the shelf files path 
@@ -554,66 +642,308 @@ class SMARTeR (SMARTeRGUI):
         self._responsive_files_display = []
         self._unresponsive_files_display = []
         self._build_query_results_panel()
-        self._populate_metadata_fields()
-        self._reset_defaults_indexing_preferences()
+        self.__populate_metadata_fields()
+        self.__default_indexing_preferences()
         
         self._query_history = []    
         self._choose_history = False
         self._choice_history = -1
         
         self._lda_num_topics = self._num_topics
-        self._init_results = []     
+        self._init_search_results = []
         
-        self.Center()
+        #--------- Creates the SMARTeR directory at in the default home directory
+        
         from os.path import expanduser
-        home = expanduser("~")
-        self.directory=os.path.join(home,"SMARTeR")
-        if(os.path.exists(self.directory)==False):
-            os.makedirs(self.directory)
+        default_user_home = expanduser("~")
+        self._SMARTeR_dir_path = os.path.join(default_user_home, "SMARTeR")
+        if not os.path.exists(self._SMARTeR_dir_path):
+            os.makedirs(self._SMARTeR_dir_path)
             
-        #self._panel_review_res= TaggingControlGUI(self._panel_review_res,self)
-        #self._panel_review_unres= TaggingControlGUI(self._panel_review_unres,self)
-        self._cfg_dir = os.path.join(self.directory,"repository")
-        if(os.path.exists(self._cfg_dir)==False):
-            os.makedirs(self._cfg_dir)
-        for _, _, files in os.walk(self._cfg_dir):
-            for file_name in files:
-                project, _ = os.path.splitext(file_name)
-                self._cbx_project_title.Append(project)
+        #--------------------- Creates the project configuration files directory
+        
+        self._cfg_dir_path = os.path.join(self._SMARTeR_dir_path, "repository")
+        if not os.path.exists(self._cfg_dir_path):
+            os.makedirs(self._cfg_dir_path)
+            
+            
+        #--------- Loads all project names existing in the SMARTeR folder to GUI
+            
+        for _, _, files in os.walk(self._cfg_dir_path):
+            for project_file_name in files:
+                project_name, _ = os.path.splitext(project_file_name)
+                self._cbx_project_title.Append(project_name)
+        
         self._load_cbx_confidence_levels()
         self._init_confidence()
         self._notebook.ChangeSelection(0)
         self._notebook.RemovePage(3)
+        self.Center()
         self.Show(True)
         
-    def _reset_defaults_indexing_preferences(self):
+    def _get_relevancy_color(self, is_relevant):
+        if is_relevant == 'Yes': return self.RELEVANCY_COLOR_HEX['relevant']
+        elif is_relevant == 'No': return self.RELEVANCY_COLOR_HEX['irrelevant']
+        elif is_relevant == 'Uncertain': return self.RELEVANCY_COLOR_HEX['uncertain']
+        else: return self.RELEVANCY_COLOR_HEX['not_reviewed']
+        
+    def _get_irrelevancy_color(self, is_rrrelevant):
+        if is_rrrelevant == 'Yes': return self.RELEVANCY_COLOR_HEX['irrelevant']
+        elif is_rrrelevant == 'No': return self.RELEVANCY_COLOR_HEX['relevant']
+        elif is_rrrelevant == 'Uncertain': return self.RELEVANCY_COLOR_HEX['uncertain']
+        else: return self.RELEVANCY_COLOR_HEX['not_reviewed']
+    
+    def __default_indexing_preferences(self):
         
         self._num_topics = 30
         self._num_passes = 99
         self._min_token_freq = 1 
         self._min_token_len = 2
         
-    def _on_menu_sel_preferences(self, event):
-        '''
-        
-        '''
-        Preferences(parent=self)
-        
-    def _populate_metadata_fields(self):
+
+    def __populate_metadata_fields(self):
         '''
         This function will populate the metadata combo box 
         dynamically at the time of file loading. This will help
         to accommodate new metadata types as and when they are needed. 
         '''
         meta_data_types = MetadataType._types
-        #self._cbx_meta_type.Append(MetadataType.ALL)  # adds the all field to the combo box
-        self._cbx_meta_type1.Append(MetadataType.ALL) 
+        self._cbx_query_data_fields.Append(MetadataType.ALL) # adds the all field to the combo box
         for l in meta_data_types :
-            #self._cbx_meta_type.Append(l)
-            self._cbx_meta_type1.Append(l) 
-        #self._cbx_meta_type.SetSelection(0)
-        self._cbx_meta_type1.SetSelection(0)
+            self._cbx_query_data_fields.Append(l) 
+        self._cbx_query_data_fields.SetSelection(0)
 
+    def _on_notebook_page_changed(self, event):
+        '''
+        Handles the note book page change event 
+        '''
+        
+        self._current_page = event.Selection
+        self._notebook.ChangeSelection(self._current_page)
+
+
+    def __on_close(self):
+        '''
+        Closes the Application after confirming with user
+        Arguments: Nothing
+        Returns: Nothing
+        '''
+        try:
+            dlg = wx.MessageDialog(self,
+                                   "Do you really want to close this application?",
+                                   "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
+            if dlg.ShowModal() == wx.ID_OK:
+                
+#                # Handles the shelf 
+#                if self.shelf is not None:
+#                    if self._is_rt_updated:
+#                        self._shelf_update_review_tab_state()
+#                    self.shelf.close()
+                
+                self.Destroy()
+        except Exception,e:
+            print e
+
+
+    def _show_error_message(self, _header, _message):
+        '''
+        Shows error messages in a pop up 
+        '''
+        
+        dlg = wx.MessageDialog(self, _message, _header, wx.OK | wx.ICON_ERROR)
+        dlg.ShowModal()
+    
+
+
+    #------------------------------------------------------------ Menu functions
+        
+    def _on_menu_sel_preferences(self, event):
+        '''
+        Display's application preferences popup 
+        '''
+        Preferences(parent=self)
+        
+    def _on_menu_sel_exit(self, event):
+
+        dlg = wx.MessageDialog(self,
+                               "Do you really want to close this application?",
+                               "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        if result == wx.ID_OK:
+            self.Destroy()   
+            
+
+    #--------------------------------------------------------------- Project tab
+    
+#    def _on_click_io_sel_new_project(self,event):
+#        
+#        super(SMARTeR, self)._on_click_io_sel_new_project(event)
+#       
+#        if self._chk_io_new_project.Value==True:
+#            self._tc_project_name.Show(True)
+#            self._tc_project_name.Enable()
+#            self._tc_project_name.SetValue("")
+#            self._cbx_project_title.Disable()
+#            self._cbx_project_title.SetSelection(-1)
+#        else:
+#            #self._tc_project_name.Show(False)
+#            self._tc_project_name.Disable()
+#            self._tc_project_name.SetValue("Title of new project...")
+#            self._cbx_project_title.Enable()
+#            self._cbx_project_title.SetSelection(0)
+            
+    def _on_click_index_new_project(self, event):
+        
+        SMARTeRGUI._on_click_index_new_project(self, event)
+        self.__clear_project_details()
+        msg_dlg = CreateProjectPopup(self)
+        msg_dlg.Show()
+    
+#    def _on_file_change_mdl(self, event):
+#        '''
+#        Handles the model file change event  
+#        '''
+#        
+#        file_name = self._file_picker_mdl.GetPath()
+#        self.project_name = file_name
+#        self.__load_model(file_name)
+#
+#        if self._is_tm_index_available or self._is_lucene_index_available:
+#            self.SetStatusText("The %s model is loaded." % self.mdl_cfg['DATA']['name'])
+#        else: 
+#            self._show_error_message("Model Error", "Please select a valid model.")
+#            self._file_picker_mdl.SetPath("")
+#            self.mdl_cfg = None 
+                    
+    def __load_model(self, model_cfg_file):
+        '''
+        Loads the models specified in the model configuration file  
+        
+        Arguments: 
+            model_cfg_file - the model configuration file  
+        
+        '''
+        
+        print 'Project configuration file:', model_cfg_file
+        
+        self.mdl_cfg = read_config(model_cfg_file)
+        self._tc_data_fld.SetValue(self.mdl_cfg['DATA']['root_dir'])
+        
+        self._shelve_dir = os.path.join(self.mdl_cfg['DATA']['project_dir'], SHELVE_DIR_NAME)
+        if not os.path.exists(self._shelve_dir): 
+            os.makedirs(self._shelve_dir)
+        print 'Project shelf directory:', self._shelve_dir
+        
+        
+        self.data_dir_name = self.mdl_cfg['DATA']['root_dir']
+        
+        # Retrieve topic model file names 
+        
+        dictionary_file = self.mdl_cfg['CORPUS']['dict_file']
+        path_index_file = self.mdl_cfg['CORPUS']['path_index_file']
+        lda_mdl_file = self.mdl_cfg['LDA']['lda_model_file']
+        lda_cos_index_file = self.mdl_cfg['LDA']['lda_cos_index_file']
+        lda_num_topics = self.mdl_cfg['LDA']['num_topics']
+        lda_theta_file = self.mdl_cfg['LDA']['lda_theta_file']
+#        lsi_mdl_file = self.mdl_cfg['LSI']['lsi_model_file']
+#        lsi_cos_index_file = self.mdl_cfg['LSI']['lsi_cos_index_file']
+        
+
+        # Loads learned topic models and file details 
+        if nexists(dictionary_file) and nexists(path_index_file):
+                
+            self.lda_file_path_index = load_file_paths_index(path_index_file)
+            self.lda_dictionary = load_dictionary(dictionary_file)
+            self._num_documents = len(self.lda_file_path_index)
+            self._vocabulary_size = len(self.lda_dictionary)        
+            
+            # Loads documents' TRUE classes
+            # TODO: hard coding for the TRUTH data. This needs to be removed from the final version 
+            if os.path.exists(os.path.join(self.data_dir_name, "1")):
+                positive_dir = os.path.normpath(os.path.join(self.data_dir_name, "1")) # TRUE positive documents  
+                for doc_id, dirname, _ in self.lda_file_path_index:
+                    if dirname == positive_dir:
+                        self._doc_true_class_ids[doc_id] = self.RESPONSIVE_CLASS_ID 
+                    else: 
+                        self._doc_true_class_ids[doc_id] = self.UNRESPONSIVE_CLASS_ID
+            else: 
+                for doc_id, dirname, _ in self.lda_file_path_index:
+                    self._doc_true_class_ids[doc_id] = ''
+            
+            
+            # loads LDA model details 
+            if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
+                self.lda_mdl, self.lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
+                self._lda_num_topics = int(lda_num_topics)
+                self._is_tm_index_available = True 
+                self._lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble) # loads the LDA theta from the model theta file 
+                print 'LDA: number of documents: ', self._num_documents, ' number of topics: ', self._lda_num_topics  
+                    
+#            # loads LSI model details 
+#            if nexists(lsi_mdl_file) and nexists(lsi_cos_index_file):
+#                self.lsi_mdl, self.lsi_index = load_lsi_variables(lsi_mdl_file, lsi_cos_index_file)
+#                self._is_tm_index_available = True  
+#                self._tc_available_mdl.AppendText('[LSI] ')    
+                                   
+
+        # Loads Lucene index files 
+        lucene_dir = self.mdl_cfg['LUCENE']['lucene_index_dir']
+        
+        if nexists(lucene_dir):
+            self.lucene_index_dir = lucene_dir
+            self._is_lucene_index_available = True  
+
+    def __clear_project_details(self):
+        '''
+        Clears the loaded project details
+        
+        TODO: this should clear all the project related 
+        objects in this class 
+        '''
+        self._cbx_project_title.SetSelection(-1)
+        self._tc_data_fld.SetValue('')
+        self.mdl_cfg = None
+        self._project_dir_path = ''
+        self._project_cfg_file_path = ''
+        self._is_tm_index_available = False
+        self._is_lucene_index_available = False
+        self.SetStatusText('All project details are cleared.')
+             
+    def _on_click_index_go_to_search(self, event):
+        '''
+        Handles "Go to Search" button click events 
+
+        '''
+        if self._cbx_project_title.GetCurrentSelection() == -1:
+            self._show_error_message("Missing input", "Please select a project or create a new project.")
+        else:
+            if self._is_tm_index_available and self._is_lucene_index_available:
+                self._current_page = 1
+                self._notebook.ChangeSelection(self._current_page)
+                self.SetStatusText('')
+            else: 
+                self._show_error_message("Project Error", "Please select a valid project.")
+                self.__clear_project_details()
+                
+                
+    def _on_set_index_existing_project(self, event):
+        
+        if self._cbx_project_title.GetCurrentSelection() == -1:
+            self.__clear_project_details()
+            return 
+        
+        project_name = self._cbx_project_title.GetValue().strip()
+        
+        self._project_dir_path = os.path.join(self._SMARTeR_dir_path, project_name)
+        self._project_cfg_file_path = os.path.join(self._cfg_dir_path, project_name + CONFIGURATION_FILE_EXT)
+        self.__load_model(self._project_cfg_file_path)
+        
+        self.SetStatusText("The project %s index is loaded." % self.mdl_cfg['DATA']['name'])
+
+
+
+    #--------------------------------------------- Query preliminary results tab
 
     def _build_query_results_panel(self):
         '''
@@ -689,24 +1019,7 @@ class SMARTeR (SMARTeRGUI):
 
         self._panel_query_results.SetSizer(hbox)
         '''
-    def _on_menu_sel_exit(self, event):
 
-        dlg = wx.MessageDialog(self,
-                               "Do you really want to close this application?",
-                               "Confirm Exit", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
-        result = dlg.ShowModal()
-        dlg.Destroy()
-        if result == wx.ID_OK:
-            self.Destroy()        
-        
-    def _on_notebook_page_changed(self, event):
-        '''
-        Handles the note book page change event 
-        '''
-        
-        self._current_page = event.Selection
-        self._notebook.ChangeSelection(self._current_page)
-  
     def _create_persistent_shelves(self, items):
         """
             Stores the query-results into shelves. 
@@ -740,29 +1053,7 @@ class SMARTeR (SMARTeRGUI):
             os.remove(file_name) 
         global num_of_chunks
         num_of_chunks = 0
-    
-    def _on_click_io_sel_new_project(self,event):
-        
-        super(SMARTeR, self)._on_click_io_sel_new_project(event)
-       
-        if self._chk_io_new_project.Value==True:
-            self._tc_project_name.Show(True)
-            self._tc_project_name.Enable()
-            self._tc_project_name.SetValue("")
-            self._cbx_project_title.Disable()
-            self._cbx_project_title.SetSelection(-1)
-        else:
-            #self._tc_project_name.Show(False)
-            self._tc_project_name.Disable()
-            self._tc_project_name.SetValue("Title of new project...")
-            self._cbx_project_title.Enable()
-            self._cbx_project_title.SetSelection(0)
-            
-    def _on_click_new_project(self, event):
-        SMARTeRGUI._on_click_new_project(self, event)
-        msg_dlg=NewProject1(self)
-        msg_dlg.Show()
-    
+
     def _on_click_next(self, event):
         global present_chunk
         current_chunk = present_chunk;
@@ -772,6 +1063,13 @@ class SMARTeR (SMARTeRGUI):
             self._lc_results_res._populate_results(current_chunk,"true")
             self._lc_results_unres._populate_results(current_chunk,"false")
             present_chunk = current_chunk
+     
+        
+
+  
+
+    
+
     
     def _on_click_next_res(self, event):
         global present_chunk_res
@@ -840,213 +1138,71 @@ class SMARTeR (SMARTeRGUI):
         for i in range(num):
             self._lc_results_unres.CheckItem(i, False)
 
-    def _on_click_log_files(self, event):
+#    def _on_click_log_files(self, event):
 #        num = self._lc_results_res.GetItemCount()
 #        for i in range(num):
 #            if i == 0: self._tc_files_log.Clear()
 #            if self._lc_results_res.IsChecked(i):
 #                self._tc_files_log.AppendText(self._lc_results_res.GetItemText(i) + '\n')
-        pass 
+#        pass 
     
-    def _on_file_change_mdl(self, event):
-        '''
-        Handles the model file change event  
-        '''
-        
-        file_name = self._file_picker_mdl.GetPath()
-        self.project_name = file_name
-        self._load_model(file_name)
 
-        if self._is_tm_index_available or self._is_lucene_index_available:
-            self.SetStatusText("The %s model is loaded." % self.mdl_cfg['DATA']['name'])
-        else: 
-            self._show_error_message("Model Error", "Please select a valid model.")
-            self._file_picker_mdl.SetPath("")
-            self.mdl_cfg = None 
-                    
-    def _load_model(self, model_cfg_file):
-        '''
-        Loads the models specified in the model configuration file  
-        
-        Arguments: 
-            model_cfg_file - the model configuration file  
-        
-        '''
-        
-        print 'Project configuration file:', model_cfg_file
-        
-        self.mdl_cfg = read_config(model_cfg_file)
-        self._tc_data_fld.SetValue(self.mdl_cfg['DATA']['root_dir'])
-        
-        self._shelve_dir = os.path.join(self.mdl_cfg['DATA']['project_dir'], SHELVE_DIR_NAME)
-        if not os.path.exists(self._shelve_dir): 
-            os.makedirs(self._shelve_dir)
-        print 'Project shelf directory:', self._shelve_dir
-        
-        
-        self.data_dir_name = self.mdl_cfg['DATA']['root_dir']
-        
-        # Retrieve topic model file names 
-        
-        dictionary_file = self.mdl_cfg['CORPUS']['dict_file']
-        path_index_file = self.mdl_cfg['CORPUS']['path_index_file']
-        lda_mdl_file = self.mdl_cfg['LDA']['lda_model_file']
-        lda_cos_index_file = self.mdl_cfg['LDA']['lda_cos_index_file']
-        lda_num_topics = self.mdl_cfg['LDA']['num_topics']
-#        lsi_mdl_file = self.mdl_cfg['LSI']['lsi_model_file']
-#        lsi_cos_index_file = self.mdl_cfg['LSI']['lsi_cos_index_file']
-        
 
-        # Loads learned topic models and file details 
-        if nexists(dictionary_file) and nexists(path_index_file):
-                
-            self.lda_file_path_index = load_file_paths_index(path_index_file)
-            self.lda_dictionary = load_dictionary(dictionary_file)
-            self.lda_num_files = len(self.lda_file_path_index)
-            self.lda_vocab_size = len(self.lda_dictionary)        
-            
-            # Loads documents' TRUE classes
-            # TODO: hard coding for the TRUTH data. This needs to be removed from the final version 
-            
-            positive_dir = os.path.normpath(os.path.join(self.data_dir_name, "1")) # TRUE positive documents  
-            for doc_id, dirname, _ in self.lda_file_path_index:
-                if dirname == positive_dir:
-                    self._doc_true_class_ids[doc_id] = self.RESPONSIVE_CLASS_ID 
-                else: 
-                    self._doc_true_class_ids[doc_id] = self.UNRESPONSIVE_CLASS_ID 
-            
-            
-            # loads LDA model details 
-            if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
-                self.lda_mdl, self.lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
-                self._lda_num_topics = int(lda_num_topics)
-                self._is_tm_index_available = True      
-                    
-#            # loads LSI model details 
-#            if nexists(lsi_mdl_file) and nexists(lsi_cos_index_file):
-#                self.lsi_mdl, self.lsi_index = load_lsi_variables(lsi_mdl_file, lsi_cos_index_file)
-#                self._is_tm_index_available = True  
-#                self._tc_available_mdl.AppendText('[LSI] ')    
-                                   
-
-        # Loads Lucene index files 
-        lucene_dir = self.mdl_cfg['LUCENE']['lucene_index_dir']
-        
-        if nexists(lucene_dir):
-            self.lucene_index_dir = lucene_dir
-            self._is_lucene_index_available = True  
-
-   
-    def _on_click_add_to_query(self, event):
-        metadataSelected = self._cbx_meta_type.GetValue()
-        queryBoxText = self._tc_query_input.GetValue()
-        # Uncomment the below lines if it is decided that the conjunctions AND OR NOT should be there. 
-        # if(self._rbtn_conjunction.Enabled) :
-        # self._tc_query.AppendText(self._rbtn_compulsion_level.GetStringSelection() + " " + metadataSelected + ":" + queryBoxText + " ");
-        # else :
-        # self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":");
-        #    self._rbtn_conjunction.Enable()   
-        self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":" + self._rbtn_compulsion_level.GetStringSelection() + ' ')
-        
-    def _on_click_add_to_query1(self, event):
-        metadataSelected = self._cbx_meta_type1.GetValue()
-        operatorSelected = self._cbx_meta_type2.GetValue()
-        queryBoxText = '('+self._tc_query_input1.GetValue()+')'
-        # Uncomment the below lines if it is decided that the conjunctions AND OR NOT should be there. 
-        # if(self._rbtn_conjunction.Enabled) :
-        # self._tc_query.AppendText(self._rbtn_compulsion_level.GetStringSelection() + " " + metadataSelected + ":" + queryBoxText + " ");
-        # else :
-        # self._tc_query.AppendText(metadataSelected + ":" + queryBoxText + ":");
-        #    self._rbtn_conjunction.Enable()
-#        self._tc_query.AppendText(metadataSelected + ":" + self._tc_query_input1.GetValue() + ":MUST")
-        if(self._tc_query1.GetValue()==""):   
-            self._tc_query1.AppendText(metadataSelected + ":" + queryBoxText)
-        else:
-            self._tc_query1.AppendText("\n"+operatorSelected + "\n" )
-            self._tc_query1.AppendText(metadataSelected + ":" + queryBoxText)
-        self._tc_query_input1.SetValue('')
+    #---------------------------------------------------------- Start Search tab
     
-    def _on_click_history_select(self,event):
+    def _on_click_search_query_history(self,event):
+        
         selection = self._list_query_history.GetSelection()
-        self._tc_query1.SetValue(self._query_history[selection][0])
+        self._tc_query_aggregated.SetValue(self._query_history[selection][0])
         
-    def _show_error_message(self, _header, _message):
+    
+    def __lucene_append_nonresponsive_docs(self, docs):
         '''
-        Shows error messages in a pop up 
-        '''
+        Appends the documents that are not retrieved via Lucene 
+        search along with a default score 
         
-        dlg = wx.MessageDialog(self, _message, _header, wx.OK | wx.ICON_ERROR)
-        dlg.ShowModal()
-    
-    
-#    def _on_chbx_topic_search(self, event):
-#        self._chbx_facet_search.SetValue(False)
-#        
-#    def _on_chbx_facet_search(self, event):
-#        self._chbx_topic_search.SetValue(False)
-#        
-#    def load_tm(self, mdl_cfg):
-#    
-#        dictionary_file = mdl_cfg['CORPUS']['dict_file']
-#        path_index_file = mdl_cfg['CORPUS']['path_index_file']
-#        lda_mdl_file = mdl_cfg['LDA']['lda_model_file']
-#        lda_cos_index_file = mdl_cfg['LDA']['lda_cos_index_file']
-#        root_dir = mdl_cfg['DATA']['root_dir']
-#        lucene_index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
-#        if nexists(dictionary_file) and nexists(path_index_file):       
-#            lda_file_path_index = load_file_paths_index(path_index_file)
-#            lda_dictionary = load_dictionary(dictionary_file)
-#            
-#        if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
-#            lda_mdl, lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
-#            
-#        return root_dir, lucene_index_dir ,lda_dictionary, lda_mdl, lda_index, lda_file_path_index
-    
-    def lu_append_nonresp(self, docs, test_directory):
-        '''
-        Used only for Lucene 
         '''
         
-        result_dict = dict()
-        result_list = []
-        result = dict()
+        lucene_score_dict = {}
         score_list = []
         
         for doc in docs:
-            result[doc[0]] = True
-            result_list.append(doc)
-            result_dict[doc[0]] = [doc[1],doc[10]]
+            lucene_score_dict[int(doc[9])] = doc[10]
             score_list.append(doc[10])
         
-        import numpy as np
-        min_score = np.min(score_list) * 0.1
+        if len(score_list) > 0:
+            min_score = min(score_list) * 0.1 # default minimum 
+        else:
+            min_score = 1e-10 
         
-        for root, _, files in os.walk(test_directory):
-            for file_name in files:
-                if file_name not in result:
-                    result_dict[file_name] = [os.path.join(root,file_name),min_score]
+        for doc_id, _, _ in self.lda_file_path_index:
+            if int(doc_id) not in lucene_score_dict.keys():
+                lucene_score_dict[int(doc_id)] = min_score
                     
-        return result_dict, result_list
+        return lucene_score_dict
     
-    def search_tm_topics(self, topics_list, limit, mdl_cfg):   
+     
+    
+    def __search_tm_topics(self, topics_list, limit, mdl_cfg):   
         '''
         Performs search on the topic model using relevant  
         topic indices 
+        
+        Return:
+            a list of [doc_id, doc_path, doc_name, doc_score]
+        
         '''
-        import numpy as np
+        # import numpy as np
         EPS = 1e-24 # a constant 
-        lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
-        # index_dir = mdl_cfg['LUCENE']['lucene_index_dir']
-        # path_index_file = mdl_cfg['CORPUS']['path_index_file']    
-        # lda_file_path_index = load_file_paths_index(path_index_file) # loads the file paths    
-        lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble) # loads the LDA theta from the model theta file 
-        num_docs, num_topics = lda_theta.shape
+        # lda_theta_file = mdl_cfg['LDA']['lda_theta_file']
+        # lda_theta = np.loadtxt(lda_theta_file, dtype=np.longdouble) # loads the LDA theta from the model theta file 
+        # num_docs, num_topics = lda_theta.shape
         
-        print 'LDA-theta is loaded: number of documents: ', num_docs, ' number of topics: ', num_topics  
+
         
-        unsel_topic_idx = [idx for idx in range(0, num_topics) if idx not in topics_list]
-        sel = np.log(lda_theta[:, topics_list] + EPS)
-        unsel = np.log(1.0 - lda_theta[:, unsel_topic_idx] + EPS)
+        unsel_topic_idx = [idx for idx in range(0, self._lda_num_topics) if idx not in topics_list]
+        sel = np.log(self._lda_theta[:, topics_list] + EPS)
+        unsel = np.log(1.0 - self._lda_theta[:, unsel_topic_idx] + EPS)
         ln_score = sel.sum(axis=1) + unsel.sum(axis=1)  
         sorted_idx = ln_score.argsort(axis=0)[::-1]
         # score = np.exp(ln_score)
@@ -1057,52 +1213,181 @@ class SMARTeR (SMARTeRGUI):
         n_ln_score = (1.0 - ln_score / min_ln_score)
     
         ts_results = []
-        for i in range(0, min(limit, num_docs)):
+        for i in range(0, min(limit, self._num_documents)):
             ts_results.append([self.lda_file_path_index[sorted_idx[i]][0], # document id  
-                              self.lda_file_path_index[sorted_idx[i]][1], # document directory path   
+                              os.path.normpath(os.path.join(self.lda_file_path_index[sorted_idx[i]][1], self.lda_file_path_index[sorted_idx[i]][2])), # document path   
                               self.lda_file_path_index[sorted_idx[i]][2], # document name
                               n_ln_score[sorted_idx[i]]]) # similarity score 
             # print lda_file_path_index[sorted_idx[i]], ln_score[sorted_idx[i]], n_ln_score[sorted_idx[i]], score[sorted_idx[i]] 
             
     
         # grabs the files details from the index     
-        ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) 
+        # ts_results = get_indexed_file_details(ts_results, self.lucene_index_dir) 
+        # results = [[row[0], int(row[9]), float(row[10])] for row in ts_results] # Note: we need a float conversion because it's retrieving as string 
         
-        results = [[row[0], int(row[9]), float(row[10])] for row in ts_results] # Note: we need a float conversion because it's retrieving as string 
-        
-        return results
+        return ts_results # [doc_id, doc_path, doc_name, doc_score]
     
-    def fuse_lucene_tm_scores(self,results_lucene, results_tm):
+    
+    def __fuse_lucene_tm_scores(self, lucene_score_dict, results_tm):
         '''
         This method fuse document relevancy scores from 
         Lucene with topic modeling based ranking scores. 
         Currently, it's based on Geometric mean of both 
         scores. 
-        
-        TODO: need to use 'document id' as the dictionary key 
+
         '''
         
-        result = []
-        for res_tm in results_tm:
-            lu_score = results_lucene[res_tm[0]]
-            mult_score = float(lu_score[1]) * float(res_tm[1]) 
-            result.append([res_tm[1],lu_score[0],res_tm[0], mult_score])
+        lucene_tm_results = []
+        for doc_details in results_tm:            
+            [doc_id, dir_path, doc_name, doc_score] = doc_details 
+            lucene_score = lucene_score_dict[doc_id]
+            mult_score = lucene_score * doc_score
+            lucene_tm_results.append([doc_id, dir_path, doc_name, mult_score])
     
-        #result = sorted(result, key=lambda student: student[1])
+        #lucene_tm_results = sorted(lucene_tm_results, key=lambda student: student[1])
         
-        return result
+        return lucene_tm_results
     
-    def __is_responsive(self, class_id):
+    def __is_relevant(self, class_id):
         if class_id == self.RESPONSIVE_CLASS_ID: return 'Yes'
         elif class_id == self.UNRESPONSIVE_CLASS_ID: return 'No'
-        else: return '' # Neutral 
+        elif class_id == self.NEUTRAL_CLASS_ID: return 'Uncertain' # Neutral 
+        else: return '' # Not reviewed 
     
-    def __convert_to_class_id(self, feedback_label):
+    def __is_irrelevant(self, class_id):
+        if class_id == self.RESPONSIVE_CLASS_ID: return 'No'
+        elif class_id == self.UNRESPONSIVE_CLASS_ID: return 'Yes'
+        elif class_id == self.NEUTRAL_CLASS_ID: return 'Uncertain' # Neutral 
+        else: return '' # Not reviewed 
+    
+    def __convert_is_relevant_to_id(self, feedback_label):
         if feedback_label == 'Yes': return self.RESPONSIVE_CLASS_ID
         elif feedback_label == 'No': return self.UNRESPONSIVE_CLASS_ID
-        else: return self.NEUTRAL_CLASS_ID  
+        elif  feedback_label == 'Uncertain': return self.NEUTRAL_CLASS_ID  
+        else: return self.NOTREVIEWED_CLASS_ID # Not reviewed 
+        
+    def __convert_is_irrelevant_to_id(self, feedback_label):
+        if feedback_label == 'Yes': return self.UNRESPONSIVE_CLASS_ID
+        elif feedback_label == 'No': return self.RESPONSIVE_CLASS_ID
+        elif  feedback_label == 'Uncertain': return self.NEUTRAL_CLASS_ID  
+        else: return self.NOTREVIEWED_CLASS_ID # Not reviewed 
     
-    def _on_click_run_query(self, event):
+    def _on_text_search_query_terms(self, event):
+        if self._tc_query_aggregated.GetValue().strip() <> '':
+            self._cbx_query_conjunctions.Enable()
+    
+    def _on_click_search_add_to_query(self, event):
+        
+        metadataSelected = self._cbx_query_data_fields.GetValue()
+        operatorSelected = self._cbx_query_conjunctions.GetValue()
+        queryBoxText = '(' + self._tc_query_terms.GetValue() + ')'
+
+        if(self._tc_query_aggregated.GetValue() == ""):   
+            self._tc_query_aggregated.AppendText(metadataSelected + ":" + queryBoxText)
+        else:
+            self._tc_query_aggregated.AppendText("\n" + operatorSelected + "\n" )
+            self._tc_query_aggregated.AppendText(metadataSelected + ":" + queryBoxText)
+            
+        self._tc_query_terms.SetValue('')
+        self._cbx_query_conjunctions.Enable()
+    
+    
+    def __seed_docs_topK_selection(self, num_seed_docs=100):
+        '''
+        Selecting seed documents from the initial ranking results
+        TODO: the seed document selection should improved, e.g., use 
+        a representative sample of all the clusters found in the 
+        documents (based on k-Means clustering on ranking scores)
+        '''
+        
+        seed_docs_details = []
+        for i, doc_details in enumerate(self._init_search_results):
+            doc_id, doc_path, doc_name, _ = doc_details
+            seed_docs_details.append([doc_id, doc_path, doc_name, self.__is_relevant(self._doc_true_class_ids[doc_id])])
+            if i+1 == 100: break
+        
+        return seed_docs_details
+    
+    def __seed_docs_random_selection(self, num_seed_docs=100):
+        '''
+        Selecting seed documents randomly from the initial ranking results
+        '''
+       
+        import random
+        indices = range(0, self._num_documents)
+        random.shuffle(indices)
+        selected_random_indices = indices[1:num_seed_docs]
+ 
+        seed_docs_details = []
+        for random_index in selected_random_indices:
+                doc_id, dir_path, doc_name = self.lda_file_path_index[random_index]
+                doc_path = os.path.normpath(os.path.join(dir_path, doc_name))
+                seed_docs_details.append([doc_id, doc_path, doc_name, self.__is_relevant(self._doc_true_class_ids[doc_id])])
+       
+        
+        self.__is_relevant(self._doc_true_class_ids[doc_id])])
+       
+        return seed_docs_details
+    
+    def __seed_docs_Kmeans_selection(self, num_seed_docs=100, num_clusters=4):
+        '''
+        Selecting seed documents from K-means clusters of LDA 
+        document topic proportions (theta_d) 
+        '''
+        import random 
+        from scipy.cluster.vq import kmeans2
+        from collections import Counter, defaultdict
+
+        def __get_seed_doc_details(doc_id):
+            
+            is_resp = self.__is_relevant(self._doc_true_class_ids[doc_id])
+            doc_id, dir_path, doc_name = self.lda_file_path_index[doc_id]
+            doc_path = os.path.normpath(os.path.join(dir_path, doc_name))
+            
+            # print doc_id, doc_name, is_resp
+            return [doc_id, doc_path, doc_name, is_resp]
+
+        
+        seed_docs_details = []
+        desired_class_count = int(num_seed_docs / num_clusters)
+        
+        # K-means clustering on the LDA theta 
+        exec_count = 0
+        while True:
+            try:
+                exec_count += 1
+                _, doc_labels = kmeans2(data=self._lda_theta, k=num_clusters, minit='random')
+                break # while loop break when success 
+            except Exception as exp:
+                print exec_count, exp 
+        
+        # Gets class elements' document id 
+        class_docs_id = defaultdict(list)
+        for doc_id, doc_label in enumerate(doc_labels):
+            class_docs_id[doc_label] += [doc_id] 
+        
+
+        for class_id, class_count in Counter(doc_labels).items(): # gets class_id and counts 
+            
+            if class_count <= desired_class_count:
+                for doc_id in class_docs_id[class_id]:
+                    # print class_id, 
+                    seed_docs_details.append(__get_seed_doc_details(doc_id))
+            else: 
+                indices = range(0, class_count)
+                random.shuffle(indices)
+                selected_class_indices = [class_docs_id[class_id][i] for i in indices[1:desired_class_count]]
+                for doc_id in selected_class_indices:
+                    # print class_id, 
+                    seed_docs_details.append(__get_seed_doc_details(doc_id))
+        
+        print 'Seed documents count:', len(seed_docs_details)
+        
+        return seed_docs_details
+            
+    
+    
+    def _on_click_search_start(self, event):
         """
         Actions to be done when the "Run Query" button is clicked
 
@@ -1110,12 +1395,11 @@ class SMARTeR (SMARTeRGUI):
         
         global dictionary_of_rows
         dictionary_of_rows = OrderedDict()
-        queryText = self._tc_query1.GetValue().strip() 
+        queryText = self._tc_query_aggregated.GetValue().strip() 
         
         #----------------------------------------------------------- Validations
         
-        if not self._is_lucene_index_available:
-            # Lucene index is mandatory 
+        if not self._is_lucene_index_available: # Lucene index is mandatory 
             self._show_error_message('Run Query Error!', 'Please select a valid index for searching.')
             return   
         elif queryText == '':
@@ -1124,18 +1408,6 @@ class SMARTeR (SMARTeRGUI):
         elif not self._is_tm_index_available:
             self._show_error_message('Run Query Error!', 'Topic model is not available for topic search.')
             return 
-        
-#        topics = self.lda_mdl.show_topics(topics= -1, topn=10, log=False, formatted=False)
-#        topic_key = []
-#        for topic in topics:
-#            cnt = 0
-#            keywords = ""
-#            for tuple_ele in topic:
-#                keywords = keywords + tuple_ele[1] + ", "
-#                cnt += 1
-#                if(cnt == 5):
-#                    break
-#            topic_key.append(keywords.strip()[:-1])
         
         
         #------------------------------------------------------ Parses the query
@@ -1153,58 +1425,55 @@ class SMARTeR (SMARTeRGUI):
         dominant_topics = get_dominant_query_topics(topicQuery, self.lda_dictionary, self.lda_mdl, TOP_K_TOPICS)
         dominant_topics_idx = [idx for (idx, _) in dominant_topics] # gets the topic indices
         
-        lu_docs = boolean_search_lucene_index(self.lucene_index_dir, luceneQuery, LIMIT_LUCENE) # lucene search 
-        lu_docs_dict, _ = self.lu_append_nonresp(lu_docs, self.data_dir_name) # TODO: need to use file_paths_index list to append the unidentified files  
-        lda_tts_docs = self.search_tm_topics(dominant_topics_idx, LIMIT_LUCENE, self.mdl_cfg) # topic index search 
-        final_docs_tts = self.fuse_lucene_tm_scores(lu_docs_dict, lda_tts_docs) # fuses LDA and Lucene 
-        self._init_results = final_docs_tts
+        lucene_search_results = boolean_search_lucene_index(self.lucene_index_dir, luceneQuery, self._num_documents) # lucene search 
+        lda_search_results = self.__search_tm_topics(dominant_topics_idx, self._num_documents, self.mdl_cfg) # returns [doc_id, doc_path, doc_name, doc_score] 
+        self._lucene_scores_dict = self.__lucene_append_nonresponsive_docs(lucene_search_results) 
 
+        if len(lucene_search_results) > 0:
+            self._init_search_results = self.__fuse_lucene_tm_scores(self._lucene_scores_dict, lda_search_results) # fuses LDA and Lucene 
+        else: 
+            self._init_search_results = lda_search_results
 
 
         #------------- Selecting seed documents from the initial ranking results
-        # TODO: the seed document selection should improved, e.g., use 
-        # a representative sample of all the clusters found in the 
-        # documents (based on k-Means clustering on ranking scores)
         
-        
-        self._seed_docs_details = []
-        for i, doc_details in enumerate(final_docs_tts):
-            doc_id, doc_path, doc_name, doc_score = doc_details
-            self._seed_docs_details.append([doc_id, doc_path, doc_name, doc_score, self.__is_responsive(self._doc_true_class_ids[doc_id])])
-            if i+1 == 100: break
+        self._seed_docs_details = self.__seed_docs_random_selection()#self.__seed_docs_Kmeans_selection()
+            
         self._responsive_files = []
         self._responsive_files_display = []
         self._unresponsive_files = []
         self._unresponsive_files_display = []
         self.sampled_files_responsive = []
         self.sampled_files_unresponsive = []
-        self.load_document_feedback()
+        self.__load_document_feedback()
+        
         flag = True
         cnt  = 0
         for query in self._list_query_history.GetItems():
             if query == luceneQuery:
                 flag = False
-                self._choice_history= cnt
+                self._choice_history = cnt
                 break
             cnt += 1
+        
         if flag:
             self._list_query_history.Append(luceneQuery)
-            self._query_history.append([luceneQuery,-1])
+            self._query_history.append([luceneQuery, -1])
             self._choice_history = cnt
         
-        self._tc_query1.SetValue('')
+        # self._tc_query_aggregated.SetValue('')
+        
         #------------------------------------------------------- Change of focus
         
         self._current_page = 2
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
-    def _on_click_recalculate(self, event):
+    #----------------------------------------------------- Document Feedback tab
+    
+    def _on_click_feedback_smart_ranking(self, event):
         """
-        Actions to be done when the "SMARTeR Ranking" button is clicked
-
-        TODO: 
-            1. Add Lucene & TM ranking score into the SVM model  
+        Actions to be done when the "SMART Ranking" button is clicked
             
         """
         
@@ -1215,42 +1484,57 @@ class SMARTeR (SMARTeRGUI):
         #       from the document feedback tab. This is a tuple 
         #       list of [file_id, file_path, file_name, file_score, class_id] 
         #       
-        #       self._init_results has the results from the 
+        #       self._init_search_results has the results from the 
         #       LDA-Lucene fusion method 
         #
         #       We only consider the documents that are reviewed responsive 
         #       or unresponsive to build the SVM model 
         
                 
-        import numpy as np 
         from libsvm.python.svmutil import svm_problem, svm_parameter, svm_train, svm_predict
         SVM_C = 32 
         SVM_g = 0.5
 
-
-        self._reviewed_seed_docs = [seed_doc for seed_doc in self._seed_docs_details if seed_doc[4] in ['Yes', 'No']]
-        reviewed_seed_docs_id = [seed_doc[0] for seed_doc in self._reviewed_seed_docs]
-        reviewed_seed_docs_cls = [self.__convert_to_class_id(seed_doc[4]) for seed_doc in self._reviewed_seed_docs]
+        num_reviewed_seed_docs = 0
+        reviewed_seed_docs_id = []
+        reviewed_seed_docs_cls = []
         
-        print 'Number of reviewed seed documents (which are responsive or unresponsive):', len(self._reviewed_seed_docs)
+        for seed_doc in self._seed_docs_details:
+            
+            doc_id, doc_path, doc_name, is_resp = seed_doc 
+            
+            if is_resp in ['Yes', 'No']: # Relevant and Irrelevant classes 
+                reviewed_seed_docs_id.append(doc_id)
+                reviewed_seed_docs_cls.append(self.__convert_is_relevant_to_id(is_resp))
+                num_reviewed_seed_docs += 1
+            
+            
+        print 'Number of reviewed seed documents (which are responsive or unresponsive):', num_reviewed_seed_docs
         
-        if len(self._reviewed_seed_docs) > 0:
+        if num_reviewed_seed_docs > 0:
 
-            lda_theta_file = self.mdl_cfg['LDA']['lda_theta_file']   
-            lda_theta = np.loadtxt(lda_theta_file, dtype=np.float)
-            num_docs, _ = lda_theta.shape 
+            # lda_theta_file = self.mdl_cfg['LDA']['lda_theta_file']   
+            # lda_theta = np.loadtxt(lda_theta_file, dtype=np.float)
+            # num_docs, _ = lda_theta.shape
+            
+            # Include the Lucene scores as the last element  
+            # This improves the accuracy by 7% on TREC2010:Query-201 
+            corpus_docs_features = [(theta_d + [self._lucene_scores_dict[doc_id]]) for doc_id, theta_d in enumerate(self._lda_theta.tolist())]                
+            
     
-            reviewed_seed_docs_theta = lda_theta[reviewed_seed_docs_id,:]  
+            # reviewed_seed_docs_theta = lda_theta[reviewed_seed_docs_id,:]  
+            reviewed_seed_docs_theta = [corpus_docs_features[doc_id] for doc_id in reviewed_seed_docs_id] 
+            
             
             # SVM train 
             
-            train_prob  = svm_problem(reviewed_seed_docs_cls, reviewed_seed_docs_theta.tolist())
+            train_prob  = svm_problem(reviewed_seed_docs_cls, reviewed_seed_docs_theta)
             train_param = svm_parameter('-t 2 -c 0 -b 1 -c %f -g %f' % (SVM_C, SVM_g))
             self._seed_docs_svm_mdl = svm_train(train_prob, train_param)
             
             # SVM prediction for all the documents in the results 
             
-            self._docs_svm_label, _, p_val = svm_predict([0]*num_docs, lda_theta.tolist(), self._seed_docs_svm_mdl, '-b 0')
+            self._docs_svm_label, _, p_val = svm_predict([0]*self._num_documents, corpus_docs_features, self._seed_docs_svm_mdl, '-b 0')
             self._docs_svm_decision_values = [p_v[0] for p_v in p_val]
             
             # print self._docs_svm_label
@@ -1264,7 +1548,7 @@ class SMARTeR (SMARTeRGUI):
         
         #---------- Classify documents as responsive or unresponsive (using SVM)
      
-        if len(self._init_results) == 0: 
+        if len(self._init_search_results) == 0: 
             self.SetStatusText('No documents found in the initial ranking results. Exiting the ranking!')
             return 
         
@@ -1278,22 +1562,23 @@ class SMARTeR (SMARTeRGUI):
             else: return 'Unresponsive'                   
             
 #        key = 0 
-        for doc_details in self._init_results:
+        
+        for doc_details in self._init_search_results:
             
             doc_id, doc_path, doc_name, doc_score = doc_details # doc_details: [file_id, file_path, file_name, score]
             svm_predicted_class = self._docs_svm_label[doc_id]
             
             # display_doc_details = [doc_id, doc_path, doc_name, doc_score, __convert_to_display_label(svm_predicted_class)]
             
-            print doc_name, doc_score, self._doc_true_class_ids[doc_id], svm_predicted_class, __classify_by_threshold(doc_score) 
+            # print doc_name, doc_score, self._doc_true_class_ids[doc_id], svm_predicted_class, __classify_by_threshold(doc_score) 
             
             if svm_predicted_class == self.RESPONSIVE_CLASS_ID: # float(display_doc_details[3]) >= CUT_OFF_NORM:
-                self._responsive_files.append([doc_path, self.__is_responsive(self._doc_true_class_ids[doc_id]), ""])
+                self._responsive_files.append([doc_path, self.__is_relevant(self._doc_true_class_ids[doc_id]), "",doc_details[3]])
                 #self._responsive_files_display.append([display_doc_details[0],display_doc_details[1],display_doc_details[10],""])
             else:
-                self._unresponsive_files.append([doc_path, self.__is_responsive(self._doc_true_class_ids[doc_id]), ""])
+                self._unresponsive_files.append([doc_path, self.__is_irrelevant(self._doc_true_class_ids[doc_id]), "",doc_details[3]])
                 #self._unresponsive_files_display.append([display_doc_details[0],display_doc_details[1],display_doc_details[10],""])
-            
+
 #            # Put the results to the dictionary_of_rows
 #            dictionary_of_rows.__setitem__(str(key), display_doc_details)
 #            key += 1
@@ -1303,24 +1588,32 @@ class SMARTeR (SMARTeRGUI):
         
         seed_dict = dict()
         for seed in self._seed_docs_details:
-            seed_dict[seed[1]] = seed[4]
+            seed_dict[seed[1]] = seed[3] # gets seed classes 
         
-        correct_files = 0
-        print float(correct_files)
+        correct_files = 0.0
+
         for doc in self._responsive_files:
             if seed_dict.has_key(doc[0]):
                 if seed_dict[doc[0]] == 'Yes':
-                    correct_files += 1
+                    correct_files += 1.0
             
         for doc in self._unresponsive_files:
             if seed_dict.has_key(doc[0]):
                 if seed_dict[doc[0]] == 'No':
-                    correct_files += 1
-        print float(correct_files)
-        print len(self._seed_docs_details)
-        print float(correct_files)/len(self._seed_docs_details) 
+                    correct_files += 1.0
+        
+        print 
+        print 'Computes the SVM accuracy on the seed documents (train)'
+        print 'TP+TN:', correct_files, 
+        print 'Number of seeds:', len(self._seed_docs_details), 
+        print 'Accuracy based on seeds:', correct_files / len(self._seed_docs_details) 
+        print 
+        
         self._query_history[self._choice_history][1] = float(correct_files)/len(self._seed_docs_details)     
-        self._setup_grid()
+        
+        
+        #----------------- Generate samples of Relevant and Irrelevant documents
+        
         self._generate_file_samples()
         self._generate_file_samples_unres()
         
@@ -1351,16 +1644,97 @@ class SMARTeR (SMARTeRGUI):
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
                   
-    def _setup_grid(self):
-        if self._grid_query_accuracy.NumberRows!=len(self._query_history):
-            self._grid_query_accuracy.InsertRows(0,len(self._query_history)-self._grid_query_accuracy.NumberRows)
-        row = 0
-        print self._query_history
-        for query in self._query_history:
-            self._grid_query_accuracy.SetCellValue(row,0,query[0])
-            if query[1]!=-1:
-                self._grid_query_accuracy.SetCellValue(row,1,str(query[1]))
-            row = row +1
+    
+    def _on_click_feedback_back(self, event):
+        self._current_page = 1
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+        
+        
+    def __load_document_feedback(self):
+        
+        num_seed_docs = len(self._seed_docs_details)
+        
+        self._st_document_feedback_title.SetLabel(u"Please review the below %d documents to increase the accuracy of document retrieval." % num_seed_docs)
+        
+        self.panel_feedback_doc = TaggingControlFeedback(self._panel_feedback_doc, self)
+        self.panel_feedback_doc._setup_review_tab()
+        
+        
+    def _on_rbx_doc_feedback_updated(self, event):
+        '''
+        Handles the document feedback tab, selected seed 
+        document's 'Responsive' radio button group changes 
+         
+        Note: If you make any changes in this function, 
+        you may consider reviewing the custom class 
+        TaggingControlFeedback 
+                
+        TODO: All exceptions should be captured and logged 
+        using the main logging method, instead of printing 
+        them to the command line.  
+        '''
+        try:
+            row_id = self.panel_feedback_doc.GetFocusedItem()
+            if row_id < 0: return 
+            
+            is_relevant = self._rbx_doc_feedback.GetStringSelection()
+            selected_doc_id = self._seed_docs_details[row_id][0]
+            
+            if is_relevant in ['Yes', 'No', 'Uncertain']:
+                self.panel_feedback_doc.SetStringItem(row_id, 2, is_relevant)
+                self._seed_docs_details[row_id][3] = is_relevant
+            else: # when not reviewed 
+                self.panel_feedback_doc.SetStringItem(row_id, 2, '')
+                self._seed_docs_details[row_id][3] = ''
+
+            self._doc_true_class_ids[selected_doc_id] = self.__convert_is_relevant_to_id(is_relevant)
+            self.panel_feedback_doc.SetItemBackgroundColour(row_id, self._get_relevancy_color(is_relevant))    
+
+                
+        except Exception, e:
+            print e
+        
+
+        
+    
+    def __setup_accuracy_grid(self):
+        
+        # TODO: Sahil, please use the below code to display samples' 
+        # details in the Report tab 
+        
+        num_irrelevant_docs = len([1 for doc_sample in self.sampled_files_unresponsive if doc_sample[1] == 'Yes'])
+        num_relevant_docs = len([1 for doc_sample in self.sampled_files_unresponsive if doc_sample[1] == 'No'])
+        
+        # We ignore uncertain and not reviewed documents from the calculation  
+        print '%d relevant docs and %d irrelevant docs found in the sample of %d irrelevant docs' % (num_relevant_docs, 
+                                                                                                     num_irrelevant_docs, 
+                                                                                                     len(self.sampled_files_unresponsive))
+        print 'Irrelevant sample accuracy:{:2.2f}'.format(float(num_irrelevant_docs) * 100.0/ float(num_irrelevant_docs + num_relevant_docs))
+
+
+        num_irrelevant_docs = len([1 for doc_sample in self.sampled_files_responsive if doc_sample[1] == 'No'])
+        num_relevant_docs = len([1 for doc_sample in self.sampled_files_responsive if doc_sample[1] == 'Yes'])
+        
+        # We ignore uncertain and not reviewed documents from the calcualtion  
+        print '%d relevant docs and %d irrelevant docs found in the sample of %d relevant docs' % (num_relevant_docs, 
+                                                                                                     num_irrelevant_docs, 
+                                                                                                     len(self.sampled_files_responsive))
+        print 'Relevant sample accuracy:{:2.2f}'.format(float(num_relevant_docs) * 100.0/ float(num_irrelevant_docs + num_relevant_docs))
+
+
+
+        if self._grid_query_accuracy.NumberRows != len(self._query_history):
+            self._grid_query_accuracy.InsertRows(0, len(self._query_history) - self._grid_query_accuracy.NumberRows)
+            
+
+        for row_count, query_details in enumerate(self._query_history):
+            query, accuracy = query_details
+            self._grid_query_accuracy.SetCellValue(row_count, 0, query)
+            if accuracy != -1:
+                self._grid_query_accuracy.SetCellValue(row_count, 1, str(accuracy))
+            
+                
             
     def _on_click_update_results(self, event):
         '''
@@ -1425,7 +1799,7 @@ class SMARTeR (SMARTeRGUI):
         
     def _on_click_skip_contextual_feed(self, event):
         self._current_page = 4
-        self.load_document_feedback()
+        self.__load_document_feedback()
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -1435,81 +1809,50 @@ class SMARTeR (SMARTeRGUI):
             # print chk_box.GetSelection()
         
         self._current_page = 3
-        self.load_document_feedback()
+        self.__load_document_feedback()
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
-    def load_document_feedback(self):
-        self.panel_feedback_doc = TaggingControlFeedback(self._panel_feedback_doc, self)
-        self.panel_feedback_doc._setup_review_tab()
         
-    def _on_rbx_result_responsive_update(self, event):
-        
-        
-        try:
-            selected_doc_id = self._lc_results_res.GetFocusedItem()
-            responsive_status = self._rbx_feedack_res.GetStringSelection()
-            if responsive_status == 'Responsive': 
-                self._lc_results_res.SetStringItem(selected_doc_id, 3, 'Yes')
-                #self._seed_docs_details[selected_doc_id][2] = 'Responsive'
-            elif responsive_status == 'Unresponsive': 
-                self._lc_results_res.SetStringItem(selected_doc_id, 3, 'No')
-                #self._seed_docs_details[selected_doc_id][2] = 'Unresponsive'
-            else: 
-                self._lc_results_res.SetStringItem(selected_doc_id, 3, '')
-                #self._seed_docs_details[selected_doc_id][2] = ''
-            
-        except Exception, e:
-            print e
-            
-    def _on_rbx_result_unresponsive_update(self, event):
-        
-        try:
-            selected_doc_id = self._lc_results_unres.GetFocusedItem()
-            responsive_status = self._rbx_feedack_unres.GetStringSelection()
-            if responsive_status == 'Responsive': 
-                self._lc_results_unres.SetStringItem(selected_doc_id, 3, 'Yes')
-                #self._seed_docs_details[selected_doc_id][2] = 'Responsive'
-            elif responsive_status == 'Unresponsive': 
-                self._lc_results_unres.SetStringItem(selected_doc_id, 3, 'No')
-                #self._seed_docs_details[selected_doc_id][2] = 'Unresponsive'
-            else: 
-                self._lc_results_unres.SetStringItem(selected_doc_id, 3, '')
-                #self._seed_docs_details[selected_doc_id][2] = ''
-            
-        except Exception, e:
-            print e
+#        
+#    def _on_rbx_result_responsive_update(self, event):
+#        
+#        
+#        try:
+#            selected_doc_id = self._lc_results_res.GetFocusedItem()
+#            responsive_status = self._rbx_feedack_res.GetStringSelection()
+#            if responsive_status == 'Responsive': 
+#                self._lc_results_res.SetStringItem(selected_doc_id, 3, 'Yes')
+#                #self._seed_docs_details[selected_doc_id][2] = 'Responsive'
+#            elif responsive_status == 'Unresponsive': 
+#                self._lc_results_res.SetStringItem(selected_doc_id, 3, 'No')
+#                #self._seed_docs_details[selected_doc_id][2] = 'Unresponsive'
+#            else: 
+#                self._lc_results_res.SetStringItem(selected_doc_id, 3, '')
+#                #self._seed_docs_details[selected_doc_id][2] = ''
+#            
+#        except Exception, e:
+#            print e
+#            
+#    def _on_rbx_result_unresponsive_update(self, event):
+#        
+#        try:
+#            selected_doc_id = self._lc_results_unres.GetFocusedItem()
+#            responsive_status = self._rbx_feedack_unres.GetStringSelection()
+#            if responsive_status == 'Responsive': 
+#                self._lc_results_unres.SetStringItem(selected_doc_id, 3, 'Yes')
+#                #self._seed_docs_details[selected_doc_id][2] = 'Responsive'
+#            elif responsive_status == 'Unresponsive': 
+#                self._lc_results_unres.SetStringItem(selected_doc_id, 3, 'No')
+#                #self._seed_docs_details[selected_doc_id][2] = 'Unresponsive'
+#            else: 
+#                self._lc_results_unres.SetStringItem(selected_doc_id, 3, '')
+#                #self._seed_docs_details[selected_doc_id][2] = ''
+#            
+#        except Exception, e:
+#            print e
     
-    def _on_rbx_responsive_updated(self, event):
-        '''
-        Handles the document feedback tab, selected seed 
-        document's 'Responsive' radio button group changes 
-         
-        Note: If you make any changes in this function, 
-        you may consider reviewing the custom class 
-        TaggingControlFeedback 
-                
-        TODO: All exceptions should be captured and logged 
-        using the main logging method, instead of printing 
-        them to the command line.  
-        '''
-        try:
-            selected_doc_id = self.panel_feedback_doc.GetFocusedItem()
-            responsive_status = self._rbx_responsive.GetStringSelection()
-            if responsive_status == 'Responsive': 
-                self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'Yes')
-                self._seed_docs_details[selected_doc_id][4] = 'Yes'
-                self._doc_true_class_ids[selected_doc_id] = self.RESPONSIVE_CLASS_ID
-            elif responsive_status == 'Unresponsive': 
-                self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, 'No')
-                self._seed_docs_details[selected_doc_id][4] = 'No'
-                self._doc_true_class_ids[selected_doc_id] = self.UNRESPONSIVE_CLASS_ID
-            else: 
-                self.panel_feedback_doc.SetStringItem(selected_doc_id, 2, '')
-                self._seed_docs_details[selected_doc_id][4] = ''
-                self._doc_true_class_ids[selected_doc_id] = self.NEUTRAL_CLASS_ID
-        except Exception, e:
-            print e
+
         
         
     def _init_confidence(self):
@@ -1649,7 +1992,7 @@ class SMARTeR (SMARTeRGUI):
         self.sampled_files_responsive = random_sampler(self._responsive_files, self.confidence_val, self.precision_val, self.SEED)
         if self._chk_toggle_cl_level.Value==True:
             self.sampled_files_unresponsive = random_sampler(self._unresponsive_files, self.confidence_val, self.precision_val, self.SEED)
-        print self.confidence_val
+        
         self._st_num_samples_res.SetLabel('Responsive: %d sample documents will be selected' % len(self.sampled_files_responsive))
         self._st_num_samples_res.Show()
         
@@ -1757,54 +2100,16 @@ class SMARTeR (SMARTeRGUI):
         self.SetStatusText('')
     
     def _on_click_cl_next( self, event ):
-        self._review_unres = TaggingControlSmarter(self._panel_review_unres, self.sampled_files_unresponsive,self._rbx_response_unres,self._rbx_privilage_unres,self._tc_preview_tags_unres,self._panel_doc_tag_unres)
-        self._review_unres._setup_review_tab()
+        self._review_unres = TaggingControlSmarter(self._panel_review_unres, self.sampled_files_unresponsive,
+                                                   self._rbx_response_unres, 
+                                                   self._tc_preview_tags_unres, self._panel_doc_tag_unres, 
+                                                   self._get_irrelevancy_color)
+        self._review_unres._setup_review_tab('Irrelevant')
         self._current_page = 4
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
 
-    def _on_click_index_data(self, event):
-        '''
-        Handles the data folder files' indexing and topic modeling 
-         
-         
-        TODO: 
-            1. validations to be done 
-        
-        '''
-    
-        project_name = self._cbx_project_title.GetValue()
-        #ADD
-        self.output_dir=os.path.join(self.directory,project_name)
-        if project_name=="":
-            self._show_error_message("Missing input", "Please enter or select a project.")
-        else:
 
-            if self._is_tm_index_available or self._is_lucene_index_available:
-                self.SetStatusText("The %s model is loaded." % self.mdl_cfg['DATA']['name'])
-                self._current_page = 1
-                self._notebook.ChangeSelection(self._current_page)
-                self.SetStatusText('')
-            else: 
-                self._show_error_message("Model Error", "Please select a valid model.")
-                self._file_picker_mdl.SetPath("")
-                self.mdl_cfg = None
-                
-    def _on_set_existing_project(self,event):
-        project_name = self._cbx_project_title.GetValue()
-        self.cfg_file_name = os.path.join(self._cfg_dir,project_name+".cfg")
-        self.project_name = self.cfg_file_name
-        self._load_model(self.cfg_file_name)
-              
-    def _on_click_clear_project_details(self, event):
-        '''
-        Clears the project details 
-        
-        '''
-        
-        self._tc_project_name.SetValue('')
-        self._data_dir_picker.SetPath('')
-        self._application_dir_picker.SetPath('')
         
     def _on_click_change_unres_focus(self,event):
         if self._chk_toggle_cl_level.Value==True:
@@ -1849,127 +2154,306 @@ class SMARTeR (SMARTeRGUI):
         
         return rows 
         
-    def _on_rbx_responsive_updated_res( self, event ):
+    def _on_rbx_relevant_feeback( self, event ):
         '''
-        Handles the selected document responsive check box 
-        check and uncheck events 
+        Handles "Sample Relevant" tab, document relevancy feedback 
+        radio button group updated event  
          
         '''
-        selected_doc_id = self._review_res.GetFocusedItem()
-        if(selected_doc_id != -1):
-            responsive_status = self._rbx_response_res.GetStringSelection() 
-            if responsive_status == 'Yes': 
-                self._review_res.SetStringItem(selected_doc_id, 2, 'Yes')
-                self.sampled_files_responsive[selected_doc_id][1]='Yes'
-            elif responsive_status == 'No': 
-                self._review_res.SetStringItem(selected_doc_id, 2, 'No')
-                self.sampled_files_responsive[selected_doc_id][1]='No'
-            elif responsive_status == 'Unknown': 
-                self._review_res.SetStringItem(selected_doc_id, 2, '')
-                self.sampled_files_responsive[selected_doc_id][1]=''
+        selected_row_id = self._review_res.GetFocusedItem()
+        
+        if selected_row_id > -1:
             
-    
-    
-    def _on_rbx_privileged_updated_res( self, event ):
-        '''
-        Handles the selected document privileged check box 
-        check and uncheck events 
-         
-        '''
-        selected_doc_id = self._review_res.GetFocusedItem()
-        if(selected_doc_id != -1):
-            privileged_status = self._rbx_privilage_res.GetStringSelection() 
-            if privileged_status == 'Yes': 
-                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'Yes')
-                self.sampled_files_responsive[selected_doc_id][2]='Yes'
-            elif privileged_status == 'No': 
-                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'No')
-                self.sampled_files_responsive[selected_doc_id][2]='No'
-            elif privileged_status == 'Unknown': 
-                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, '')
-                self.sampled_files_responsive[selected_doc_id][2]=''
+            is_relevant = self._rbx_response_res.GetStringSelection() 
+            
+            if is_relevant in ['Yes', 'No', 'Uncertain']:
+                self._review_res.SetStringItem(selected_row_id, 2, is_relevant)
+                self.sampled_files_responsive[selected_row_id][1] = is_relevant
+            else: # when not reviewed 
+                self._review_res.SetStringItem(selected_row_id, 2, '')
+                self.sampled_files_responsive[selected_row_id][1] = ''
 
-    def _on_click_clear_all_doc_tags_res( self, event ):
+            self._review_res.SetItemBackgroundColour(selected_row_id, self._get_relevancy_color(is_relevant)) 
+            
+            selected_doc_id = self.sampled_files_responsive[selected_row_id][0]
+            self._doc_true_class_ids[selected_doc_id] = self.__convert_is_relevant_to_id(is_relevant)
+              
+    
+#    
+#    def _on_rbx_privileged_updated_res( self, event ):
+#        '''
+#        Handles the selected document privileged check box 
+#        check and uncheck events 
+#         
+#        '''
+#        selected_doc_id = self._review_res.GetFocusedItem()
+#        if(selected_doc_id != -1):
+#            privileged_status = self._rbx_privilage_res.GetStringSelection() 
+#            if privileged_status == 'Yes': 
+#                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'Yes')
+#                self.sampled_files_responsive[selected_doc_id][2]='Yes'
+#            elif privileged_status == 'No': 
+#                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, 'No')
+#                self.sampled_files_responsive[selected_doc_id][2]='No'
+#            elif privileged_status == 'Unknown': 
+#                self._review_res.SetStringItem(self._review_res.GetFocusedItem(), 3, '')
+#                self.sampled_files_responsive[selected_doc_id][2]=''
+
+    def _on_click_relevant_clear_tags( self, event ):
         '''
         Clear all assigned document tags from the list control 
         '''
         try:
             for i in range(0, len(self.sampled_files_responsive)):
                 self._review_res.SetStringItem(i, 2, '')
-                self._review_res.SetStringItem(i, 3, '')       
-                self.sampled_files_responsive[i][1]=''
-                self.sampled_files_responsive[i][2]=''
-            
-            self._rbx_response_res.SetStringSelection('Unknown')    
-            self._rbx_privilage_res.SetStringSelection('Unknown')  
-            
-        except Exception,e:
-            self.error(e)
+                self._review_res.SetItemBackgroundColour(i, self._get_relevancy_color('Not Reviewed'))
+                self.sampled_files_responsive[i][1] = ''
+                
+            self._rbx_response_res.SetSelection(2)  
+        except Exception, e:
+            print e
 
-    def _on_rbx_responsive_updated_unres( self, event ):
+    def _on_rbx_irrelevant_feeback( self, event ):
         '''
-        Handles the selected document responsive check box 
-        check and uncheck events 
+        Handles "Sample Irrelevant" tab, document irrelevancy feedback 
+        radio button group updated event  
          
         '''
-        responsive_status = self._rbx_response_unres.GetStringSelection() 
-        if responsive_status == 'Yes': 
-            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 2, 'Yes')
-        elif responsive_status == 'No': 
-            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 2, 'No')
-        elif responsive_status == 'Unknown': 
-            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 2, '')    
-    def _on_rbx_privileged_updated_unres( self, event ):
-        '''
-        Handles the selected document privileged check box 
-        check and uncheck events 
-         
-        '''
-        privileged_status = self._rbx_privilage_unres.GetStringSelection() 
-        if privileged_status == 'Yes': 
-            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, 'Yes')
-        elif privileged_status == 'No': 
-            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, 'No')
-        elif privileged_status == 'Unknown': 
-            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, '')
+        selected_row_id = self._review_unres.GetFocusedItem()
+        
+        if selected_row_id > -1:
+            
+            is_irrelevant = self._rbx_response_unres.GetStringSelection() 
+            
+            if is_irrelevant in ['Yes', 'No', 'Uncertain']:
+                self._review_unres.SetStringItem(selected_row_id, 2, is_irrelevant)
+                self.sampled_files_unresponsive[selected_row_id][1] = is_irrelevant
+            else: # when not reviewed 
+                self._review_unres.SetStringItem(selected_row_id, 2, '')
+                self.sampled_files_unresponsive[selected_row_id][1] = ''
 
-    def _on_click_clear_all_doc_tags_unres( self, event ):
+            self._review_unres.SetItemBackgroundColour(selected_row_id, self._get_irrelevancy_color(is_irrelevant)) 
+            
+            selected_doc_id = self.sampled_files_unresponsive[selected_row_id][0]
+            self._doc_true_class_ids[selected_doc_id] = self.__convert_is_irrelevant_to_id(is_irrelevant)
+            
+#    def _on_rbx_privileged_updated_unres( self, event ):
+#        '''
+#        Handles the selected document privileged check box 
+#        check and uncheck events 
+#         
+#        '''
+#        privileged_status = self._rbx_privilage_unres.GetStringSelection() 
+#        if privileged_status == 'Yes': 
+#            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, 'Yes')
+#        elif privileged_status == 'No': 
+#            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, 'No')
+#        elif privileged_status == 'Unknown': 
+#            self._review_unres.SetStringItem(self._review_unres.GetFocusedItem(), 3, '')
+
+    def _on_click_irrelevant_clear_tags( self, event ):
         '''
         Clear all assigned document tags from the list control 
         '''
         try:
             for i in range(0, len(self.sampled_files_unresponsive)):
-                self._review_unres.SetStringItem(i, 2, '')
-                self._review_unres.SetStringItem(i, 3, '')       
+                self._review_unres.SetStringItem(i, 2, '') 
+                self._review_unres.SetItemBackgroundColour(i, self._get_irrelevancy_color('Not Reviewed'))
+                self.sampled_files_unresponsive[i][1] = ''     
+
+            self._rbx_response_unres.SetSelection(2)   
             
-            self._rbx_response_unres.SetStringSelection('Unknown')    
-            self._rbx_privilage_unres.SetStringSelection('Unknown')  
-                
-    
             self._is_rt_updated = True
-        except Exception,e:
+        except Exception, e:
             print e
             
     def _on_click_review_gen_report_res( self, event ):
             
-            self.confidence_val_rep = self.confidence_val
-            self.precision_val_rep =self.precision_val
-            self.file_list = self._responsive_files
-            self.sampled_files = self.sampled_files_responsive
-            self._gen_report(self.sampled_files_responsive,self._cbx_report_types_res.GetValue(),'responsive_sample_')
+        self.confidence_val_rep = self.confidence_val
+        self.precision_val_rep =self.precision_val
+        self.file_list = self._responsive_files
+        self.sampled_files = self.sampled_files_responsive
+        self._gen_report(self.sampled_files_responsive, self._cbx_report_types_res.GetValue(), 
+                         'responsive_sample_', 'Responsive Document Sample Review Report')
     
     def _on_click_review_gen_report_unres( self, event ):
             
-            self.confidence_val_rep = self.confidence_val_unres
-            self.precision_val_rep =self.precision_val_unres
-            self.file_list = self._unresponsive_files
-            self.sampled_files = self.sampled_files_unresponsive
-            self._gen_report(self.sampled_files_unresponsive,self._cbx_report_types_unres.GetValue(),'unresponsive_sample_')
+        self.confidence_val_rep = self.confidence_val_unres
+        self.precision_val_rep = self.precision_val_unres
+        self.file_list = self._unresponsive_files
+        self.sampled_files = self.sampled_files_unresponsive
+        self._gen_report(self.sampled_files_unresponsive, self._cbx_report_types_unres.GetValue(),
+                         'unresponsive_sample_', 'Unresponsive Document Sample Review Report')
     
-    def _gen_report( self,  samples_lst, report_type, file_type):
+    def _gen_report( self, samples_lst, report_type, file_type, report_title='Document Sample Review Report' ):
+        
+        def __save_html_report(html_body, file_name, report_title=report_title):
+            '''
+            Stores into a file 
+            '''
+            
+            try:
+                with open(file_name, "w") as hw: 
+                    hw.write(unicode(
+                    """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+                    <html>
+                    <head>
+                        <title>%s</title>
+                    </head>
+                    <body style="font-family:verdana,helvetica;font-size:9pt">
+                    <h2>%s</h2>
+                    
+                    Report overview: 
+                    
+                    <br/><br/>
+                    """ % (report_title, report_title)))
+                    
+                    hw.write(unicode(__gen_specifications_html()))
+        
+                    hw.write(unicode(html_body))
+    
+                    hw.write(unicode(
+                    """
+                    <hr/>
+                    <p>Report is generated on: %s</p>
+                    </body>
+                    </html>""" % datetime.now().strftime("%A, %d. %B %Y %I:%M%p")))
+            except Exception, e:
+                print e
+                
+    
+        def __gen_specifications_html(): 
+            try:
+                hrow = TableRow(cells=['Sampler Specifications', 'Entries'], bgcolor='#6E6E6E')
+                setting_table = Table(header_row=hrow, border=0)
+                '''
+                config_cell = TableCell("Source document folder", bgcolor = '#CEF6F5', align = 'left')
+                setting_cell = TableCell(self.dir_path, bgcolor = '#CEF6F5', align = 'left')
+                setting_table.rows.append([config_cell, setting_cell])
+                
+                config_cell = TableCell("Sampled output folder", bgcolor = '#CEF6F5', align = 'left')
+                setting_cell = TableCell(self.output_dir_path, bgcolor = '#CEF6F5', align = 'left')
+                setting_table.rows.append([config_cell, setting_cell])
+                '''
+                config_cell = TableCell("Confidence level (%)", bgcolor = '#CEF6F5', align = 'left')
+                setting_cell = TableCell(self.confidence_val_rep*100, bgcolor = '#CEF6F5', align = 'right')
+                setting_table.rows.append([config_cell, setting_cell])
+                
+                config_cell = TableCell("Confidence interval (%)", bgcolor = '#CEF6F5', align = 'left')
+                setting_cell = TableCell(self.precision_val_rep*100, bgcolor = '#CEF6F5', align = 'right')
+                setting_table.rows.append([config_cell, setting_cell])
+                
+                config_cell = TableCell("Total documents in the source document folder", bgcolor = '#CEF6F5', align = 'left')
+                setting_cell = TableCell(len(self.file_list), bgcolor = '#CEF6F5', align = 'right')
+                setting_table.rows.append([config_cell, setting_cell])
+                
+                config_cell = TableCell("The sample size", bgcolor = '#CEF6F5', align = 'left')
+                setting_cell = TableCell(len(self.sampled_files), bgcolor = '#CEF6F5', align = 'right')
+                setting_table.rows.append([config_cell, setting_cell])
+                
+                return str(setting_table)
+            except Exception,e:
+                print e
+            
+        def __gen_complete_html_report(samples, responsive, privileged):
+            try:
+                # Generate HTML tags for all documents 
+                hrow = TableRow(cells=['#', 'File Name', 'Responsive', 'Privileged','Ranking Score'], bgcolor='#6E6E6E')
+                all_table = Table(header_row=hrow)
+                cnt = 1
+                for fs in samples:
+                    
+                    rc_colr = resp_colors[rstatus(fs[1])]
+                    pc_colr = priv_colors[rstatus(fs[2])]
+                    r_colr = row_colors[row_status(fs[1], fs[2])]
+                    num_cell = TableCell(cnt, bgcolor=r_colr, align='center')
+                    file_name = link(fs[0], fs[0])
+                    fn_cell = TableCell(file_name, bgcolor=r_colr)
+                    resp_cell = TableCell(fs[1], bgcolor=rc_colr, align='center')
+                    priv_cell = TableCell(fs[2], bgcolor=pc_colr, align='center')
+                    rank_cell = TableCell(fs[3], bgcolor=r_colr, align='center')
+                    
+                    all_table.rows.append([num_cell, fn_cell, resp_cell, priv_cell,rank_cell])
+                    cnt = cnt + 1
+                
+                html_body = """
+                %s 
+        
+                %s 
+        
+                <hr/>
+                <h3>Complete Sample</h3>
+                %s 
+                <br/>
+                """ % (__gen_responsive_html_report(responsive), __gen_privileged_html_report(privileged), str(all_table))
+                
+                return html_body
+            except Exception,e:
+                print e
+           
+        def __gen_responsive_html_report(responsive):
+            '''
+            Generate HTML tags for responsive documents 
+            '''
+            try:
+                if len(responsive) == 0: return ''
+                hrow = TableRow(cells=['#', 'File Name','Ranking Score'], bgcolor='#6E6E6E')
+                resp_table = Table(header_row=hrow)
+                cnt = 1
+                for fs in responsive:
+                    # r_colr = resp_colors['Yes']
+                    num_cell = TableCell(cnt, align='center') # bgcolor=r_colr, 
+                    file_name = link(fs[0], fs[0])
+                    fn_cell = TableCell(file_name) # , bgcolor=r_colr
+                    rank_cell = TableCell(fs[3], align='center')
+                    resp_table.rows.append([num_cell, fn_cell,rank_cell])
+                    cnt = cnt + 1
+                    
+                html_body = """
+                <hr/>
+                <h3>Responsive Documents</h3>
+                %s 
+                <br/>
+                """ % str(resp_table)
+                
+                return html_body
+            except Exception,e:
+                print e
+          
+        def __gen_privileged_html_report(privileged):
+            '''
+            Generate HTML tags for privileged documents 
+            '''
+            try:
+                if len(privileged) == 0: return ''
+                
+                hrow = TableRow(cells=['#', 'File Name','Ranking Score'], bgcolor='#6E6E6E')
+                priv_table = Table(header_row=hrow)
+                cnt = 1
+                for fs in privileged:
+                    # r_colr = priv_colors['Yes']
+                    num_cell = TableCell(cnt, align='center') # bgcolor=r_colr, 
+                    file_name = link(fs[0], fs[0])
+                    fn_cell = TableCell(file_name) # , bgcolor=r_colr
+                    rank_cell = TableCell(fs[3], align='center')
+                    priv_table.rows.append([num_cell, fn_cell, rank_cell])
+                    cnt = cnt + 1
+                html_body = """
+                <hr/>
+                <h3>Privileged Documents</h3>
+                %s 
+                <br/>
+                """ % str(priv_table)
+                
+                return html_body
+            except Exception,e:
+                print e
+
+        
+       
         try:
             if report_type == 'Responsive':
-                file_name = os.path.join(self.output_dir, file_type+REPORT_RESPONSIVE)   
+                file_name = os.path.join(self._project_dir_path, file_type+REPORT_RESPONSIVE)   
                 responsive = []
                 for fs in samples_lst: 
                     if fs[1] == 'Yes': 
@@ -1977,9 +2461,9 @@ class SMARTeR (SMARTeRGUI):
                 if len(responsive) == 0:
                     self._show_error_message('Report Generation', 'There are no responsive documents available.')
                     return 
-                html_body = self._gen_responsive_html_report(responsive)
+                html_body = __gen_responsive_html_report(responsive)
             elif report_type == 'Privileged':
-                file_name = os.path.join(self.output_dir, file_type+REPORT_PRIVILEGED)   
+                file_name = os.path.join(self._project_dir_path, file_type+REPORT_PRIVILEGED)   
                 privileged = []
                 for fs in samples_lst: 
                     if fs[2] == 'Yes': 
@@ -1987,9 +2471,9 @@ class SMARTeR (SMARTeRGUI):
                 if len(privileged) == 0:
                     self._show_error_message('Report Generation', 'There are no privileged documents available.')
                     return 
-                html_body = self._gen_privileged_html_report(privileged)
+                html_body = __gen_privileged_html_report(privileged)
             elif report_type == 'All':
-                file_name = os.path.join(self.output_dir, file_type+REPORT_COMPLETE)   
+                file_name = os.path.join(self._project_dir_path, file_type+REPORT_COMPLETE)   
                 responsive = []
                 privileged = []
                 for fs in samples_lst: 
@@ -1997,11 +2481,11 @@ class SMARTeR (SMARTeRGUI):
                         responsive.append(fs)
                     if fs[2] == 'Yes': 
                         privileged.append(fs)
-                html_body = self._gen_complete_html_report(samples_lst, responsive, privileged)
+                html_body = __gen_complete_html_report(samples_lst, responsive, privileged)
             
             
             # Saves into a file path 
-            self._save_html_report(html_body, file_name)
+            __save_html_report(html_body, file_name)
             
             # Open the HTML report in the default web browser 
             webbrowser.open(file_name)
@@ -2009,221 +2493,35 @@ class SMARTeR (SMARTeRGUI):
             # Report generation failed 
             print e 
                     
-    def _save_html_report(self, html_body, file_name):
-        '''
-        Stores into a file 
-        '''
-        
-        try:
-            with open(file_name, "w") as hw: 
-                hw.write(unicode(
-                """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-                <html>
-                <head>
-                    <title>Document Sample Review Report</title>
-                </head>
-                <body style="font-family:verdana,helvetica;font-size:9pt">
-                <h2>Document Sample Review Report</h2>
-                
-                Report overview: 
-                
-                <br/><br/>
-                """))
-                
-                hw.write(unicode(self._gen_specifications_html()))
-    
-                hw.write(unicode(html_body))
-
-                hw.write(unicode(
-                """
-                <hr/>
-                <p>Report is generated on: %s</p>
-                </body>
-                </html>""" % datetime.now().strftime("%A, %d. %B %Y %I:%M%p")))
-        except Exception, e:
-            print e
-            
-
-    def _gen_specifications_html(self): 
-        try:
-            hrow = TableRow(cells=['Sampler Specifications', 'Entries'], bgcolor='#6E6E6E')
-            setting_table = Table(header_row=hrow, border=0)
-            '''
-            config_cell = TableCell("Source document folder", bgcolor = '#CEF6F5', align = 'left')
-            setting_cell = TableCell(self.dir_path, bgcolor = '#CEF6F5', align = 'left')
-            setting_table.rows.append([config_cell, setting_cell])
-            
-            config_cell = TableCell("Sampled output folder", bgcolor = '#CEF6F5', align = 'left')
-            setting_cell = TableCell(self.output_dir_path, bgcolor = '#CEF6F5', align = 'left')
-            setting_table.rows.append([config_cell, setting_cell])
-            '''
-            config_cell = TableCell("Confidence level (%)", bgcolor = '#CEF6F5', align = 'left')
-            setting_cell = TableCell(self.confidence_val_rep*100, bgcolor = '#CEF6F5', align = 'right')
-            setting_table.rows.append([config_cell, setting_cell])
-            
-            config_cell = TableCell("Confidence interval (%)", bgcolor = '#CEF6F5', align = 'left')
-            setting_cell = TableCell(self.precision_val_rep*100, bgcolor = '#CEF6F5', align = 'right')
-            setting_table.rows.append([config_cell, setting_cell])
-            
-            config_cell = TableCell("Total documents in the source document folder", bgcolor = '#CEF6F5', align = 'left')
-            setting_cell = TableCell(len(self.file_list), bgcolor = '#CEF6F5', align = 'right')
-            setting_table.rows.append([config_cell, setting_cell])
-            
-            config_cell = TableCell("The sample size", bgcolor = '#CEF6F5', align = 'left')
-            setting_cell = TableCell(len(self.sampled_files), bgcolor = '#CEF6F5', align = 'right')
-            setting_table.rows.append([config_cell, setting_cell])
-            
-            return str(setting_table)
-        except Exception,e:
-            print e
-        
-    def _gen_complete_html_report(self, samples, responsive, privileged):
-        try:
-            # Generate HTML tags for all documents 
-            hrow = TableRow(cells=['#', 'File Name', 'Responsive', 'Privileged'], bgcolor='#6E6E6E')
-            all_table = Table(header_row=hrow)
-            cnt = 1
-            for fs in samples:
-                
-                rc_colr = resp_colors[rstatus(fs[1])]
-                pc_colr = priv_colors[rstatus(fs[2])]
-                r_colr = row_colors[row_status(fs[1], fs[2])]
-                num_cell = TableCell(cnt, bgcolor=r_colr, align='center')
-                file_name = link(fs[0], fs[0])
-                fn_cell = TableCell(file_name, bgcolor=r_colr)
-                resp_cell = TableCell(fs[1], bgcolor=rc_colr, align='center')
-                priv_cell = TableCell(fs[2], bgcolor=pc_colr, align='center')
-                
-                all_table.rows.append([num_cell, fn_cell, resp_cell, priv_cell])
-                cnt = cnt + 1
-            
-            html_body = """
-            %s 
-    
-            %s 
-    
-            <hr/>
-            <h3>Complete Sample</h3>
-            %s 
-            <br/>
-            """ % (self._gen_responsive_html_report(responsive), self._gen_privileged_html_report(privileged), str(all_table))
-            
-            return html_body
-        except Exception,e:
-            print e
-       
-    def _gen_responsive_html_report(self, responsive):
-        '''
-        Generate HTML tags for responsive documents 
-        '''
-        try:
-            if len(responsive) == 0: return ''
-            hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
-            resp_table = Table(header_row=hrow)
-            cnt = 1
-            for fs in responsive:
-                r_colr = resp_colors['Yes']
-                num_cell = TableCell(cnt, bgcolor=r_colr, align='center')
-                file_name = link(fs[0], fs[0])
-                fn_cell = TableCell(file_name, bgcolor=r_colr)
-                resp_table.rows.append([num_cell, fn_cell])
-                cnt = cnt + 1
-                
-            html_body = """
-            <hr/>
-            <h3>Responsive Documents</h3>
-            %s 
-            <br/>
-            """ % str(resp_table)
-            
-            return html_body
-        except Exception,e:
-            print e
-      
-    def _gen_privileged_html_report(self, privileged):
-        '''
-        Generate HTML tags for privileged documents 
-        '''
-        try:
-            if len(privileged) == 0: return ''
-            
-            hrow = TableRow(cells=['#', 'File Name'], bgcolor='#6E6E6E')
-            priv_table = Table(header_row=hrow)
-            cnt = 1
-            for fs in privileged:
-                r_colr = priv_colors['Yes']
-                num_cell = TableCell(cnt, bgcolor=r_colr, align='center')
-                file_name = link(fs[0], fs[0])
-                fn_cell = TableCell(file_name, bgcolor=r_colr)
-                priv_table.rows.append([num_cell, fn_cell])
-                cnt = cnt + 1
-            html_body = """
-            <hr/>
-            <h3>Privileged Documents</h3>
-            %s 
-            <br/>
-            """ % str(priv_table)
-            
-            return html_body
-        except Exception,e:
-            print e
         
     #********************************************* END Review Tab Handling *******************************************************  
 
-    def _on_click_out_exit( self, event ):
-        '''
-        Exits
-        Arguments: Nothing
-        Returns: Nothing
-        '''
-        try:
-            self._on_close()
-        except Exception,e:
-            print e   
-   
-    def _on_close(self):
-        '''
-        Closes the Application after confirming with user
-        Arguments: Nothing
-        Returns: Nothing
-        '''
-        try:
-            dlg = wx.MessageDialog(self,
-                                   "Do you really want to close this application?",
-                                   "Confirm Exit", wx.OK|wx.CANCEL|wx.ICON_QUESTION)
-            if dlg.ShowModal() == wx.ID_OK:
-                
-                # Handles the shelf 
-                if self.shelf is not None:
-                    if self._is_rt_updated:
-                        self._shelf_update_review_tab_state()
-                    self.shelf.close()
-                
-                self.Destroy()
-        except Exception,e:
-            print e
-
-            
-    def _btn_sample_back_res(self, event):
+    def _on_click_relevant_back(self, event):
         self._review_res.Destroy()
         self._current_page = 4
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
-    def _btn_sample_back_unres(self, event):
+    def _on_click_irrelevant_back(self, event):
         self._review_unres.Destroy()
         self._current_page = 3
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
     def _on_click_sample_next( self, event ):
-        self._review_res = TaggingControlSmarter(self._panel_review_res, self.sampled_files_responsive,self._rbx_response_res,self._rbx_privilage_res,self._tc_preview_tags,self._panel_doc_tag_res)
-        self._review_res._setup_review_tab()
+        self._review_res = TaggingControlSmarter(self._panel_review_res, self.sampled_files_responsive, 
+                                                 self._rbx_response_res, 
+                                                 self._tc_preview_tags, self._panel_doc_tag_res, 
+                                                 self._get_relevancy_color)
+        self._review_res._setup_review_tab('Relevant')
         self._current_page = 5
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
     def _on_click_show_report( self, event ):
+        
+        self.__setup_accuracy_grid()
+        
         self._current_page = 6
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
@@ -2233,19 +2531,33 @@ class SMARTeR (SMARTeRGUI):
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
-    def _on_click_back_query(self,event):
+    def _on_click_report_exit( self, event ):
+        self.__on_close()  
+        
+    def _btn_click_restart_search(self,event):
         self._current_page = 1
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
-    def _on_click_exit( self, event ):
-        exit()    
         
+    def _on_click_export_files(self,event):
+        import zipfile
+        res_zip = zipfile.ZipFile(os.path.join(self._project_dir_path,"relevant.zip"),"w")
         
-    def _btn_sample_exit(self, Event):
-        exit()
+        for name in self._responsive_files:
+            res_zip.write(name[0], os.path.basename(name[0]))
+            
+        unres_zip = zipfile.ZipFile(os.path.join(self._project_dir_path,"nonrelevant.zip"),"w")
+        
+        for name in self._unresponsive_files:
+            unres_zip.write(name[0], os.path.basename(name[0]))
+            
+        unres_zip.close()
+        dlg = wx.MessageDialog(self, "The relevant and non relevant files are zipped and can be found at location "+ self._project_dir_path, "Export files", wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
 
 def main():
+    
     '''
     The main function call 
     '''

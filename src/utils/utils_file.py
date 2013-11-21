@@ -114,7 +114,8 @@ def store_file_paths_index(index_file, file_path_tuples):
     with open(index_file, 'w') as fw:
         for ft in file_path_tuples: 
             (idx, root, file_name) = ft
-            print >>fw, idx, root, file_name
+            
+            fw.write(str(idx)+";"+str(root)+";"+str(file_name)+"\n")
 
 
 def load_file_paths_index(index_file):
@@ -131,7 +132,8 @@ def load_file_paths_index(index_file):
     
     with open(index_file) as fp:
         for line in fp: 
-            (idx, root, file_name) = line.strip().split()
+            print line
+            (idx, root, file_name) = line.strip().split(";")
             file_path_tuples.append((int(idx), os.path.normpath(root), file_name))
     
     return file_path_tuples

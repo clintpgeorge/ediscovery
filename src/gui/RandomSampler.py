@@ -845,7 +845,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         #ToDo....NOT SAFE
         try:
             subprocess.check_output(['readpst', '-o', os.path.abspath(temp), '-e', '-b', '-S', pstfilename], stderr=subprocess.STDOUT,shell=True)
-    
+            print temp
+            print pstfilename
             #print response
             for root, _, files in os.walk(temp):
                 for file_name in files:

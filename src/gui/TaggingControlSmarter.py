@@ -8,112 +8,93 @@ import wx
 import os
 import webbrowser 
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
-from file_utils import get_destination_file_path
 
-class TaggingControlSmarter ( wx.ListCtrl, ListCtrlAutoWidthMixin):
-    def __init__(self, parent, doc_list,responsive, privileged,preview,tags):
+
+class TaggingControlSmarter(wx.ListCtrl, ListCtrlAutoWidthMixin):
+    
+    def __init__(self, parent, review_docs, rbx_feedback, tc_preview, panel_tagging, get_row_color):
         
-        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size( 420,200 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
+        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size(410, 250), style=wx.LC_REPORT|wx.SUNKEN_BORDER|wx.ALIGN_TOP)
         ListCtrlAutoWidthMixin.__init__(self)
         
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected)
         self.Bind(wx.EVT_LEFT_DCLICK, self._on_review_list_item_activated)
         #self.Bind(wx.EVT_CONTEXT_MENU, rs.on_right_click_menu)
-        self._sampled_files=doc_list
-        self._doc=doc_list
-        self._rbx_responsive=responsive
-        self._rbx_privileged=privileged
-        self._tc_preview=preview
-        self._panel_doc_tags=tags
+
+        self._review_docs = review_docs
+        self._rbx_feedback = rbx_feedback
+        self._tc_preview = tc_preview
+        self._panel_tagging = panel_tagging
+        self._get_row_color = get_row_color
+        
         self.Layout()
         
-    def _setup_review_tab(self):
+    def _setup_review_tab(self, feedback='Relevant'):
         '''
         This functions sets up the review tab 
         and its components 
         
         '''
-        #if rs._lc_review_loaded: 
-        #    return 
-        
         # Sets the list control headers 
         
-         
-        #if rs._lc_review_loaded==True:
-        #    self.ClearAll()
-            
-        
         self.InsertColumn(0, '#', wx.LIST_FORMAT_CENTRE, width=30)
-        self.InsertColumn(1, 'File Name', width=200)
-        self.InsertColumn(2, 'Responsive', wx.LIST_FORMAT_CENTRE)
-        self.InsertColumn(3, 'Privileged', wx.LIST_FORMAT_CENTRE)
+        self.InsertColumn(1, 'Document Name', width=200)
+        self.InsertColumn(2, feedback, wx.LIST_FORMAT_CENTRE)
         
-        # Initializes from the shelf 
+        # Add all documents to the list control 
         
+        for row_id, fs in enumerate(self._review_docs):
+            self.InsertStringItem(row_id, str(row_id + 1))
+            self.SetStringItem(row_id, 1, fs[0])
+            self.SetStringItem(row_id, 2, fs[1])
+            self.SetItemBackgroundColour(row_id, self._get_row_color(fs[1]))           
+          
         
-        file_id = 0
+    def __update_feedback(self, feedback_label):
         
-        for fs in self._doc:
-            self.InsertStringItem(file_id, str(file_id + 1))
-            self.SetStringItem(file_id, 1, fs[0])
-            self.SetStringItem(file_id, 2, fs[1])
-            self.SetStringItem(file_id, 3, fs[2])           
-            file_id += 1            
+        if feedback_label == 'Yes':
+            self._rbx_feedback.SetSelection(0)
+        elif feedback_label == 'No':
+            self._rbx_feedback.SetSelection(1)
+        elif feedback_label == 'Uncertain':
+            self._rbx_feedback.SetSelection(2)
+        else: 
+            self._rbx_feedback.SetSelection(3)
+            
+        # Shows the tags panel 
         
+        self._panel_tagging.Show()
+        self._panel_tagging.GetParent().GetSizer().Layout()
+            
     def _on_review_list_item_selected(self, event):
         
         # Gets the selected row's details 
-        
-       # rs = self.random_sampler
        
         self.selected_doc_id = self.GetFocusedItem()
         if self.selected_doc_id < 0: return 
         
-        responsive = self.GetItem(self.selected_doc_id, 2)
-        privileged = self.GetItem(self.selected_doc_id, 3)
-
+        feedback_label = self.GetItem(self.selected_doc_id, 2).Text
+        selected_doc_path = self._review_docs[self.selected_doc_id][0]
+        
         # Handles the document tags check boxes 
         
-        if responsive.Text == 'Yes':
-            self._rbx_responsive.SetStringSelection('Yes')
-        elif responsive.Text == 'No':
-            self._rbx_responsive.SetStringSelection('No')
-        elif responsive.Text == '':
-            self._rbx_responsive.SetStringSelection('Unknown')
-            
-        if privileged.Text == 'Yes':
-            self._rbx_privileged.SetStringSelection('Yes')
-        elif privileged.Text == 'No':
-            self._rbx_privileged.SetStringSelection('No')
-        elif privileged.Text == '':
-            self._rbx_privileged.SetStringSelection('Unknown')
+        self.__update_feedback(feedback_label)
+
+        # Show the preview
         
-        # Shows the tags panel 
-        self._panel_doc_tags.Show()
-        self._panel_doc_tags.GetParent().GetSizer().Layout()
-        
-        #Show the preview
-        print_message = ''
-        is_message_opened = False
+        doc_text = ''
         try:
+            _, fileExtension = os.path.splitext(selected_doc_path)
+            if fileExtension == "" or fileExtension == ".txt":
+                with open(selected_doc_path) as fp:
+                    doc_text = fp.read()
+        except:
+            None 
             
-            src_file_path = self._doc[self.selected_doc_id][0]
-            #file_path = get_destination_file_path(rs.dir_path,rs._tempdir, src_file_path, rs.output_dir_path)
-            _, fileExtension = os.path.splitext(src_file_path)
-            if fileExtension=="" or fileExtension==".txt":
-                with open(src_file_path,'r') as content:
-                    print_message+=content.read()
-                is_message_opened = True
-        except Exception as anyException:
-            is_message_opned = False;
-            
-        if is_message_opened:
-            try:
-                self._tc_preview.SetValue(print_message)
-            except:
-                self._tc_preview.SetValue("File Encoding not supported. Double click to open.")
-        else:
-            self._tc_preview.SetValue('')
+        try:
+            self._tc_preview.SetValue(doc_text)
+        except:
+            self._tc_preview.SetValue("Document encoding is not supported. Please double click on the document to open it in a system viewer.")
             
                 
 
@@ -123,119 +104,113 @@ class TaggingControlSmarter ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         '''
         # Gets the selected row's details 
-        #rs = self.random_sampler
+        
         self.selected_doc_id = self.GetFocusedItem()
-        
         if self.selected_doc_id < 0: return 
+        feedback_label = self.GetItem(self.selected_doc_id, 2).Text
         
-        responsive = self.GetItem(self.selected_doc_id, 2)
-        privileged = self.GetItem(self.selected_doc_id, 3)
-        src_file_path = self._doc[self.selected_doc_id][0]
+        # Handles the document tag radio buttons  
         
-        #print rs._tempdir+"\n"
+        self.__update_feedback(feedback_label)
         
-        _, file_name = os.path.split(src_file_path)
+        # Open the file in a system viewer 
         
-        responsive_status = self._rbx_responsive.GetStringSelection()
-        privileged_status = self._rbx_privileged.GetStringSelection()
-
-   
-        if os.path.exists(src_file_path):
-                  
+        selected_doc_path = self._review_docs[self.selected_doc_id][0]
+        if os.path.exists(selected_doc_path):
             try:
                 
-                # Open a file
-                webbrowser.open(src_file_path)
-                self.make_tag_popup(file_name,responsive_status, privileged_status)
-
-
+                webbrowser.open(selected_doc_path)
+                # _, file_name = os.path.split(selected_doc_path)
+                # self.make_tag_popup(file_name, feedback_label, privileged_status)
             except Exception as anyException:
-                pass
                 print anyException
-                #self._show_error_message("Open File Error!", "The file could not be opened with the default application.")
-        
+                self._smarter._show_error_message("Open Document Error!", "The document could not be opened with the default application.")
         else: 
-            self._show_error_message("Open File Error!", "The file does not exist!")
-
-    def make_tag_popup(self, file_name, responsive_status, privileged_status):
-        # Creates a document tagging dialog 
-                
-            dlg = TagDocument(self, file_name, responsive_status, privileged_status)
+            self._smarter._show_error_message("Open Document Error!", "The selected document does not exist!")
             
-            # Gets the tag selections from the dialog
             
-            if dlg.ShowModal() == wx.ID_OK:
-                responsive_status = dlg._rbx_responsive.GetStringSelection()  
-                privileged_status = dlg._rbx_privileged.GetStringSelection()
-                
-                # Sets the selections to the parent window 
-
-                self._rbx_responsive.SetStringSelection(responsive_status)
-                if responsive_status == 'Yes': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
-                elif responsive_status == 'No': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
-                elif responsive_status == 'Unknown': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
-                
-                self._rbx_privileged.SetStringSelection(privileged_status)
-                if privileged_status == 'Yes': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
-                elif privileged_status == 'No': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
-                elif privileged_status == 'Unknown': 
-                    self._lc_review.SetStringItem(self.selected_doc_id, 3, '')
-                    
-                self._is_rt_updated = True 
-                
-            # Destroys the dialog object 
             
-            dlg.Destroy()    
+            
 
-    def GetListCtrl(self):
-        return self
-    
-class TagDocument():
-    '''
-    Tag document custom dialog implementation 
-    '''
-
-
-    def __init__(self, parent, file_name, responsive, privileged):
-        '''
-        Constructor
-        '''
-        
-        # Calls the parent class's method 
-        
-        super(TagDocument, self).__init__(parent) 
-        
-        # Sets the dialog controls based on the selected document value 
-        
-        self.SetTitle('Tag %s' % file_name)
-        self._rbx_privileged.SetStringSelection(responsive)
-        self._rbx_responsive.SetStringSelection(privileged)
-        
-        
-    def _on_click_add_tags( self, event ):
-        '''
-        Returns the numeric code 'ID_OK' to caller
-        '''
-        
-        self.EndModal(wx.ID_OK) 
-        
-    def _show_error_message(self, _header, _message):
-        '''
-        Shows error messages in a pop up 
-        '''
-        
-        dlg = wx.MessageDialog(self, _message, _header, wx.OK | wx.ICON_ERROR)
-        dlg.ShowModal()
-
-    def _on_click_clear_tags( self, event ):
-        '''
-        Clears the check box values 
-        '''
-        
-        self._rbx_privileged.SetStringSelection("Unknown")
-        self._rbx_responsive.SetStringSelection("Unknown")        
+#    def make_tag_popup(self, file_name, responsive_status, privileged_status):
+#        # Creates a document tagging dialog 
+#                
+#            dlg = TagDocument(self, file_name, responsive_status, privileged_status)
+#            
+#            # Gets the tag selections from the dialog
+#            
+#            if dlg.ShowModal() == wx.ID_OK:
+#                responsive_status = dlg._rbx_responsive.GetStringSelection()  
+#                privileged_status = dlg._rbx_privileged.GetStringSelection()
+#                
+#                # Sets the selections to the parent window 
+#
+#                self._rbx_feedback.SetStringSelection(responsive_status)
+#                if responsive_status == 'Yes': 
+#                    self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
+#                elif responsive_status == 'No': 
+#                    self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
+#                elif responsive_status == 'Unknown': 
+#                    self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
+#                
+#                self._rbx_privileged.SetStringSelection(privileged_status)
+#                if privileged_status == 'Yes': 
+#                    self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
+#                elif privileged_status == 'No': 
+#                    self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
+#                elif privileged_status == 'Unknown': 
+#                    self._lc_review.SetStringItem(self.selected_doc_id, 3, '')
+#                    
+#                self._is_rt_updated = True 
+#                
+#            # Destroys the dialog object 
+#            
+#            dlg.Destroy()    
+#
+#    def GetListCtrl(self):
+#        return self
+#    
+#class TagDocument():
+#    '''
+#    Tag document custom dialog implementation 
+#    '''
+#
+#
+#    def __init__(self, parent, file_name, responsive, privileged):
+#        '''
+#        Constructor
+#        '''
+#        
+#        # Calls the parent class's method 
+#        
+#        super(TagDocument, self).__init__(parent) 
+#        
+#        # Sets the dialog controls based on the selected document value 
+#        
+#        self.SetTitle('Tag %s' % file_name)
+#        self._rbx_privileged.SetStringSelection(responsive)
+#        self._rbx_feedback.SetStringSelection(privileged)
+#        
+#        
+#    def _on_click_add_tags( self, event ):
+#        '''
+#        Returns the numeric code 'ID_OK' to caller
+#        '''
+#        
+#        self.EndModal(wx.ID_OK) 
+#        
+#    def _show_error_message(self, _header, _message):
+#        '''
+#        Shows error messages in a pop up 
+#        '''
+#        
+#        dlg = wx.MessageDialog(self, _message, _header, wx.OK | wx.ICON_ERROR)
+#        dlg.ShowModal()
+#
+#    def _on_click_clear_tags( self, event ):
+#        '''
+#        Clears the check box values 
+#        '''
+#        
+#        self._rbx_privileged.SetStringSelection("Unknown")
+#        self._rbx_feedback.SetStringSelection("Unknown")        

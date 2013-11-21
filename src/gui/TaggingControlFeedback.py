@@ -14,7 +14,7 @@ class TaggingControlFeedback(wx.ListCtrl, ListCtrlAutoWidthMixin):
     
     def __init__(self, parent, sm):
         
-        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size( 420,200 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
+        wx.ListCtrl.__init__(self, parent, id = wx.ID_ANY, size = wx.Size( 600,200 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
         ListCtrlAutoWidthMixin.__init__(self)
         self.smarter = sm
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected)
@@ -27,20 +27,15 @@ class TaggingControlFeedback(wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         '''
         sm = self.smarter
-        self.InsertColumn(0, '#', wx.LIST_FORMAT_CENTRE, width=30)
-        self.InsertColumn(1, 'File Name', width=200)
-        self.InsertColumn(2, 'Responsive', wx.LIST_FORMAT_CENTRE)
-        #self.InsertColumn(3, 'Privileged', wx.LIST_FORMAT_CENTRE)
-        #rs._lc_review_loaded = True
-        # Initializes from the shelf 
-        
-        #samples_lst = rs.shelf['samples']
-        file_id = 0
-        for fs in sm._seed_docs_details:
-            self.InsertStringItem(file_id, str(file_id + 1))
-            self.SetStringItem(file_id, 1, str(fs[2]))
-            self.SetStringItem(file_id, 2, str(fs[4]))           
-            file_id += 1            
+        self.InsertColumn(0, '#', wx.LIST_FORMAT_CENTRE, width=40)
+        self.InsertColumn(1, 'Document Name', width=450)
+        self.InsertColumn(2, 'Relevant', wx.LIST_FORMAT_CENTRE, width=60)
+
+        for row_id, fs in enumerate(sm._seed_docs_details):
+            self.InsertStringItem(row_id, str(row_id + 1))
+            self.SetStringItem(row_id, 1, str(fs[2]))
+            self.SetStringItem(row_id, 2, str(fs[3]))      
+            self.SetItemBackgroundColour(row_id, sm._get_relevancy_color(fs[3]))     
         
             
         
@@ -48,51 +43,41 @@ class TaggingControlFeedback(wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         # Gets the selected row's details 
         sm = self.smarter
-        selected_doc_id = self.GetFocusedItem()
+        selected_row_id = self.GetFocusedItem()
         
-        if selected_doc_id < 0: return 
+        if selected_row_id < 0: return 
         
-        responsive = sm._seed_docs_details[selected_doc_id][4]    
+        is_relevant = sm._seed_docs_details[selected_row_id][3]  
+        selected_doc_path = sm._seed_docs_details[selected_row_id][1]
         
         # Handles the document tags check boxes 
-        # TODO: Need to verify whether the following 
-        # code snippet is necessary 
         
-        if responsive == 'Yes':
-            sm._rbx_responsive.SetSelection(0)
-            sm._seed_docs_details[selected_doc_id][4] = 'Yes'
-            sm._doc_true_class_ids[selected_doc_id] = sm.RESPONSIVE_CLASS_ID
-        elif responsive == 'No':
-            sm._rbx_responsive.SetSelection(1)
-            sm._seed_docs_details[selected_doc_id][4] = 'No'
-            sm._doc_true_class_ids[selected_doc_id] = sm.UNRESPONSIVE_CLASS_ID
+        if is_relevant == 'Yes':
+            sm._rbx_doc_feedback.SetSelection(0)
+        elif is_relevant == 'No':
+            sm._rbx_doc_feedback.SetSelection(1)
+        elif is_relevant == 'Uncertain':
+            sm._rbx_doc_feedback.SetSelection(2)
         else:
-            sm._rbx_responsive.SetSelection(2)
-            sm._seed_docs_details[selected_doc_id][4] = ''
-            sm._doc_true_class_ids[selected_doc_id] = sm.NEUTRAL_CLASS_ID
+            sm._rbx_doc_feedback.SetSelection(3)
                          
         
         # Show the preview of the selected file in the Text Window  
 
         msg_text = ''
-        is_message_opened = False
         
         try:  
-            src_file_path = sm._seed_docs_details[selected_doc_id][1]
-            file_extension = os.path.splitext(src_file_path)[1]
+            file_extension = os.path.splitext(selected_doc_path)[1]
             if file_extension == "" or file_extension == ".txt":
-                with open(src_file_path) as fp:
+                with open(selected_doc_path) as fp:
                     # TODO: fp.read() returns entire contents of the file; 
                     #       there will be a problem if the file is twice as 
                     #       large as the machine's memory
                     msg_text = fp.read()
-                is_message_opened = True
         except: 
             print 'File open failed!' 
-        
-        if is_message_opened:
-            sm._doc_feedback_preview.SetValue(msg_text)
-        else:
-            sm._doc_feedback_preview.SetValue('')
+
+        sm._doc_feedback_preview.SetValue(msg_text)
             
+        
             
