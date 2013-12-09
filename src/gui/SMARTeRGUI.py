@@ -400,7 +400,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_query_results.SetSizer( sbSizer11 )
 		self._panel_query_results.Layout()
 		sbSizer11.Fit( self._panel_query_results )
-		self._notebook.AddPage( self._panel_query_results, _(u"SMARTeR Results (Optional Preview)"), True )
+		self._notebook.AddPage( self._panel_query_results, _(u"SMARTeR Results (Optional Preview)"), False )
 		self._panel_sample_conf = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self._panel_sample_conf.Hide()
 		
@@ -511,8 +511,8 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_conf_back = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer14.Add( self._btn_conf_back, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_conf_next = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer14.Add( self._btn_conf_next, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._btn_conf_next = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Next"), wx.Point( -1,-1 ), wx.DefaultSize, 0 )
+		gbSizer14.Add( self._btn_conf_next, wx.GBPosition( 0, 55 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		sbSizer6.Add( gbSizer14, 1, wx.EXPAND, 5 )
@@ -524,7 +524,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_sample_conf.SetSizer( bSizer101 )
 		self._panel_sample_conf.Layout()
 		bSizer101.Fit( self._panel_sample_conf )
-		self._notebook.AddPage( self._panel_sample_conf, _(u"Sample Confidence"), False )
+		self._notebook.AddPage( self._panel_sample_conf, _(u"Sample Confidence"), True )
 		self._panel_review_unresp = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		_bsizer_review_unresp = wx.BoxSizer( wx.VERTICAL )
 		
@@ -704,20 +704,23 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer211.SetFlexibleDirection( wx.BOTH )
 		gbSizer211.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._grid_query_accuracy = wx.grid.Grid( self._panel_search_report, wx.ID_ANY, wx.DefaultPosition, wx.Size( 800,200 ), wx.NO_BORDER )
+		self._grid_query_accuracy = wx.grid.Grid( self._panel_search_report, wx.ID_ANY, wx.DefaultPosition, wx.Size( 1030,200 ), wx.NO_BORDER )
 		
 		# Grid
-		self._grid_query_accuracy.CreateGrid( 0, 4 )
+		self._grid_query_accuracy.CreateGrid( 0, 7 )
 		self._grid_query_accuracy.EnableEditing( True )
 		self._grid_query_accuracy.EnableGridLines( True )
 		self._grid_query_accuracy.EnableDragGridSize( False )
 		self._grid_query_accuracy.SetMargins( 0, 0 )
 		
 		# Columns
-		self._grid_query_accuracy.SetColSize( 0, 350 )
-		self._grid_query_accuracy.SetColSize( 1, 85 )
-		self._grid_query_accuracy.SetColSize( 2, 117 )
-		self._grid_query_accuracy.SetColSize( 3, 151 )
+		self._grid_query_accuracy.SetColSize( 0, 302 )
+		self._grid_query_accuracy.SetColSize( 1, 74 )
+		self._grid_query_accuracy.SetColSize( 2, 111 )
+		self._grid_query_accuracy.SetColSize( 3, 123 )
+		self._grid_query_accuracy.SetColSize( 4, 102 )
+		self._grid_query_accuracy.SetColSize( 5, 110 )
+		self._grid_query_accuracy.SetColSize( 6, 120 )
 		self._grid_query_accuracy.EnableDragColMove( False )
 		self._grid_query_accuracy.EnableDragColSize( True )
 		self._grid_query_accuracy.SetColLabelSize( 30 )
@@ -725,6 +728,9 @@ class SMARTeRGUI ( wx.Frame ):
 		self._grid_query_accuracy.SetColLabelValue( 1, _(u"Accuracy*") )
 		self._grid_query_accuracy.SetColLabelValue( 2, _(u"Relevancy Ratio$") )
 		self._grid_query_accuracy.SetColLabelValue( 3, _(u"Irrelevancy Ratio^") )
+		self._grid_query_accuracy.SetColLabelValue( 4, _(u"Accuracy Lucene") )
+		self._grid_query_accuracy.SetColLabelValue( 5, _(u"Relevancy Lucene") )
+		self._grid_query_accuracy.SetColLabelValue( 6, _(u"Irrelevancy Lucene") )
 		self._grid_query_accuracy.SetColLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
 		
 		# Rows
@@ -842,7 +848,7 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer211.Add( self._btn_back_sample_res, wx.GBPosition( 10, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._btn_exit = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer211.Add( self._btn_exit, wx.GBPosition( 10, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer211.Add( self._btn_exit, wx.GBPosition( 10, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticline91 = wx.StaticLine( self._panel_search_report, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbSizer211.Add( self.m_staticline91, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )

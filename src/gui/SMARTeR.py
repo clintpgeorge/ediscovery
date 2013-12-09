@@ -1452,7 +1452,7 @@ class SMARTeR (SMARTeRGUI):
         lda_search_results = self.__search_tm_topics(dominant_topics_idx, self._num_documents, self.mdl_cfg) # returns [doc_id, doc_path, doc_name, doc_score] 
         self._lucene_scores_dict = self.__lucene_append_nonresponsive_docs(lucene_search_results) 
         self._lucene_docs_list = [doc[0] for doc in lucene_search_results]
-
+    
         if len(lucene_search_results) > 0:
             self._init_search_results = self.__fuse_lucene_tm_scores(self._lucene_scores_dict, lda_search_results) # fuses LDA and Lucene 
         else: 
@@ -1482,7 +1482,7 @@ class SMARTeR (SMARTeRGUI):
         
         if flag:
             self._list_query_history.Append(luceneQuery)
-            self._query_history.append([luceneQuery, -1,"",""])
+            self._query_history.append([luceneQuery, -1,"","","","",""])
             self._choice_history = cnt
         
         # self._tc_query_aggregated.SetValue('')
@@ -1647,7 +1647,7 @@ class SMARTeR (SMARTeRGUI):
         print 'Accuracy based on seeds:', correct_files / len(self._seed_docs_details) 
         print 
         
-        self._query_history[self._choice_history][1] = float(correct_files)/len(self._seed_docs_details)     
+        self._query_history[self._choice_history][1] = round(float(correct_files)/len(self._seed_docs_details),2)     
         
         
         #----------------- Generate samples of Relevant and Irrelevant documents
@@ -1763,18 +1763,18 @@ class SMARTeR (SMARTeRGUI):
         
 
         print 
-        num_lucene_tn = 0
-        num_lucene_tp = 0 
+        num_lucene_fn = 0
+        num_lucene_fp = 0 
         for doc_sample in self.sampled_files_unresponsive:
             _, is_irrelevant, _, _, doc_id = doc_sample
             if doc_id not in self._lucene_docs_list and is_irrelevant == 'Yes':
-                num_lucene_tn += 1
+                num_lucene_fn += 1
             elif doc_id in self._lucene_docs_list and is_irrelevant == 'No':
-                num_lucene_tp += 1                 
-        lucene_IRS_acc = float(num_lucene_tn) * 100.0 / float(irrelevant_size)
+                num_lucene_fp += 1                 
+        lucene_IRS_acc = float(num_lucene_fn) * 100.0 / float(irrelevant_size)
 
-        print 'Irrelevant Sample #%d (LUCENE): TP #%d, TN #%d, accuracy %1.4f' % (irrelevant_size, num_lucene_tp, num_lucene_tn, lucene_IRS_acc)
-
+        print 'Irrelevant Sample #%d (LUCENE): TP #%d, TN #%d, accuracy %1.4f' % (irrelevant_size, num_lucene_fp, num_lucene_fn, lucene_IRS_acc)
+        self._query_history[self._choice_history][6] = str(num_lucene_fp)+"/"+str(irrelevant_size)
         num_lucene_tn = 0
         num_lucene_tp = 0 
         for doc_sample in self.sampled_files_responsive:
@@ -1785,23 +1785,30 @@ class SMARTeR (SMARTeRGUI):
                 num_lucene_tp += 1
         lucene_RS_acc = float(num_lucene_tp) * 100.0 / float(relevant_size)
         
-        self._query_history[self._choice_history][2]=self.eval_relv
-        self._query_history[self._choice_history][3]=self.eval_irrelv
+        self._query_history[self._choice_history][5] = str(num_lucene_tp)+"/"+str(relevant_size)
+        
+        
         
         print 'Relevant Sample #%d (LUCENE): TP #%d, TN #%d, accuracy %1.4f' % (relevant_size, num_lucene_tp, num_lucene_tn, lucene_RS_acc)
+        self._query_history[self._choice_history][2]=self.eval_relv
+        self._query_history[self._choice_history][3]=self.eval_irrelv
+        self._query_history[self._choice_history][4] = round(float(num_lucene_tp+num_lucene_fp)/float(relevant_size+irrelevant_size),2)
         print 
-
+        
         if self._grid_query_accuracy.NumberRows != len(self._query_history):
             self._grid_query_accuracy.InsertRows(0, len(self._query_history) - self._grid_query_accuracy.NumberRows)
             
 
         for row_count, query_details in enumerate(self._query_history):
-            query, accuracy, rev, irrev = query_details
+            query, accuracy, rev, irrev , lacc, lrev,lirrev= query_details
             self._grid_query_accuracy.SetCellValue(row_count, 0, query)
             if accuracy != -1:
                 self._grid_query_accuracy.SetCellValue(row_count, 1, str(accuracy))
             self._grid_query_accuracy.SetCellValue(row_count, 2, str(rev))
             self._grid_query_accuracy.SetCellValue(row_count, 3, str(irrev))
+            self._grid_query_accuracy.SetCellValue(row_count, 4, str(lacc))
+            self._grid_query_accuracy.SetCellValue(row_count, 5, str(lrev))
+            self._grid_query_accuracy.SetCellValue(row_count, 6, str(lirrev))
                      
     def _on_click_update_results(self, event):
         '''

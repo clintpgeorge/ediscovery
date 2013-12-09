@@ -3253,7 +3253,7 @@
                         <object class="notebookpage" expanded="1">
                             <property name="bitmap"></property>
                             <property name="label">SMARTeR Results (Optional Preview)</property>
-                            <property name="select">1</property>
+                            <property name="select">0</property>
                             <object class="wxPanel" expanded="1">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
@@ -4834,7 +4834,7 @@
                         <object class="notebookpage" expanded="0">
                             <property name="bitmap"></property>
                             <property name="label">Sample Confidence</property>
-                            <property name="select">0</property>
+                            <property name="select">1</property>
                             <object class="wxPanel" expanded="0">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
@@ -6489,7 +6489,7 @@
                                                     <object class="gbsizeritem" expanded="0">
                                                         <property name="border">5</property>
                                                         <property name="colspan">1</property>
-                                                        <property name="column">1</property>
+                                                        <property name="column">55</property>
                                                         <property name="flag">wxALL</property>
                                                         <property name="row">0</property>
                                                         <property name="rowspan">1</property>
@@ -6536,7 +6536,7 @@
                                                             <property name="pane_size"></property>
                                                             <property name="permission">protected</property>
                                                             <property name="pin_button">1</property>
-                                                            <property name="pos"></property>
+                                                            <property name="pos">-1,-1</property>
                                                             <property name="resize">Resizable</property>
                                                             <property name="show">1</property>
                                                             <property name="size"></property>
@@ -9239,10 +9239,10 @@
                                                             <property name="close_button">1</property>
                                                             <property name="col_label_horiz_alignment">wxALIGN_CENTRE</property>
                                                             <property name="col_label_size">30</property>
-                                                            <property name="col_label_values">&quot;Keyword Query&quot; &quot;Accuracy*&quot; &quot;Relevancy Ratio$&quot; &quot;Irrelevancy Ratio^&quot;</property>
+                                                            <property name="col_label_values">&quot;Keyword Query&quot; &quot;Accuracy*&quot; &quot;Relevancy Ratio$&quot; &quot;Irrelevancy Ratio^&quot; &quot;Accuracy Lucene&quot; &quot;Relevancy Lucene&quot; &quot;Irrelevancy Lucene&quot;</property>
                                                             <property name="col_label_vert_alignment">wxALIGN_CENTRE</property>
-                                                            <property name="cols">4</property>
-                                                            <property name="column_sizes">350,85,117,151</property>
+                                                            <property name="cols">7</property>
+                                                            <property name="column_sizes">302,74,111,123,102,110,120</property>
                                                             <property name="context_help"></property>
                                                             <property name="context_menu">1</property>
                                                             <property name="default_pane">0</property>
@@ -9290,7 +9290,7 @@
                                                             <property name="row_sizes"></property>
                                                             <property name="rows">0</property>
                                                             <property name="show">1</property>
-                                                            <property name="size">800,200</property>
+                                                            <property name="size">1030,200</property>
                                                             <property name="subclass"></property>
                                                             <property name="toolbar_pane">0</property>
                                                             <property name="tooltip"></property>
@@ -10923,7 +10923,7 @@
                                                     <object class="gbsizeritem" expanded="0">
                                                         <property name="border">5</property>
                                                         <property name="colspan">1</property>
-                                                        <property name="column">2</property>
+                                                        <property name="column">1</property>
                                                         <property name="flag">wxALL</property>
                                                         <property name="row">10</property>
                                                         <property name="rowspan">1</property>
@@ -10948,7 +10948,7 @@
                                                             <property name="default_pane">0</property>
                                                             <property name="dock">Dock</property>
                                                             <property name="dock_fixed">0</property>
-                                                            <property name="docking">Left</property>
+                                                            <property name="docking">Right</property>
                                                             <property name="enabled">1</property>
                                                             <property name="fg"></property>
                                                             <property name="floatable">1</property>
