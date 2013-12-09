@@ -72,7 +72,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self.m_staticline3 = wx.StaticLine( self._panel_index, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_project.Add( self.m_staticline3, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self._btn_index_go_to_search = wx.Button( self._panel_index, wx.ID_ANY, _(u"Go to Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_index_go_to_search = wx.Button( self._panel_index, wx.ID_ANY, _(u"Next (Start Tagging Seed Set)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._btn_index_go_to_search.SetToolTipString( _(u"Click to go to the Start Search tab") )
 		
 		gbsizer_project.Add( self._btn_index_go_to_search, wx.GBPosition( 4, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -121,24 +121,8 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer8.SetFlexibleDirection( wx.BOTH )
 		gbSizer8.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._panel_feedback_doc = wx.Panel( self._panel_feedback, wx.ID_ANY, wx.DefaultPosition, wx.Size( 600,200 ), wx.TAB_TRAVERSAL )
+		self._panel_feedback_doc = wx.Panel( self._panel_feedback, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,200 ), wx.TAB_TRAVERSAL )
 		gbSizer8.Add( self._panel_feedback_doc, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
-		
-		bSizer81 = wx.BoxSizer( wx.VERTICAL )
-		
-		_rbx_doc_feedbackChoices = [ _(u"Yes"), _(u"No"), _(u"Uncertain"), _(u"Not Reviewed") ]
-		self._rbx_doc_feedback = wx.RadioBox( self._panel_feedback, wx.ID_ANY, _(u"Relevant?"), wx.DefaultPosition, wx.DefaultSize, _rbx_doc_feedbackChoices, 1, wx.RA_SPECIFY_COLS )
-		self._rbx_doc_feedback.SetSelection( 3 )
-		bSizer81.Add( self._rbx_doc_feedback, 0, wx.ALL, 5 )
-		
-		self._btn_feedback_smart_ranking = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Check Ranking"), wx.DefaultPosition, wx.Size( 110,-1 ), 0 )
-		bSizer81.Add( self._btn_feedback_smart_ranking, 0, wx.ALL, 5 )
-		
-		self._btn_feedback_back = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.Size( 110,-1 ), 0 )
-		bSizer81.Add( self._btn_feedback_back, 0, wx.ALL, 5 )
-		
-		
-		gbSizer8.Add( bSizer81, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALL, 5 )
 		
 		self._st_revew_pane_help1 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"* Please click each document line to review."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_revew_pane_help1.Wrap( -1 )
@@ -148,9 +132,9 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer8.Add( self._st_revew_pane_help1, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.LEFT, 5 )
 		
 		self._doc_feedback_preview = wx.TextCtrl( self._panel_feedback, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
-		self._doc_feedback_preview.SetMinSize( wx.Size( 985,190 ) )
+		self._doc_feedback_preview.SetMinSize( wx.Size( 500,190 ) )
 		
-		gbSizer8.Add( self._doc_feedback_preview, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 5 ), wx.ALL, 5 )
+		gbSizer8.Add( self._doc_feedback_preview, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticText1411 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText1411.Wrap( -1 )
@@ -158,11 +142,22 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		gbSizer8.Add( self.m_staticText1411, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 5 ), wx.LEFT|wx.RIGHT|wx.TOP, 5 )
 		
-		self.m_staticText1311 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Documents to be Reviewed*"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText1311 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Tag the following documents by reviewing in the preview pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText1311.Wrap( -1 )
 		self.m_staticText1311.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
 		gbSizer8.Add( self.m_staticText1311, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		
+		self._btn_feedback_smart_ranking = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Next (Search Keywords)"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
+		gbSizer8.Add( self._btn_feedback_smart_ranking, wx.GBPosition( 5, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_feedback_back = wx.Button( self._panel_feedback, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.Size( 110,-1 ), 0 )
+		gbSizer8.Add( self._btn_feedback_back, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		_rbx_doc_feedbackChoices = [ _(u"Yes"), _(u"No"), _(u"Uncertain"), _(u"Not Reviewed") ]
+		self._rbx_doc_feedback = wx.RadioBox( self._panel_feedback, wx.ID_ANY, _(u"Relevant?"), wx.DefaultPosition, wx.DefaultSize, _rbx_doc_feedbackChoices, 1, wx.RA_SPECIFY_COLS )
+		self._rbx_doc_feedback.SetSelection( 0 )
+		gbSizer8.Add( self._rbx_doc_feedback, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		sbSizer7.Add( gbSizer8, 1, wx.EXPAND, 5 )
@@ -180,13 +175,13 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_bsizer_query = wx.BoxSizer( wx.VERTICAL )
 		
-		_sbsizer_query_model1 = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Query Processing") ), wx.VERTICAL )
+		_sbsizer_query_model1 = wx.StaticBoxSizer( wx.StaticBox( self._panel_query, wx.ID_ANY, _(u"Search") ), wx.VERTICAL )
 		
 		_gbsizer_query1 = wx.GridBagSizer( 0, 5 )
 		_gbsizer_query1.SetFlexibleDirection( wx.BOTH )
 		_gbsizer_query1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._st_query1 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Enter Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_query1 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Enter Keywords:"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_query1.Wrap( -1 )
 		_gbsizer_query1.Add( self._st_query1, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.BOTTOM|wx.LEFT|wx.RIGHT, 5 )
 		
@@ -194,18 +189,18 @@ class SMARTeRGUI ( wx.Frame ):
 		self.m_staticText34.Wrap( -1 )
 		self.m_staticText34.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
 		
-		_gbsizer_query1.Add( self.m_staticText34, wx.GBPosition( 4, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_query1.Add( self.m_staticText34, wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._tc_query_terms = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )
 		self._tc_query_terms.SetToolTipString( _(u"Enter search keywords") )
 		
-		_gbsizer_query1.Add( self._tc_query_terms, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.ALIGN_TOP|wx.ALL, 5 )
+		_gbsizer_query1.Add( self._tc_query_terms, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.ALIGN_TOP|wx.ALL, 5 )
 		
 		_list_query_historyChoices = []
 		self._list_query_history = wx.ListBox( self._panel_query, wx.ID_ANY, wx.DefaultPosition, wx.Size( 370,150 ), _list_query_historyChoices, 0 )
-		_gbsizer_query1.Add( self._list_query_history, wx.GBPosition( 5, 3 ), wx.GBSpan( 3, 2 ), wx.ALL, 5 )
+		_gbsizer_query1.Add( self._list_query_history, wx.GBPosition( 4, 3 ), wx.GBSpan( 3, 2 ), wx.ALL, 5 )
 		
-		self._btn_search_add_to_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Add To Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_search_add_to_query = wx.Button( self._panel_query, wx.ID_ANY, _(u"Add To Keywords"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._btn_search_add_to_query.SetToolTipString( _(u"Click to add the query clause to the aggregated query") )
 		
 		_gbsizer_query1.Add( self._btn_search_add_to_query, wx.GBPosition( 1, 4 ), wx.GBSpan( 1, 1 ), wx.ALIGN_TOP|wx.ALL, 5 )
@@ -214,15 +209,15 @@ class SMARTeRGUI ( wx.Frame ):
 		self._cbx_query_data_fields = wx.ComboBox( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_query_data_fieldsChoices, wx.CB_READONLY|wx.CB_SORT )
 		self._cbx_query_data_fields.SetToolTipString( _(u"Select a data field") )
 		
-		_gbsizer_query1.Add( self._cbx_query_data_fields, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+		_gbsizer_query1.Add( self._cbx_query_data_fields, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.ALIGN_CENTER|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
 		
 		self._tc_query_aggregated = wx.TextCtrl( self._panel_query, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,250 ), wx.TE_MULTILINE )
 		_gbsizer_query1.Add( self._tc_query_aggregated, wx.GBPosition( 3, 1 ), wx.GBSpan( 5, 2 ), wx.ALL, 5 )
 		
-		self._btn_query_start_search = wx.Button( self._panel_query, wx.ID_ANY, _(u"Start Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_query_start_search = wx.Button( self._panel_query, wx.ID_ANY, _(u"Next (SMARTeR Search)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._btn_query_start_search.SetToolTipString( _(u"Click to start SMART search") )
 		
-		_gbsizer_query1.Add( self._btn_query_start_search, wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_query1.Add( self._btn_query_start_search, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		_cbx_query_conjunctionsChoices = [ _(u"AND"), _(u"OR"), _(u"NOT") ]
 		self._cbx_query_conjunctions = wx.ComboBox( self._panel_query, wx.ID_ANY, _(u"OR"), wx.DefaultPosition, wx.Size( 80,-1 ), _cbx_query_conjunctionsChoices, wx.CB_DROPDOWN|wx.CB_READONLY )
@@ -237,14 +232,14 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_search_in.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
 		self._st_search_in.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		_gbsizer_query1.Add( self._st_search_in, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		_gbsizer_query1.Add( self._st_search_in, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.TOP, 5 )
 		
 		self._st_search_keywords = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Enter search keywords"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_search_keywords.Wrap( -1 )
 		self._st_search_keywords.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
 		self._st_search_keywords.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		_gbsizer_query1.Add( self._st_search_keywords, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.TOP, 5 )
+		_gbsizer_query1.Add( self._st_search_keywords, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT|wx.TOP, 5 )
 		
 		self._st_search_keywords1 = wx.StaticText( self._panel_query, wx.ID_ANY, _(u"Select a Boolean connector"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_search_keywords1.Wrap( -1 )
@@ -267,7 +262,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_query_results = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self._panel_query_results.Hide()
 		
-		sbSizer11 = wx.StaticBoxSizer( wx.StaticBox( self._panel_query_results, wx.ID_ANY, _(u"Query Results") ), wx.VERTICAL )
+		sbSizer11 = wx.StaticBoxSizer( wx.StaticBox( self._panel_query_results, wx.ID_ANY, _(u"SMARTeR Results") ), wx.VERTICAL )
 		
 		self.m_staticText40 = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Please reveiw as many documents as possible, click on continue to sample documents or click on update query to refine search terms."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText40.Wrap( -1 )
@@ -293,11 +288,11 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		gbSizer23.Add( self._panel_res, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_staticText55 = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Responsive Documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText55.Wrap( -1 )
-		self.m_staticText55.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		self._st_Resp_documents = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Responsive Documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_Resp_documents.Wrap( -1 )
+		self._st_Resp_documents.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
 		
-		gbSizer23.Add( self.m_staticText55, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer23.Add( self._st_Resp_documents, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		bSizer811 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -315,10 +310,10 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer25.SetFlexibleDirection( wx.BOTH )
 		gbSizer25.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_next_res_res = wx.Button( self._panel_query_results, wx.ID_ANY, _(u">"), wx.DefaultPosition, wx.Size( 40,-1 ), 0 )
+		self._btn_next_res_res = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		gbSizer25.Add( self._btn_next_res_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_prev_res_res = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"<"), wx.DefaultPosition, wx.Size( 40,-1 ), 0 )
+		self._btn_prev_res_res = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Previous"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		gbSizer25.Add( self._btn_prev_res_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -336,11 +331,11 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		gbSizer24.Add( self._panel_unres, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_staticText56 = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Unresponsive Documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText56.Wrap( -1 )
-		self.m_staticText56.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		self._st_unresp_documents = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Unresponsive Documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._st_unresp_documents.Wrap( -1 )
+		self._st_unresp_documents.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
 		
-		gbSizer24.Add( self.m_staticText56, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer24.Add( self._st_unresp_documents, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		bSizer812 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -358,10 +353,10 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer26.SetFlexibleDirection( wx.BOTH )
 		gbSizer26.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_prev_res_unres = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"<"), wx.DefaultPosition, wx.Size( 40,-1 ), 0 )
+		self._btn_prev_res_unres = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Previous"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		gbSizer26.Add( self._btn_prev_res_unres, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_net_res_unres = wx.Button( self._panel_query_results, wx.ID_ANY, _(u">"), wx.DefaultPosition, wx.Size( 40,-1 ), 0 )
+		self._btn_net_res_unres = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		gbSizer26.Add( self._btn_net_res_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -377,10 +372,10 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer30.SetFlexibleDirection( wx.BOTH )
 		gbSizer30.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._tc_file_preview_pane = wx.TextCtrl( self._panel_query_results, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
-		self._tc_file_preview_pane.SetMinSize( wx.Size( 1000,150 ) )
+		self._tc_file_preview_pane = wx.TextCtrl( self._panel_query_results, wx.ID_ANY, _(u"all:(hi)\n"), wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
+		self._tc_file_preview_pane.SetMinSize( wx.Size( 700,150 ) )
 		
-		gbSizer30.Add( self._tc_file_preview_pane, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer30.Add( self._tc_file_preview_pane, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
 		
 		self.m_staticText54 = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Document Preview"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText54.Wrap( -1 )
@@ -389,21 +384,14 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		gbSizer30.Add( self.m_staticText54, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
+		self._btn_update_results = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Back (Refine Query)"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer30.Add( self._btn_update_results, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_continue  = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next"), wx.Point( -1,-1 ), wx.DefaultSize, 0 )
+		gbSizer30.Add( self._btn_continue , wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
 		
 		gbSizer34.Add( gbSizer30, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
-		
-		gbSizer31 = wx.GridBagSizer( 0, 0 )
-		gbSizer31.SetFlexibleDirection( wx.BOTH )
-		gbSizer31.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self._btn_update_results = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Refine Query"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer31.Add( self._btn_update_results, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_continue  = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Continue"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer31.Add( self._btn_continue , wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		
-		gbSizer34.Add( gbSizer31, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
 		
 		
 		sbSizer11.Add( gbSizer34, 1, wx.EXPAND, 5 )
@@ -412,7 +400,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_query_results.SetSizer( sbSizer11 )
 		self._panel_query_results.Layout()
 		sbSizer11.Fit( self._panel_query_results )
-		self._notebook.AddPage( self._panel_query_results, _(u"Query Results"), True )
+		self._notebook.AddPage( self._panel_query_results, _(u"SMARTeR Results (Optional Preview)"), True )
 		self._panel_sample_conf = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self._panel_sample_conf.Hide()
 		
@@ -566,7 +554,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_review_unres = wx.Panel( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,200 ), wx.TAB_TRAVERSAL )
 		_gbsizer_review_unresp.Add( self._panel_review_unres, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self._tc_preview_tags_unres = wx.TextCtrl( self._panel_review_unresp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 985,175 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
+		self._tc_preview_tags_unres = wx.TextCtrl( self._panel_review_unresp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,175 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
 		_gbsizer_review_unresp.Add( self._tc_preview_tags_unres, wx.GBPosition( 5, 0 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
 		
 		self.m_staticText141 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -577,19 +565,6 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self.m_staticline61 = wx.StaticLine( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		_gbsizer_review_unresp.Add( self.m_staticline61, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
-		
-		gbSizer111 = wx.GridBagSizer( 0, 0 )
-		gbSizer111.SetFlexibleDirection( wx.BOTH )
-		gbSizer111.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self._btn_back_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer111.Add( self._btn_back_unres, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_next_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer111.Add( self._btn_next_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		
-		_gbsizer_review_unresp.Add( gbSizer111, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
 		
 		self._panel_doc_tag_unres = wx.Panel( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer12 = wx.BoxSizer( wx.VERTICAL )
@@ -603,7 +578,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_doc_tag_unres.SetSizer( bSizer12 )
 		self._panel_doc_tag_unres.Layout()
 		bSizer12.Fit( self._panel_doc_tag_unres )
-		_gbsizer_review_unresp.Add( self._panel_doc_tag_unres, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
+		_gbsizer_review_unresp.Add( self._panel_doc_tag_unres, wx.GBPosition( 5, 3 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._st_revew_doc_help = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"* Double click on a document to open it in the default system viewer."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_revew_doc_help.Wrap( -1 )
@@ -618,6 +593,12 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_revew_pane_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		_gbsizer_review_unresp.Add( self._st_revew_pane_help, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_back_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_review_unresp.Add( self._btn_back_unres, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_next_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_review_unresp.Add( self._btn_next_unres, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		_sbsizer_review_unrep.Add( _gbsizer_review_unresp, 1, wx.EXPAND, 5 )
@@ -657,7 +638,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_review_res = wx.Panel( self._panel_review_resp, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,200 ), wx.TAB_TRAVERSAL )
 		_gbsizer_review_res.Add( self._panel_review_res, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self._tc_preview_tags = wx.TextCtrl( self._panel_review_resp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 985,175 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
+		self._tc_preview_tags = wx.TextCtrl( self._panel_review_resp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,175 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
 		_gbsizer_review_res.Add( self._tc_preview_tags, wx.GBPosition( 5, 0 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
 		
 		self.m_staticText14 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -678,23 +659,10 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_doc_tag_res.SetSizer( bSizer11 )
 		self._panel_doc_tag_res.Layout()
 		bSizer11.Fit( self._panel_doc_tag_res )
-		_gbsizer_review_res.Add( self._panel_doc_tag_res, wx.GBPosition( 1, 2 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
+		_gbsizer_review_res.Add( self._panel_doc_tag_res, wx.GBPosition( 5, 3 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self.m_staticline6 = wx.StaticLine( self._panel_review_resp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		_gbsizer_review_res.Add( self.m_staticline6, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
-		
-		gbSizer11 = wx.GridBagSizer( 0, 0 )
-		gbSizer11.SetFlexibleDirection( wx.BOTH )
-		gbSizer11.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-		
-		self._btn_back_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer11.Add( self._btn_back_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_next_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer11.Add( self._btn_next_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		
-		_gbsizer_review_res.Add( gbSizer11, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND, 5 )
 		
 		self._st_resp_revew_doc_help = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"* Double click on a document to open it in the default system viewer."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_resp_revew_doc_help.Wrap( -1 )
@@ -709,6 +677,12 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_resp_revew_pane_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		_gbsizer_review_res.Add( self._st_resp_revew_pane_help, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_back_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_review_res.Add( self._btn_back_res, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_next_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		_gbsizer_review_res.Add( self._btn_next_res, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		_sbsizer_review_resp.Add( _gbsizer_review_res, 1, wx.EXPAND, 5 )
@@ -768,14 +742,8 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer112.SetFlexibleDirection( wx.BOTH )
 		gbSizer112.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_exit = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer112.Add( self._btn_exit, wx.GBPosition( 0, 4 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
 		self._btn_report_restart_search = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Restart Search"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer112.Add( self._btn_report_restart_search, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
-		self._btn_back_sample_res = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbSizer112.Add( self._btn_back_sample_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		gbSizer112.Add( self._btn_report_restart_search, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._btn_export_files = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Export Files"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer112.Add( self._btn_export_files, wx.GBPosition( 0, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -870,6 +838,15 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_resp1.Wrap( -1 )
 		gbSizer211.Add( self._st_resp1, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
+		self._btn_back_sample_res = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer211.Add( self._btn_back_sample_res, wx.GBPosition( 10, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self._btn_exit = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbSizer211.Add( self._btn_exit, wx.GBPosition( 10, 2 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		
+		self.m_staticline91 = wx.StaticLine( self._panel_search_report, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		gbSizer211.Add( self.m_staticline91, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 3 ), wx.EXPAND |wx.ALL, 5 )
+		
 		
 		_sbsizer_comprehensive_report.Add( gbSizer211, 1, wx.EXPAND, 5 )
 		
@@ -898,9 +875,9 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_index_go_to_search.Bind( wx.EVT_BUTTON, self._on_click_index_go_to_search )
 		self._cbx_project_title.Bind( wx.EVT_COMBOBOX, self._on_set_index_existing_project )
 		self._btn_index_new_project.Bind( wx.EVT_BUTTON, self._on_click_index_new_project )
-		self._rbx_doc_feedback.Bind( wx.EVT_RADIOBOX, self._on_rbx_doc_feedback_updated )
 		self._btn_feedback_smart_ranking.Bind( wx.EVT_BUTTON, self._on_click_feedback_smart_ranking )
 		self._btn_feedback_back.Bind( wx.EVT_BUTTON, self._on_click_feedback_back )
+		self._rbx_doc_feedback.Bind( wx.EVT_RADIOBOX, self._on_rbx_doc_feedback_updated )
 		self._tc_query_terms.Bind( wx.EVT_TEXT, self._on_text_search_query_terms )
 		self._list_query_history.Bind( wx.EVT_LISTBOX, self._on_click_search_query_history )
 		self._btn_search_add_to_query.Bind( wx.EVT_BUTTON, self._on_click_search_add_to_query )
@@ -921,19 +898,19 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_conf_back.Bind( wx.EVT_BUTTON, self._on_click_cl_goback )
 		self._btn_conf_next.Bind( wx.EVT_BUTTON, self._on_click_cl_next )
 		self._btn_clear_unres.Bind( wx.EVT_BUTTON, self._on_click_irrelevant_clear_tags )
+		self._rbx_response_unres.Bind( wx.EVT_RADIOBOX, self._on_rbx_irrelevant_feeback )
 		self._btn_back_unres.Bind( wx.EVT_BUTTON, self._on_click_irrelevant_back )
 		self._btn_next_unres.Bind( wx.EVT_BUTTON, self._on_click_sample_next )
-		self._rbx_response_unres.Bind( wx.EVT_RADIOBOX, self._on_rbx_irrelevant_feeback )
 		self._btn_clear_res.Bind( wx.EVT_BUTTON, self._on_click_relevant_clear_tags )
 		self._rbx_response_res.Bind( wx.EVT_RADIOBOX, self._on_rbx_relevant_feeback )
 		self._btn_back_res.Bind( wx.EVT_BUTTON, self._on_click_relevant_back )
 		self._btn_next_res.Bind( wx.EVT_BUTTON, self._on_click_show_report )
-		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_report_exit )
 		self._btn_report_restart_search.Bind( wx.EVT_BUTTON, self._btn_click_restart_search )
-		self._btn_back_sample_res.Bind( wx.EVT_BUTTON, self._on_click_report_back_sample )
 		self._btn_export_files.Bind( wx.EVT_BUTTON, self._on_click_export_files )
 		self._btn_gen_report_res.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report_res )
 		self._btn_gen_report_unres.Bind( wx.EVT_BUTTON, self._on_click_review_gen_report_unres )
+		self._btn_back_sample_res.Bind( wx.EVT_BUTTON, self._on_click_report_back_sample )
+		self._btn_exit.Bind( wx.EVT_BUTTON, self._on_click_report_exit )
 	
 	def __del__( self ):
 		pass
@@ -961,13 +938,13 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_click_index_new_project( self, event ):
 		event.Skip()
 	
-	def _on_rbx_doc_feedback_updated( self, event ):
-		event.Skip()
-	
 	def _on_click_feedback_smart_ranking( self, event ):
 		event.Skip()
 	
 	def _on_click_feedback_back( self, event ):
+		event.Skip()
+	
+	def _on_rbx_doc_feedback_updated( self, event ):
 		event.Skip()
 	
 	def _on_text_search_query_terms( self, event ):
@@ -1030,13 +1007,13 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_click_irrelevant_clear_tags( self, event ):
 		event.Skip()
 	
+	def _on_rbx_irrelevant_feeback( self, event ):
+		event.Skip()
+	
 	def _on_click_irrelevant_back( self, event ):
 		event.Skip()
 	
 	def _on_click_sample_next( self, event ):
-		event.Skip()
-	
-	def _on_rbx_irrelevant_feeback( self, event ):
 		event.Skip()
 	
 	def _on_click_relevant_clear_tags( self, event ):
@@ -1051,13 +1028,7 @@ class SMARTeRGUI ( wx.Frame ):
 	def _on_click_show_report( self, event ):
 		event.Skip()
 	
-	def _on_click_report_exit( self, event ):
-		event.Skip()
-	
 	def _btn_click_restart_search( self, event ):
-		event.Skip()
-	
-	def _on_click_report_back_sample( self, event ):
 		event.Skip()
 	
 	def _on_click_export_files( self, event ):
@@ -1067,6 +1038,12 @@ class SMARTeRGUI ( wx.Frame ):
 		event.Skip()
 	
 	def _on_click_review_gen_report_unres( self, event ):
+		event.Skip()
+	
+	def _on_click_report_back_sample( self, event ):
+		event.Skip()
+	
+	def _on_click_report_exit( self, event ):
 		event.Skip()
 	
 

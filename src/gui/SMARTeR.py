@@ -7,6 +7,7 @@ import sys
 import wx 
 import shelve
 import os 
+import math
 import mimetypes
 import wx.grid
 import wx.animate
@@ -1069,23 +1070,23 @@ class SMARTeR (SMARTeRGUI):
     def _on_click_next_res(self, event):
         global present_chunk_res
         current_chunk = present_chunk_res;
-        import math
            
                         
-        if(current_chunk <> math.ceil(len(self._responsive_files)/5) ): 
+        if(current_chunk+1 < math.ceil(float(len(self._responsive_files))/6) ): 
             current_chunk += 1
+            self._st_Resp_documents.SetLabel(u'Responsive Documents ('+str(current_chunk + 1)+'/'+str(int(math.ceil(float(len(self._responsive_files))/6)))+')')
             self._lc_results_res._populate_results(current_chunk,self._responsive_files_display)
             present_chunk_res = current_chunk
             
     def _on_click_next_unres(self, event):
         global present_chunk_unres
-        import math
+        
         current_chunk = present_chunk_unres;
         
-        if(current_chunk <> math.ceil(len(self._unresponsive_files)/5)):
+        if(current_chunk+1 < math.ceil(float(len(self._unresponsive_files))/6)):
             
             current_chunk += 1
-        
+            self._st_unresp_documents.SetLabel(u'Unresponsive Documents ('+str(current_chunk + 1)+'/'+str(int(math.ceil(float(len(self._unresponsive_files))/6)))+')')
             self._lc_results_unres._populate_results(current_chunk,self._unresponsive_files_display)
             present_chunk_unres = current_chunk
             
@@ -1095,6 +1096,7 @@ class SMARTeR (SMARTeRGUI):
         current_chunk = present_chunk;
         current_chunk -= 1
         if(current_chunk >= 0): 
+            
             self._lc_results_res._populate_results(current_chunk,"true")
             self._lc_results_unres._populate_results(current_chunk,"false")
             present_chunk = current_chunk
@@ -1103,7 +1105,8 @@ class SMARTeR (SMARTeRGUI):
         global present_chunk_res
         current_chunk = present_chunk_res;
         current_chunk -= 1
-        if(current_chunk >= 0): 
+        if(current_chunk >= 0):
+            self._st_Resp_documents.SetLabel(u'Responsive Documents ('+str(current_chunk + 1)+'/'+str(int(math.ceil(float(len(self._responsive_files))/6)))+')') 
             self._lc_results_res._populate_results(current_chunk,self._responsive_files_display)
             present_chunk_res = current_chunk
             
@@ -1112,6 +1115,7 @@ class SMARTeR (SMARTeRGUI):
         current_chunk = present_chunk_unres;
         current_chunk -= 1
         if(current_chunk >= 0): 
+            self._st_unresp_documents.SetLabel(u'Unresponsive Documents ('+str(current_chunk + 1)+'/'+str(int(math.ceil(float(len(self._unresponsive_files))/6)))+')')
             self._lc_results_unres._populate_results(current_chunk,self._unresponsive_files_display)
             present_chunk_unres = current_chunk
             
@@ -1485,6 +1489,9 @@ class SMARTeR (SMARTeRGUI):
         
         #------------------------------------------------------- Change of focus
         self.smarter_ranking()
+        self._st_Resp_documents.SetLabel(u'Responsive Documents (1/'+str(int(math.ceil(float(len(self._responsive_files))/6)))+')')
+        self._st_unresp_documents.SetLabel(u'Unresponsive Documents (1/'+str(int(math.ceil(float(len(self._unresponsive_files))/6)))+')')
+        
         self._current_page = 3
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
