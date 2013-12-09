@@ -101,7 +101,7 @@ CONFIGURATION_FILE_EXT = '.cfg'
 class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin, ColumnSorterMixin):
     def __init__(self, parent_panel, parent_window,rbx_response):
         wx.ListCtrl.__init__(self, parent_panel, -1, style=wx.LC_REPORT | wx.SUNKEN_BORDER)
-        CheckListCtrlMixin.__init__(self)
+        #CheckListCtrlMixin.__init__(self)
         ListCtrlAutoWidthMixin.__init__(self)
         ColumnSorterMixin.__init__(self, NUMBER_OF_COLUMNS_IN_UI_FOR_EMAILS)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_list_item_select)
@@ -116,14 +116,14 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         
         self.ClearAll()
         #Remove this after Testing
-        columnHeaders = ['File Name','File Path','File Score','Responsive']# MetadataType._types
+        columnHeaders = ['File Name','File Path','File Score']# MetadataType._types
         columnNumber = 0
         #for c in columnHeaders:
         self.InsertColumn(columnNumber, columnHeaders[0])
         columnNumber = columnNumber + 1
         self.InsertColumn(columnNumber, "File Path")
         self.InsertColumn(columnNumber + 1, "File Score")
-        self.InsertColumn(columnNumber + 2, "Rating")        
+        
         
     
     def _set_shelve_dir(self, _dir_path):
@@ -152,12 +152,12 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         # Populate the column names using the metadata types from MetadataType_types &RB
         self._set_table_headers()
         
-        i=chunk_number*5
+        i=chunk_number*6
         end=0
-        if (chunk_number+1)*5>len(doc_list):
+        if (chunk_number+1)*6>len(doc_list):
             end=len(doc_list)
         else:
-            end=(chunk_number+1)*5
+            end=(chunk_number+1)*6
         
         while i<end:
             index = self.InsertStringItem(sys.maxint, doc_list[i][0])
@@ -168,8 +168,8 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
             self.SetStringItem(index, 1, cell)
             cell = str(doc_list[i][2])
             self.SetStringItem(index, 2, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
-            cell = str("")
-            self.SetStringItem(index, 3, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+            #cell = str("")
+            #self.SetStringItem(index, 3, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
             i= i+1
         
         # 1. Reads from that particular shelved-file
@@ -469,21 +469,22 @@ class CreateProjectPopup ( wx.Dialog ):
                         shutil.copy(os.path.join(root,file_name), os.path.abspath(pstTemp))
                         temp=os.path.basename(file_name)
                         pstTempFile=os.path.join(pstTemp,temp)
-                        print pstTempFile
+                        # print pstTempFile
                         try:
                             self.convert_pst(pstTempFile, pstTemp)
                         except Exception,e:
                             print e
-                        print os.path.join(root,file_name)
+                        # print os.path.join(root,file_name)
                         os.remove(os.path.join(root,file_name))
             
-            print tmp_files
+            # print tmp_files
             
             index_data(tmp_files, self.smarter._SMARTeR_dir_path, 
                        project_name, self.smarter._cfg_dir_path, 
                        self.smarter._num_topics, self.smarter._num_passes, 
                        self.smarter._min_token_freq, self.smarter._min_token_len, 
-                       log_to_file = True)
+                       log_to_file = True, lemmatize=True, stem=True, nonascii=True)
+            
             self.smarter._cbx_project_title.Append(project_name)        
             self.smarter.SetStatusText('The project %s indexing is completed. Please select a project from the project drop down.' % project_name)
             msg_dialog.Destroy()
@@ -677,7 +678,6 @@ class SMARTeR (SMARTeRGUI):
         self._load_cbx_confidence_levels()
         self._init_confidence()
         self._notebook.ChangeSelection(0)
-        self._notebook.RemovePage(3)
         self.Center()
         self.Show(True)
         
@@ -919,6 +919,8 @@ class SMARTeR (SMARTeRGUI):
             self._show_error_message("Missing input", "Please select a project or create a new project.")
         else:
             if self._is_tm_index_available and self._is_lucene_index_available:
+                self._seed_docs_details = self.__seed_docs_Kmeans_selection()
+                self.__load_document_feedback()
                 self._current_page = 1
                 self._notebook.ChangeSelection(self._current_page)
                 self.SetStatusText('')
@@ -1064,13 +1066,6 @@ class SMARTeR (SMARTeRGUI):
             self._lc_results_unres._populate_results(current_chunk,"false")
             present_chunk = current_chunk
      
-        
-
-  
-
-    
-
-    
     def _on_click_next_res(self, event):
         global present_chunk_res
         current_chunk = present_chunk_res;
@@ -1324,18 +1319,16 @@ class SMARTeR (SMARTeRGUI):
                 doc_path = os.path.normpath(os.path.join(dir_path, doc_name))
                 seed_docs_details.append([doc_id, doc_path, doc_name, self.__is_relevant(self._doc_true_class_ids[doc_id])])
        
-        
-        self.__is_relevant(self._doc_true_class_ids[doc_id])])
-       
         return seed_docs_details
     
-    def __seed_docs_Kmeans_selection(self, num_seed_docs=100, num_clusters=4):
+
+    def __seed_docs_Kmeans_selection(self, num_seed_docs=100, num_clusters=5):
         '''
         Selecting seed documents from K-means clusters of LDA 
         document topic proportions (theta_d) 
         '''
         import random 
-        from scipy.cluster.vq import kmeans2
+        
         from collections import Counter, defaultdict
 
         def __get_seed_doc_details(doc_id):
@@ -1352,14 +1345,35 @@ class SMARTeR (SMARTeRGUI):
         desired_class_count = int(num_seed_docs / num_clusters)
         
         # K-means clustering on the LDA theta 
-        exec_count = 0
-        while True:
-            try:
-                exec_count += 1
-                _, doc_labels = kmeans2(data=self._lda_theta, k=num_clusters, minit='random')
-                break # while loop break when success 
-            except Exception as exp:
-                print exec_count, exp 
+#        from scipy.cluster.vq import kmeans2
+#        _, doc_labels = kmeans2(data=self._lda_theta + 1e-8, k=num_clusters, minit='random')
+        
+        if np.isnan(np.min(self._lda_theta)):
+            print "Cannot perform k-means because one of the elements of the document THETA matrix is NAN."
+            exit()
+             
+        print 'k-Means clustering'
+        from scipy.cluster.vq import kmeans, vq, whiten
+        whitened = whiten(self._lda_theta + 1e-15)
+        codebook, _ = kmeans(whitened, num_clusters)
+        doc_labels, _ = vq(whitened, codebook)
+        
+
+#        import Pycluster
+#        doc_labels, error, nfound = Pycluster.kcluster(self._lda_theta, num_clusters)
+#        print error # The within-cluster sum of distances for the optimal clustering solution.
+#        print nfound # The number of times the optimal solution was found.
+        
+        
+        
+#        exec_count = 0
+#        while True:
+#            try:
+#                exec_count += 1
+#                _, doc_labels = kmeans2(data=self._lda_theta, k=num_clusters, minit='random')
+#                break # while loop break when success 
+#            except Exception as exp:
+#                print exec_count, exp 
         
         # Gets class elements' document id 
         class_docs_id = defaultdict(list)
@@ -1381,7 +1395,7 @@ class SMARTeR (SMARTeRGUI):
                     # print class_id, 
                     seed_docs_details.append(__get_seed_doc_details(doc_id))
         
-        print 'Seed documents count:', len(seed_docs_details)
+        print 'Number of seed documents selected:', len(seed_docs_details)
         
         return seed_docs_details
             
@@ -1392,7 +1406,8 @@ class SMARTeR (SMARTeRGUI):
         Actions to be done when the "Run Query" button is clicked
 
         """
-        
+        self.eval_relv = ""
+        self.eval_irrelv = ""
         global dictionary_of_rows
         dictionary_of_rows = OrderedDict()
         queryText = self._tc_query_aggregated.GetValue().strip() 
@@ -1416,18 +1431,23 @@ class SMARTeR (SMARTeRGUI):
         luceneQuery = ' '.join(term.strip() for term in filteredQuery)
         topicQuery = ' '.join(re.split(':', term)[1].strip()[1:][:-1] for term in filteredQuery if len(re.split(':', term)) > 1) # [1:][:-1] is for remove brackets 
         
+        from utils.utils_email import lemmatize_tokens, stem_tokens
+        norm_tokens = ' '.join( stem_tokens( lemmatize_tokens( topicQuery.split() ) ) )
+        
         print 'Lucene query:', luceneQuery
-        print 'TM query:', topicQuery
+        print 'TM query:', topicQuery, 'Stems/Lemmas:', norm_tokens
+        
                 
 
         #---------------------- Document Lucene and topic modeling-based ranking
         
-        dominant_topics = get_dominant_query_topics(topicQuery, self.lda_dictionary, self.lda_mdl, TOP_K_TOPICS)
+        dominant_topics = get_dominant_query_topics(norm_tokens, self.lda_dictionary, self.lda_mdl, TOP_K_TOPICS)
         dominant_topics_idx = [idx for (idx, _) in dominant_topics] # gets the topic indices
         
         lucene_search_results = boolean_search_lucene_index(self.lucene_index_dir, luceneQuery, self._num_documents) # lucene search 
         lda_search_results = self.__search_tm_topics(dominant_topics_idx, self._num_documents, self.mdl_cfg) # returns [doc_id, doc_path, doc_name, doc_score] 
         self._lucene_scores_dict = self.__lucene_append_nonresponsive_docs(lucene_search_results) 
+        self._lucene_docs_list = [doc[0] for doc in lucene_search_results]
 
         if len(lucene_search_results) > 0:
             self._init_search_results = self.__fuse_lucene_tm_scores(self._lucene_scores_dict, lda_search_results) # fuses LDA and Lucene 
@@ -1437,7 +1457,7 @@ class SMARTeR (SMARTeRGUI):
 
         #------------- Selecting seed documents from the initial ranking results
         
-        self._seed_docs_details = self.__seed_docs_random_selection()#self.__seed_docs_Kmeans_selection()
+        self._seed_docs_details = self.__seed_docs_Kmeans_selection()
             
         self._responsive_files = []
         self._responsive_files_display = []
@@ -1458,20 +1478,25 @@ class SMARTeR (SMARTeRGUI):
         
         if flag:
             self._list_query_history.Append(luceneQuery)
-            self._query_history.append([luceneQuery, -1])
+            self._query_history.append([luceneQuery, -1,"",""])
             self._choice_history = cnt
         
         # self._tc_query_aggregated.SetValue('')
         
         #------------------------------------------------------- Change of focus
-        
-        self._current_page = 2
+        self.smarter_ranking()
+        self._current_page = 3
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
     #----------------------------------------------------- Document Feedback tab
     
     def _on_click_feedback_smart_ranking(self, event):
+        self._current_page = 2
+        self._notebook.ChangeSelection(self._current_page)
+        self.SetStatusText('')
+    
+    def smarter_ranking(self):
         """
         Actions to be done when the "SMART Ranking" button is clicked
             
@@ -1519,8 +1544,8 @@ class SMARTeR (SMARTeRGUI):
             
             # Include the Lucene scores as the last element  
             # This improves the accuracy by 7% on TREC2010:Query-201 
-            corpus_docs_features = [(theta_d + [self._lucene_scores_dict[doc_id]]) for doc_id, theta_d in enumerate(self._lda_theta.tolist())]                
-            
+            # corpus_docs_features = [(theta_d + [self._lucene_scores_dict[doc_id]]) for doc_id, theta_d in enumerate(self._lda_theta.tolist())]                
+            corpus_docs_features = self._lda_theta.tolist()    
     
             # reviewed_seed_docs_theta = lda_theta[reviewed_seed_docs_id,:]  
             reviewed_seed_docs_theta = [corpus_docs_features[doc_id] for doc_id in reviewed_seed_docs_id] 
@@ -1568,16 +1593,21 @@ class SMARTeR (SMARTeRGUI):
             doc_id, doc_path, doc_name, doc_score = doc_details # doc_details: [file_id, file_path, file_name, score]
             svm_predicted_class = self._docs_svm_label[doc_id]
             
-            # display_doc_details = [doc_id, doc_path, doc_name, doc_score, __convert_to_display_label(svm_predicted_class)]
+            display_doc_details = [doc_id, doc_path, doc_name, doc_score, __convert_to_display_label(svm_predicted_class)]
             
             # print doc_name, doc_score, self._doc_true_class_ids[doc_id], svm_predicted_class, __classify_by_threshold(doc_score) 
             
             if svm_predicted_class == self.RESPONSIVE_CLASS_ID: # float(display_doc_details[3]) >= CUT_OFF_NORM:
-                self._responsive_files.append([doc_path, self.__is_relevant(self._doc_true_class_ids[doc_id]), "",doc_details[3]])
-                #self._responsive_files_display.append([display_doc_details[0],display_doc_details[1],display_doc_details[10],""])
+                self._responsive_files.append([doc_path, self.__is_relevant(self._doc_true_class_ids[doc_id]), "", doc_score, doc_id])
+                self._responsive_files_display.append([display_doc_details[2],display_doc_details[1],display_doc_details[3]])
             else:
-                self._unresponsive_files.append([doc_path, self.__is_irrelevant(self._doc_true_class_ids[doc_id]), "",doc_details[3]])
-                #self._unresponsive_files_display.append([display_doc_details[0],display_doc_details[1],display_doc_details[10],""])
+                self._unresponsive_files.append([doc_path, self.__is_irrelevant(self._doc_true_class_ids[doc_id]), "", doc_score, doc_id])
+                self._unresponsive_files_display.append([display_doc_details[2],display_doc_details[1],display_doc_details[3]])
+                
+            if self.__is_relevant(self._doc_true_class_ids[doc_id]) =='Yes':
+                self.add_update_seedlist(doc_id, doc_path, os.path.basename(doc_path), 'Yes')
+            elif self.__is_irrelevant(self._doc_true_class_ids[doc_id]) =='Yes':
+                self.add_update_seedlist(doc_id, doc_path, os.path.basename(doc_path), 'No')  
 
 #            # Put the results to the dictionary_of_rows
 #            dictionary_of_rows.__setitem__(str(key), display_doc_details)
@@ -1604,8 +1634,9 @@ class SMARTeR (SMARTeRGUI):
         
         print 
         print 'Computes the SVM accuracy on the seed documents (train)'
-        print 'TP+TN:', correct_files, 
-        print 'Number of seeds:', len(self._seed_docs_details), 
+        print 
+        print 'TP+TN:', correct_files
+        print 'Number of seeds:', len(self._seed_docs_details) 
         print 'Accuracy based on seeds:', correct_files / len(self._seed_docs_details) 
         print 
         
@@ -1617,7 +1648,7 @@ class SMARTeR (SMARTeRGUI):
         self._generate_file_samples()
         self._generate_file_samples_unres()
         
-        '''    
+          
         self._lc_results_res._set_shelve_dir(self._shelve_dir)
         self._lc_results_res.itemDataMap = dictionary_of_rows
         self._lc_results_res.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results_res._on_header_column_click)
@@ -1627,26 +1658,25 @@ class SMARTeR (SMARTeRGUI):
         self._lc_results_unres.Bind(wx.EVT_LIST_COL_CLICK, self._lc_results_unres._on_header_column_click)
         
         items = dictionary_of_rows.items()
-        self._reset_persistent_shelves()
-        self._create_persistent_shelves(items)
+        #self._reset_persistent_shelves()
+        #self._create_persistent_shelves(items)
         global present_chunk_res
         global present_chunk_unres
         present_chunk_res = 0
         present_chunk_unres = 0
+    
         self._lc_results_res._populate_results(present_chunk,self._responsive_files_display)
         self._lc_results_unres._populate_results(present_chunk,self._unresponsive_files_display)
         self._tc_file_preview_pane.SetValue('')
-        '''
+        
         
         #----------------------------------------------- Goes to the results tab
         
-        self._current_page = 3
-        self._notebook.ChangeSelection(self._current_page)
-        self.SetStatusText('')
+        
                   
     
     def _on_click_feedback_back(self, event):
-        self._current_page = 1
+        self._current_page = 0
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -1694,48 +1724,78 @@ class SMARTeR (SMARTeRGUI):
                 
         except Exception, e:
             print e
-        
-
-        
     
     def __setup_accuracy_grid(self):
         
         # TODO: Sahil, please use the below code to display samples' 
         # details in the Report tab 
         
+        print 
+        
         num_irrelevant_docs = len([1 for doc_sample in self.sampled_files_unresponsive if doc_sample[1] == 'Yes'])
         num_relevant_docs = len([1 for doc_sample in self.sampled_files_unresponsive if doc_sample[1] == 'No'])
+        irrelevant_size = len(self.sampled_files_unresponsive)
+        irrelevant_acc = float(num_irrelevant_docs) * 100.0/ float(irrelevant_size)
         
         # We ignore uncertain and not reviewed documents from the calculation  
-        print '%d relevant docs and %d irrelevant docs found in the sample of %d irrelevant docs' % (num_relevant_docs, 
-                                                                                                     num_irrelevant_docs, 
-                                                                                                     len(self.sampled_files_unresponsive))
-        print 'Irrelevant sample accuracy:{:2.2f}'.format(float(num_irrelevant_docs) * 100.0/ float(num_irrelevant_docs + num_relevant_docs))
-
+        print 'Irrelevant Sample #%d: relevant #%d, irrelevant #%d, accuracy %1.4f' % (irrelevant_size, num_relevant_docs, 
+                                                                                       num_irrelevant_docs, irrelevant_acc)
+        # print 'Irrelevant sample accuracy:{:2.2f}'.format(float(num_irrelevant_docs) * 100.0/ float(num_irrelevant_docs + num_relevant_docs))
+        self.eval_irrelv = "%d / %d" % (num_irrelevant_docs, irrelevant_size)
 
         num_irrelevant_docs = len([1 for doc_sample in self.sampled_files_responsive if doc_sample[1] == 'No'])
         num_relevant_docs = len([1 for doc_sample in self.sampled_files_responsive if doc_sample[1] == 'Yes'])
+        relevant_size = len(self.sampled_files_responsive)
+        relevant_acc = float(num_relevant_docs) * 100.0/ float(relevant_size)
         
-        # We ignore uncertain and not reviewed documents from the calcualtion  
-        print '%d relevant docs and %d irrelevant docs found in the sample of %d relevant docs' % (num_relevant_docs, 
-                                                                                                     num_irrelevant_docs, 
-                                                                                                     len(self.sampled_files_responsive))
-        print 'Relevant sample accuracy:{:2.2f}'.format(float(num_relevant_docs) * 100.0/ float(num_irrelevant_docs + num_relevant_docs))
+        # We ignore uncertain and not reviewed documents from the calculation  
+        print 'Relevant Sample #%d: relevant #%d, irrelevant #%d, accuracy %1.4f' % (relevant_size, num_relevant_docs, 
+                                                                                     num_irrelevant_docs, relevant_acc)
+        # print 'Relevant sample accuracy:{:2.2f}'.format(float(num_relevant_docs) * 100.0/ float(num_irrelevant_docs + num_relevant_docs))
+        self.eval_relv = "%d / %d" % (num_relevant_docs, relevant_size)
+        
 
+        print 
+        num_lucene_tn = 0
+        num_lucene_tp = 0 
+        for doc_sample in self.sampled_files_unresponsive:
+            _, is_irrelevant, _, _, doc_id = doc_sample
+            if doc_id not in self._lucene_docs_list and is_irrelevant == 'Yes':
+                num_lucene_tn += 1
+            elif doc_id in self._lucene_docs_list and is_irrelevant == 'No':
+                num_lucene_tp += 1                 
+        lucene_IRS_acc = float(num_lucene_tn) * 100.0 / float(irrelevant_size)
 
+        print 'Irrelevant Sample #%d (LUCENE): TP #%d, TN #%d, accuracy %1.4f' % (irrelevant_size, num_lucene_tp, num_lucene_tn, lucene_IRS_acc)
+
+        num_lucene_tn = 0
+        num_lucene_tp = 0 
+        for doc_sample in self.sampled_files_responsive:
+            _, is_relevant, _, _, doc_id = doc_sample
+            if doc_id not in self._lucene_docs_list and is_relevant == 'No':
+                num_lucene_tn += 1
+            elif doc_id in self._lucene_docs_list and is_relevant == 'Yes':
+                num_lucene_tp += 1
+        lucene_RS_acc = float(num_lucene_tp) * 100.0 / float(relevant_size)
+        
+        self._query_history[self._choice_history][2]=self.eval_relv
+        self._query_history[self._choice_history][3]=self.eval_irrelv
+        
+        print 'Relevant Sample #%d (LUCENE): TP #%d, TN #%d, accuracy %1.4f' % (relevant_size, num_lucene_tp, num_lucene_tn, lucene_RS_acc)
+        print 
 
         if self._grid_query_accuracy.NumberRows != len(self._query_history):
             self._grid_query_accuracy.InsertRows(0, len(self._query_history) - self._grid_query_accuracy.NumberRows)
             
 
         for row_count, query_details in enumerate(self._query_history):
-            query, accuracy = query_details
+            query, accuracy, rev, irrev = query_details
             self._grid_query_accuracy.SetCellValue(row_count, 0, query)
             if accuracy != -1:
                 self._grid_query_accuracy.SetCellValue(row_count, 1, str(accuracy))
-            
-                
-            
+            self._grid_query_accuracy.SetCellValue(row_count, 2, str(rev))
+            self._grid_query_accuracy.SetCellValue(row_count, 3, str(irrev))
+                     
     def _on_click_update_results(self, event):
         '''
         This function incorporates the user ratings into 
@@ -1744,7 +1804,7 @@ class SMARTeR (SMARTeRGUI):
         and search for similar documents.  
         
         '''
-
+        '''
         self.shelf_query = shelve.open(os.path.join(self._shelve_dir, str("rating" + SHELVE_FILE_EXTENSION)), writeback=True)  # open -- file may get suffix added by low-level
         self.shelf_query['query'] = self._tc_query.GetValue().strip() 
         for row in dictionary_of_rows:
@@ -1755,8 +1815,8 @@ class SMARTeR (SMARTeRGUI):
         dlg = wx.MessageDialog(self, "Information is recorded, Thank you", "Update Results", wx.OK)
         dlg.ShowModal()  # Shows it
         dlg.Destroy()  # finally destroy it when finished.
-        
-        self._current_page = 1
+        '''
+        self._current_page = 2
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -1852,9 +1912,6 @@ class SMARTeR (SMARTeRGUI):
 #        except Exception, e:
 #            print e
     
-
-        
-        
     def _init_confidence(self):
         '''
         Sets default confidence level and interval in Top Level interface
@@ -1892,13 +1949,11 @@ class SMARTeR (SMARTeRGUI):
         # Hides the status messages 
         self._st_num_samples_res.Show(False)
         self._st_num_samples_unres.Show(False)
-        #self._st_num_samples_ind_unres.Show(False)            
-    
-        
+        #self._st_num_samples_ind_unres.Show(False)                    
     def _on_click_continue(self, event):
         self._generate_file_samples()
         self._generate_file_samples_unres()
-        self._current_page = 3
+        self._current_page = 4
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -1949,7 +2004,6 @@ class SMARTeR (SMARTeRGUI):
         
         self._generate_file_samples()
         
-        
     def _on_precision_changed_unres(self, event):
         '''
         Triggers an event and updates the sample list on precision - aka 
@@ -1999,8 +2053,7 @@ class SMARTeR (SMARTeRGUI):
         if self._chk_toggle_cl_level.Value==True:
             self._st_num_samples_unres.SetLabel('Unresponsive: %d sample documents will be selected'% len(self.sampled_files_unresponsive))
             self._st_num_samples_unres.Show()
-        
-        
+                
     def _generate_file_samples_unres(self):
         '''
         This function generates file sample based on the 
@@ -2095,7 +2148,7 @@ class SMARTeR (SMARTeRGUI):
         self._generate_file_samples_unres()
 
     def _on_click_cl_goback( self, event ):
-        self._current_page = 2
+        self._current_page = 3
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
@@ -2105,12 +2158,10 @@ class SMARTeR (SMARTeRGUI):
                                                    self._tc_preview_tags_unres, self._panel_doc_tag_unres, 
                                                    self._get_irrelevancy_color)
         self._review_unres._setup_review_tab('Irrelevant')
-        self._current_page = 4
+        self._current_page = 5
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
-
-
-        
+  
     def _on_click_change_unres_focus(self,event):
         if self._chk_toggle_cl_level.Value==True:
             self.precision_val_unres=self.precision_val
@@ -2172,13 +2223,14 @@ class SMARTeR (SMARTeRGUI):
             else: # when not reviewed 
                 self._review_res.SetStringItem(selected_row_id, 2, '')
                 self.sampled_files_responsive[selected_row_id][1] = ''
+                
+            self.add_update_seedlist(self.sampled_files_unresponsive[selected_row_id][4],self.sampled_files_unresponsive[selected_row_id][0],os.path.basename(self.sampled_files_unresponsive[selected_row_id][0]),is_relevant)
 
             self._review_res.SetItemBackgroundColour(selected_row_id, self._get_relevancy_color(is_relevant)) 
             
             selected_doc_id = self.sampled_files_responsive[selected_row_id][0]
             self._doc_true_class_ids[selected_doc_id] = self.__convert_is_relevant_to_id(is_relevant)
               
-    
 #    
 #    def _on_rbx_privileged_updated_res( self, event ):
 #        '''
@@ -2224,19 +2276,39 @@ class SMARTeR (SMARTeRGUI):
         if selected_row_id > -1:
             
             is_irrelevant = self._rbx_response_unres.GetStringSelection() 
-            
+            seed_relevant=is_irrelevant
             if is_irrelevant in ['Yes', 'No', 'Uncertain']:
                 self._review_unres.SetStringItem(selected_row_id, 2, is_irrelevant)
                 self.sampled_files_unresponsive[selected_row_id][1] = is_irrelevant
+                if is_irrelevant == 'Yes':
+                    seed_relevant = 'No'
+                elif is_irrelevant == 'No':
+                    seed_relevant = 'Yes'
             else: # when not reviewed 
                 self._review_unres.SetStringItem(selected_row_id, 2, '')
                 self.sampled_files_unresponsive[selected_row_id][1] = ''
-
+            
+            self.add_update_seedlist(self.sampled_files_unresponsive[selected_row_id][4],self.sampled_files_unresponsive[selected_row_id][0],os.path.basename(self.sampled_files_unresponsive[selected_row_id][0]),seed_relevant)
+            
             self._review_unres.SetItemBackgroundColour(selected_row_id, self._get_irrelevancy_color(is_irrelevant)) 
             
             selected_doc_id = self.sampled_files_unresponsive[selected_row_id][0]
             self._doc_true_class_ids[selected_doc_id] = self.__convert_is_irrelevant_to_id(is_irrelevant)
             
+    def add_update_seedlist(self,file_id,path,name,seed_relevant):
+        i = 0
+        
+        while i <self._seed_docs_details.__len__():
+            print str(self._seed_docs_details[i][0]) + " " + str(file_id)
+            if self._seed_docs_details[i][0] == file_id:
+                self._seed_docs_details[i][3] = seed_relevant
+                break
+            i = i + 1
+            
+        if i >= self._seed_docs_details.__len__():
+            self._seed_docs_details.append([file_id,path,name,seed_relevant])
+        #print self._seed_docs_details   
+        
 #    def _on_rbx_privileged_updated_unres( self, event ):
 #        '''
 #        Handles the selected document privileged check box 
@@ -2498,13 +2570,13 @@ class SMARTeR (SMARTeRGUI):
 
     def _on_click_relevant_back(self, event):
         self._review_res.Destroy()
-        self._current_page = 4
+        self._current_page = 5
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
     def _on_click_irrelevant_back(self, event):
         self._review_unres.Destroy()
-        self._current_page = 3
+        self._current_page = 4
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -2514,7 +2586,7 @@ class SMARTeR (SMARTeRGUI):
                                                  self._tc_preview_tags, self._panel_doc_tag_res, 
                                                  self._get_relevancy_color)
         self._review_res._setup_review_tab('Relevant')
-        self._current_page = 5
+        self._current_page = 6
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -2522,12 +2594,12 @@ class SMARTeR (SMARTeRGUI):
         
         self.__setup_accuracy_grid()
         
-        self._current_page = 6
+        self._current_page = 7
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
     
     def _on_click_report_back_sample( self, event ):
-        self._current_page = 5
+        self._current_page = 6
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
@@ -2535,7 +2607,7 @@ class SMARTeR (SMARTeRGUI):
         self.__on_close()  
         
     def _btn_click_restart_search(self,event):
-        self._current_page = 1
+        self._current_page = 2
         self._notebook.ChangeSelection(self._current_page)
         self.SetStatusText('')
         
