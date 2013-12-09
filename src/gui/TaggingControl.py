@@ -102,7 +102,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         if is_message_opened:
             rs._tc_preview.SetValue(str(print_message))
         else:
-            rs._tc_preview.SetValue('')
+            rs._tc_preview.SetValue('Preview not available.')
             
                 
 

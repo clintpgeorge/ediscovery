@@ -1,4 +1,4 @@
-import wx
+timport wx
 import os
 import tempfile
 from wx.lib.masked import NumCtrl

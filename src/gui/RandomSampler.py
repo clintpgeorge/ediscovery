@@ -909,8 +909,23 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 thread.join()
                 #progress_dialog.Show(False)
                 #self._btn_out_go_to_review.Enable()
-                self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
+                #self._btn_out_go_to_review.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ))
                 #self._btn_out_go_to_review.SetLabel("Next(Samples Created, Go to Review)")
+                
+                if self._is_samples_created and self._prior_page_status >= 3:
+                    self._shelf_update_samples()
+                elif self._is_samples_created:
+                    self._shelf_update_sample_tab_state()
+                    
+                # Sets up the review tab 
+                
+                self._lc_review._setup_review_tab(self.sampled_files)
+                
+                # changes the tab selection 
+        
+                self._current_page = 3
+                self.nb_config_sampler.ChangeSelection(self._current_page)
+                self.SetStatusText('')
                 self.shelf['isSampleCreated']=True
                 self._is_samples_created=True
                 self.shelf.sync()

@@ -17,9 +17,9 @@ import wx.xrc
 class RandomSamplerGUI ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Random Sampler", pos = wx.DefaultPosition, size = wx.Size( 1000,600 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.SYSTEM_MENU|wx.HSCROLL|wx.TAB_TRAVERSAL )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Random Sampler", pos = wx.DefaultPosition, size = wx.Size( 1100,600 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.SYSTEM_MENU|wx.HSCROLL|wx.TAB_TRAVERSAL )
 		
-		self.SetSizeHintsSz( wx.Size( 1000,450 ), wx.DefaultSize )
+		self.SetSizeHintsSz( wx.Size( 1100,500 ), wx.DefaultSize )
 		self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 		
@@ -76,7 +76,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._cbx_project_title = wx.ComboBox( self._panel_io, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_project_titleChoices, wx.CB_DROPDOWN|wx.CB_READONLY|wx.TE_PROCESS_ENTER )
 		self._cbx_project_title.SetMinSize( wx.Size( 300,20 ) )
 		
-		gbsizer_io.Add( self._cbx_project_title, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
+		gbsizer_io.Add( self._cbx_project_title, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
 		self._st_data_folder1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Source Document Folder", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self._st_data_folder1.Wrap( -1 )
@@ -84,8 +84,8 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_io.Add( self._st_data_folder1, wx.GBPosition( 5, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._chk_io_new_project = wx.CheckBox( self._panel_io, wx.ID_ANY, u"Click to create a new project", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_io.Add( self._chk_io_new_project, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		self._chk_io_new_project = wx.CheckBox( self._panel_io, wx.ID_ANY, u"Click to create a new project or select an existing project", wx.DefaultPosition, wx.DefaultSize, 0 )
+		gbsizer_io.Add( self._chk_io_new_project, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._tc_io_new_project = wx.TextCtrl( self._panel_io, wx.ID_ANY, u"Title of new project...", wx.DefaultPosition, wx.Size( 300,-1 ), wx.TE_LEFT )
 		self._tc_io_new_project.Enable( False )
@@ -327,6 +327,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		self._btn_out_go_to_review = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Next ( Go to Review )", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
+		self._btn_out_go_to_review.Hide()
 		
 		bsizer_cg.Add( self._btn_out_go_to_review, 0, wx.ALL, 5 )
 		
@@ -359,7 +360,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_review.SetFlexibleDirection( wx.BOTH )
 		gbsizer_review.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self.m_staticText33 = wx.StaticText( self._panel_review, wx.ID_ANY, u"Documents to be Reviewed\nDouble click on a file to open it", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText33 = wx.StaticText( self._panel_review, wx.ID_ANY, u"Select the sample documents to be reviewed.\nSample is displayed in the preview pane. \nDouble click on a document to open it ", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText33.Wrap( -1 )
 		self.m_staticText33.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
@@ -409,7 +410,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_review.Add( self._sl_header3, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 12 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._panel_review_tag = wx.Panel( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self._panel_review_tag.SetMinSize( wx.Size( 400,200 ) )
+		self._panel_review_tag.SetMinSize( wx.Size( 220,200 ) )
 		
 		gbsizer_review.Add( self._panel_review_tag, wx.GBPosition( 4, 0 ), wx.GBSpan( 3, 4 ), wx.EXPAND, 5 )
 		
@@ -418,7 +419,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_review.Add( self._tc_preview, wx.GBPosition( 3, 4 ), wx.GBSpan( 4, 4 ), wx.ALL, 5 )
 		
-		self.m_staticText25 = wx.StaticText( self._panel_review, wx.ID_ANY, u"File Preview (Only Emails and Text)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText25 = wx.StaticText( self._panel_review, wx.ID_ANY, u"Document Preview (Only Emails and Text)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText25.Wrap( -1 )
 		gbsizer_review.Add( self.m_staticText25, wx.GBPosition( 2, 4 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
@@ -449,7 +450,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Document Review", True )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Sample Review", True )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		

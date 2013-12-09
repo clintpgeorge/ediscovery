@@ -17,7 +17,7 @@
         <property name="internationalize">0</property>
         <property name="name">RandomSamplerGUI</property>
         <property name="namespace"></property>
-        <property name="path">C:\Users\Sahil\git\ed\src\gui</property>
+        <property name="path">C:\workspace\ed\src\gui\</property>
         <property name="precompiled_header"></property>
         <property name="relative_path">1</property>
         <property name="skip_php_events">1</property>
@@ -39,10 +39,10 @@
             <property name="hidden">0</property>
             <property name="id">wxID_ANY</property>
             <property name="maximum_size"></property>
-            <property name="minimum_size">1000,450</property>
+            <property name="minimum_size">1100,500</property>
             <property name="name">RandomSamplerGUI</property>
             <property name="pos"></property>
-            <property name="size">1000,600</property>
+            <property name="size">1100,600</property>
             <property name="style">wxCAPTION|wxCLOSE_BOX|wxDEFAULT_FRAME_STYLE|wxMAXIMIZE_BOX|wxMINIMIZE_BOX|wxRESIZE_BORDER|wxSYSTEM_MENU</property>
             <property name="subclass"></property>
             <property name="title">Random Sampler</property>
@@ -773,7 +773,7 @@
                                                 <property name="colspan">2</property>
                                                 <property name="column">1</property>
                                                 <property name="flag">wxALL</property>
-                                                <property name="row">2</property>
+                                                <property name="row">3</property>
                                                 <property name="rowspan">1</property>
                                                 <object class="wxComboBox" expanded="0">
                                                     <property name="BottomDockable">1</property>
@@ -953,7 +953,7 @@
                                                 <property name="colspan">1</property>
                                                 <property name="column">1</property>
                                                 <property name="flag">wxALL</property>
-                                                <property name="row">3</property>
+                                                <property name="row">2</property>
                                                 <property name="rowspan">1</property>
                                                 <object class="wxCheckBox" expanded="0">
                                                     <property name="BottomDockable">1</property>
@@ -984,7 +984,7 @@
                                                     <property name="gripper">0</property>
                                                     <property name="hidden">0</property>
                                                     <property name="id">wxID_ANY</property>
-                                                    <property name="label">Click to create a new project</property>
+                                                    <property name="label">Click to create a new project or select an existing project</property>
                                                     <property name="max_size"></property>
                                                     <property name="maximize_button">0</property>
                                                     <property name="maximum_size"></property>
@@ -4619,7 +4619,7 @@
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
                                                             <property name="gripper">0</property>
-                                                            <property name="hidden">0</property>
+                                                            <property name="hidden">1</property>
                                                             <property name="id">wxID_ANY</property>
                                                             <property name="label">Next ( Go to Review )</property>
                                                             <property name="max_size"></property>
@@ -4875,7 +4875,7 @@
                         </object>
                         <object class="notebookpage" expanded="0">
                             <property name="bitmap"></property>
-                            <property name="label">Document Review</property>
+                            <property name="label">Sample Review</property>
                             <property name="select">1</property>
                             <object class="wxPanel" expanded="0">
                                 <property name="BottomDockable">1</property>
@@ -5009,7 +5009,7 @@
                                                     <property name="gripper">0</property>
                                                     <property name="hidden">0</property>
                                                     <property name="id">wxID_ANY</property>
-                                                    <property name="label">Documents to be Reviewed&#x0A;Double click on a file to open it</property>
+                                                    <property name="label">Select the sample documents to be reviewed.&#x0A;Sample is displayed in the preview pane. &#x0A;Double click on a document to open it </property>
                                                     <property name="max_size"></property>
                                                     <property name="maximize_button">0</property>
                                                     <property name="maximum_size"></property>
@@ -5820,7 +5820,7 @@
                                                     <property name="maximum_size"></property>
                                                     <property name="min_size"></property>
                                                     <property name="minimize_button">0</property>
-                                                    <property name="minimum_size">400,200</property>
+                                                    <property name="minimum_size">220,200</property>
                                                     <property name="moveable">1</property>
                                                     <property name="name">_panel_review_tag</property>
                                                     <property name="pane_border">1</property>
@@ -5992,7 +5992,7 @@
                                                     <property name="gripper">0</property>
                                                     <property name="hidden">0</property>
                                                     <property name="id">wxID_ANY</property>
-                                                    <property name="label">File Preview (Only Emails and Text)</property>
+                                                    <property name="label">Document Preview (Only Emails and Text)</property>
                                                     <property name="max_size"></property>
                                                     <property name="maximize_button">0</property>
                                                     <property name="maximum_size"></property>
