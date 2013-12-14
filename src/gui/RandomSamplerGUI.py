@@ -322,7 +322,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		bsizer_cg = wx.BoxSizer( wx.HORIZONTAL )
 		
-		self._btn_copy_files = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Create Sample", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_copy_files = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Next (Create Sample)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bsizer_cg.Add( self._btn_copy_files, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
 		self._btn_out_go_to_review = wx.Button( self._panel_create_sample, wx.ID_ANY, u"Next ( Go to Review )", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -352,7 +352,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_create_sample.SetSizer( sbsizer_sampler )
 		self._panel_create_sample.Layout()
 		sbsizer_sampler.Fit( self._panel_create_sample )
-		self.nb_config_sampler.AddPage( self._panel_create_sample, u"Create Sample", False )
+		self.nb_config_sampler.AddPage( self._panel_create_sample, u"Create Sample", True )
 		self._panel_review = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		sbsizer_review = wx.StaticBoxSizer( wx.StaticBox( self._panel_review, wx.ID_ANY, u"Samples" ), wx.VERTICAL )
 		
@@ -450,7 +450,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Sample Review", True )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Sample Review", False )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		
