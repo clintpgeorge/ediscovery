@@ -121,8 +121,8 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer8.SetFlexibleDirection( wx.BOTH )
 		gbSizer8.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._panel_feedback_doc = wx.Panel( self._panel_feedback, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,200 ), wx.TAB_TRAVERSAL )
-		gbSizer8.Add( self._panel_feedback_doc, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
+		self._panel_feedback_doc = wx.Panel( self._panel_feedback, wx.ID_ANY, wx.DefaultPosition, wx.Size( 600,200 ), wx.TAB_TRAVERSAL )
+		gbSizer8.Add( self._panel_feedback_doc, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 2 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._st_revew_pane_help1 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"* Please click each document line to review."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_revew_pane_help1.Wrap( -1 )
@@ -310,10 +310,10 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer25.SetFlexibleDirection( wx.BOTH )
 		gbSizer25.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_next_res_res = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
+		self._btn_next_res_res = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next Page"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		gbSizer25.Add( self._btn_next_res_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_prev_res_res = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Previous"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
+		self._btn_prev_res_res = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Previous Page"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		gbSizer25.Add( self._btn_prev_res_res, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -353,10 +353,10 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer26.SetFlexibleDirection( wx.BOTH )
 		gbSizer26.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_prev_res_unres = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Previous"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
+		self._btn_prev_res_unres = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Previous Page"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		gbSizer26.Add( self._btn_prev_res_unres, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_net_res_unres = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
+		self._btn_net_res_unres = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next Page"), wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		gbSizer26.Add( self._btn_net_res_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -387,7 +387,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_update_results = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Back (Refine Query)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer30.Add( self._btn_update_results, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_continue  = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next"), wx.Point( -1,-1 ), wx.DefaultSize, 0 )
+		self._btn_continue  = wx.Button( self._panel_query_results, wx.ID_ANY, _(u"Next (Start Sampling)"), wx.Point( -1,-1 ), wx.DefaultSize, 0 )
 		gbSizer30.Add( self._btn_continue , wx.GBPosition( 3, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -508,10 +508,10 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer14.SetFlexibleDirection( wx.BOTH )
 		gbSizer14.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self._btn_conf_back = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_conf_back = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Back (SMARTeR Results)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer14.Add( self._btn_conf_back, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_conf_next = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Next"), wx.Point( -1,-1 ), wx.DefaultSize, 0 )
+		self._btn_conf_next = wx.Button( self._panel_sample_conf, wx.ID_ANY, _(u"Next (Sample Irrelevant)"), wx.Point( -1,-1 ), wx.DefaultSize, 0 )
 		gbSizer14.Add( self._btn_conf_next, wx.GBPosition( 0, 55 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -524,7 +524,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_sample_conf.SetSizer( bSizer101 )
 		self._panel_sample_conf.Layout()
 		bSizer101.Fit( self._panel_sample_conf )
-		self._notebook.AddPage( self._panel_sample_conf, _(u"Sample Confidence"), True )
+		self._notebook.AddPage( self._panel_sample_conf, _(u"Sample Confidence"), False )
 		self._panel_review_unresp = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		_bsizer_review_unresp = wx.BoxSizer( wx.VERTICAL )
 		
@@ -594,10 +594,10 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_gbsizer_review_unresp.Add( self._st_revew_pane_help, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_back_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_back_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Back (Sample Confidence)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_review_unresp.Add( self._btn_back_unres, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_next_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_next_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Next (Sample Relevant)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_review_unresp.Add( self._btn_next_unres, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -678,10 +678,10 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_gbsizer_review_res.Add( self._st_resp_revew_pane_help, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_back_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_back_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Back (Sample Irrelevant)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_review_res.Add( self._btn_back_res, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_next_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Next"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_next_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Next (Reports)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_review_res.Add( self._btn_next_res, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
@@ -714,23 +714,23 @@ class SMARTeRGUI ( wx.Frame ):
 		self._grid_query_accuracy.SetMargins( 0, 0 )
 		
 		# Columns
-		self._grid_query_accuracy.SetColSize( 0, 302 )
+		self._grid_query_accuracy.SetColSize( 0, 268 )
 		self._grid_query_accuracy.SetColSize( 1, 74 )
 		self._grid_query_accuracy.SetColSize( 2, 111 )
 		self._grid_query_accuracy.SetColSize( 3, 123 )
-		self._grid_query_accuracy.SetColSize( 4, 102 )
-		self._grid_query_accuracy.SetColSize( 5, 110 )
-		self._grid_query_accuracy.SetColSize( 6, 120 )
+		self._grid_query_accuracy.SetColSize( 4, 112 )
+		self._grid_query_accuracy.SetColSize( 5, 128 )
+		self._grid_query_accuracy.SetColSize( 6, 126 )
 		self._grid_query_accuracy.EnableDragColMove( False )
 		self._grid_query_accuracy.EnableDragColSize( True )
 		self._grid_query_accuracy.SetColLabelSize( 30 )
-		self._grid_query_accuracy.SetColLabelValue( 0, _(u"Keyword Query") )
+		self._grid_query_accuracy.SetColLabelValue( 0, _(u"Search Keywords") )
 		self._grid_query_accuracy.SetColLabelValue( 1, _(u"Accuracy*") )
 		self._grid_query_accuracy.SetColLabelValue( 2, _(u"Relevancy Ratio$") )
 		self._grid_query_accuracy.SetColLabelValue( 3, _(u"Irrelevancy Ratio^") )
-		self._grid_query_accuracy.SetColLabelValue( 4, _(u"Accuracy Lucene") )
-		self._grid_query_accuracy.SetColLabelValue( 5, _(u"Relevancy Lucene") )
-		self._grid_query_accuracy.SetColLabelValue( 6, _(u"Irrelevancy Lucene") )
+		self._grid_query_accuracy.SetColLabelValue( 4, _(u"Accuracy (Lucene)") )
+		self._grid_query_accuracy.SetColLabelValue( 5, _(u"Relevancy (Lucene)") )
+		self._grid_query_accuracy.SetColLabelValue( 6, _(u"Irrelevancy (Lucene)") )
 		self._grid_query_accuracy.SetColLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
 		
 		# Rows
@@ -844,7 +844,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_resp1.Wrap( -1 )
 		gbSizer211.Add( self._st_resp1, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._btn_back_sample_res = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Back"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self._btn_back_sample_res = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Back (Sample Relevant)"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		gbSizer211.Add( self._btn_back_sample_res, wx.GBPosition( 10, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._btn_exit = wx.Button( self._panel_search_report, wx.ID_ANY, _(u"Exit"), wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -863,7 +863,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_search_report.SetSizer( _bsizer_comprehensive_report )
 		self._panel_search_report.Layout()
 		_bsizer_comprehensive_report.Fit( self._panel_search_report )
-		self._notebook.AddPage( self._panel_search_report, _(u"Search Report"), False )
+		self._notebook.AddPage( self._panel_search_report, _(u"Search Report"), True )
 		
 		_bsizer_main.Add( self._notebook, 1, wx.EXPAND |wx.ALL, 5 )
 		

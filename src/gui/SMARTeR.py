@@ -1461,7 +1461,7 @@ class SMARTeR (SMARTeRGUI):
 
         #------------- Selecting seed documents from the initial ranking results
         
-        self._seed_docs_details = self.__seed_docs_Kmeans_selection()
+        #self._seed_docs_details = self.__seed_docs_Kmeans_selection()
             
         self._responsive_files = []
         self._responsive_files_display = []
@@ -1482,8 +1482,10 @@ class SMARTeR (SMARTeRGUI):
         
         if flag:
             self._list_query_history.Append(luceneQuery)
-            self._query_history.append([luceneQuery, -1,"","","","",""])
+            self._query_history.append([luceneQuery, -1,"","","","","",len(self._seed_docs_details)])
             self._choice_history = cnt
+        else:
+            self._query_history[self._choice_history][7]=len(self._seed_docs_details)
         
         # self._tc_query_aggregated.SetValue('')
         
@@ -1530,7 +1532,7 @@ class SMARTeR (SMARTeRGUI):
         num_reviewed_seed_docs = 0
         reviewed_seed_docs_id = []
         reviewed_seed_docs_cls = []
-        
+        print "Result"+str(len(self._seed_docs_details))
         for seed_doc in self._seed_docs_details:
             
             doc_id, doc_path, doc_name, is_resp = seed_doc 
@@ -1763,25 +1765,26 @@ class SMARTeR (SMARTeRGUI):
         
 
         print 
-        num_lucene_fn = 0
-        num_lucene_fp = 0 
-        for doc_sample in self.sampled_files_unresponsive:
-            _, is_irrelevant, _, _, doc_id = doc_sample
-            if doc_id not in self._lucene_docs_list and is_irrelevant == 'Yes':
-                num_lucene_fn += 1
-            elif doc_id in self._lucene_docs_list and is_irrelevant == 'No':
-                num_lucene_fp += 1                 
-        lucene_IRS_acc = float(num_lucene_fn) * 100.0 / float(irrelevant_size)
-
-        print 'Irrelevant Sample #%d (LUCENE): TP #%d, TN #%d, accuracy %1.4f' % (irrelevant_size, num_lucene_fp, num_lucene_fn, lucene_IRS_acc)
-        self._query_history[self._choice_history][6] = str(num_lucene_fp)+"/"+str(irrelevant_size)
         num_lucene_tn = 0
+        num_lucene_fn = 0 
+        for doc_sample in self.sampled_files_unresponsive:
+            doc_id, is_irrelevant, _, _, _ = doc_sample
+            if os.path.basename(doc_id) not in self._lucene_docs_list and is_irrelevant == 'Yes':
+                num_lucene_tn += 1
+            elif os.path.basename(doc_id) in self._lucene_docs_list and is_irrelevant == 'No':
+                num_lucene_fn += 1                 
+        lucene_IRS_acc = float(num_lucene_tn) * 100.0 / float(irrelevant_size)
+
+        print 'Irrelevant Sample #%d (LUCENE): TP #%d, TN #%d, accuracy %1.4f' % (irrelevant_size, num_lucene_tn, num_lucene_fn, lucene_IRS_acc)
+        self._query_history[self._choice_history][6] = str(num_lucene_tn)+"/"+str(irrelevant_size)
+        num_lucene_fp = 0
         num_lucene_tp = 0 
         for doc_sample in self.sampled_files_responsive:
-            _, is_relevant, _, _, doc_id = doc_sample
-            if doc_id not in self._lucene_docs_list and is_relevant == 'No':
-                num_lucene_tn += 1
-            elif doc_id in self._lucene_docs_list and is_relevant == 'Yes':
+            #print doc_sample
+            doc_id, is_relevant, _, _, _ = doc_sample
+            if os.path.basename(doc_id) not in self._lucene_docs_list and is_relevant == 'No':
+                num_lucene_fp += 1
+            elif os.path.basename(doc_id) in self._lucene_docs_list and is_relevant == 'Yes':
                 num_lucene_tp += 1
         lucene_RS_acc = float(num_lucene_tp) * 100.0 / float(relevant_size)
         
@@ -1790,9 +1793,10 @@ class SMARTeR (SMARTeRGUI):
         
         
         print 'Relevant Sample #%d (LUCENE): TP #%d, TN #%d, accuracy %1.4f' % (relevant_size, num_lucene_tp, num_lucene_tn, lucene_RS_acc)
+        
         self._query_history[self._choice_history][2]=self.eval_relv
         self._query_history[self._choice_history][3]=self.eval_irrelv
-        self._query_history[self._choice_history][4] = round(float(num_lucene_tp+num_lucene_fp)/float(relevant_size+irrelevant_size),2)
+        self._query_history[self._choice_history][4] = round(float(num_lucene_tp+num_lucene_tn)/float(relevant_size+irrelevant_size),2)
         print 
         
         if self._grid_query_accuracy.NumberRows != len(self._query_history):
@@ -1800,8 +1804,8 @@ class SMARTeR (SMARTeRGUI):
             
 
         for row_count, query_details in enumerate(self._query_history):
-            query, accuracy, rev, irrev , lacc, lrev,lirrev= query_details
-            self._grid_query_accuracy.SetCellValue(row_count, 0, query)
+            query, accuracy, rev, irrev , lacc, lrev,lirrev,seed= query_details
+            self._grid_query_accuracy.SetCellValue(row_count, 0, query+" (Seeds:"+str(seed)+")")
             if accuracy != -1:
                 self._grid_query_accuracy.SetCellValue(row_count, 1, str(accuracy))
             self._grid_query_accuracy.SetCellValue(row_count, 2, str(rev))
@@ -2313,7 +2317,7 @@ class SMARTeR (SMARTeRGUI):
         i = 0
         
         while i <self._seed_docs_details.__len__():
-            print str(self._seed_docs_details[i][0]) + " " + str(file_id)
+            #print str(self._seed_docs_details[i][0]) + " " + str(file_id)
             if self._seed_docs_details[i][0] == file_id:
                 self._seed_docs_details[i][3] = seed_relevant
                 break
