@@ -39,8 +39,8 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         
         self.InsertColumn(0, '#', wx.LIST_FORMAT_CENTRE, width=30)
         self.InsertColumn(1, 'File Name', width=200)
-        self.InsertColumn(2, 'Responsive', wx.LIST_FORMAT_CENTRE)
-        self.InsertColumn(3, 'Privileged', wx.LIST_FORMAT_CENTRE)
+        self.InsertColumn(2, 'Valid?', wx.LIST_FORMAT_CENTRE)
+        #self.InsertColumn(3, 'Privileged', wx.LIST_FORMAT_CENTRE)
         rs._lc_review_loaded = True
         # Initializes from the shelf 
         
@@ -50,7 +50,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
             self.InsertStringItem(file_id, str(file_id + 1))
             self.SetStringItem(file_id, 1, fs[1])
             self.SetStringItem(file_id, 2, fs[4])
-            self.SetStringItem(file_id, 3, fs[5])           
+            #self.SetStringItem(file_id, 3, fs[5])           
             file_id += 1            
         
     def _on_review_list_item_selected(self, event):
@@ -62,24 +62,25 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         if rs.selected_doc_id < 0: return 
         
         responsive = self.GetItem(rs.selected_doc_id, 2)
-        privileged = self.GetItem(rs.selected_doc_id, 3)
+        #privileged = self.GetItem(rs.selected_doc_id, 3)
 
         # Handles the document tags check boxes 
         
         if responsive.Text == 'Yes':
-            rs._rbx_responsive.SetStringSelection('Yes')
+            rs._rbx_responsive.SetStringSelection('Valid')
         elif responsive.Text == 'No':
-            rs._rbx_responsive.SetStringSelection('No')
+            rs._rbx_responsive.SetStringSelection('Invalid')
         elif responsive.Text == '':
             rs._rbx_responsive.SetStringSelection('Unknown')
             
+        '''
         if privileged.Text == 'Yes':
             rs._rbx_privileged.SetStringSelection('Yes')
         elif privileged.Text == 'No':
             rs._rbx_privileged.SetStringSelection('No')
         elif privileged.Text == '':
             rs._rbx_privileged.SetStringSelection('Unknown')
-        
+        '''
         # Shows the tags panel 
         rs._panel_doc_tags.Show()
         rs._panel_doc_tags.GetParent().GetSizer().Layout()
@@ -102,7 +103,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         if is_message_opened:
             rs._tc_preview.SetValue(str(print_message))
         else:
-            rs._tc_preview.SetValue('Preview not available.')
+            rs._tc_preview.SetValue('Preview is not available for this document.')
             
                 
 
@@ -118,7 +119,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         if rs.selected_doc_id < 0: return 
         
         responsive = self.GetItem(rs.selected_doc_id, 2)
-        privileged = self.GetItem(rs.selected_doc_id, 3)
+        #privileged = self.GetItem(rs.selected_doc_id, 3)
         src_file_path = rs.sampled_files[rs.selected_doc_id]
         dest_file_path = get_destination_file_path(rs.dir_path,rs._tempdir, src_file_path, rs.output_dir_path)
         #print rs._tempdir+"\n"
@@ -160,13 +161,13 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
                 # Sets the selections to the parent window 
 
                 self._rbx_responsive.SetStringSelection(responsive_status)
-                if responsive_status == 'Yes': 
+                if responsive_status == 'Valid': 
                     self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
-                elif responsive_status == 'No': 
+                elif responsive_status == 'Invalid': 
                     self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
                 elif responsive_status == 'Unknown': 
                     self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
-                
+                '''
                 self._rbx_privileged.SetStringSelection(privileged_status)
                 if privileged_status == 'Yes': 
                     self._lc_review.SetStringItem(self.selected_doc_id, 3, 'Yes')
@@ -174,7 +175,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
                     self._lc_review.SetStringItem(self.selected_doc_id, 3, 'No')
                 elif privileged_status == 'Unknown': 
                     self._lc_review.SetStringItem(self.selected_doc_id, 3, '')
-                    
+                ''' 
                 self._is_rt_updated = True 
                 
             # Destroys the dialog object 

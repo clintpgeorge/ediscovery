@@ -709,7 +709,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
     
             # Set status text 
             
-            status_text = '%d sample documents will be selected' % len(self.sampled_files)
+            status_text = '%d documents' % len(self.sampled_files)
             self._st_num_samples.SetLabel(status_text)
             self._st_out_num_samples.SetLabel(status_text)
             self._st_num_samples.Show()
@@ -726,28 +726,15 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Event of new precision value
         Returns: Nothing
         '''
-        
-        def show_precision_error():
-            self._show_error_message("Value Error!", "Please enter a confidence interval between 0 and 100.")
-            self._tc_confidence_interval.ChangeValue(str(int(DEFAULT_CONFIDENCE_INTERVAL))) # Sets the default value 
-            self._tc_confidence_interval.SetFocus()
-            
-        
         super(RandomSampler, self)._on_precision_changed(event)
         # Maybe intermittently null string, escaping 
         try:
             # Checks for positive values 
-            ci = float(self._tc_confidence_interval.GetValue())
-            if ci <= 0 or ci > 99:
-                show_precision_error()
-                return 
-            
             self.get_precision_as_float()
-            self._tc_out_confidence_interval.ChangeValue(self._tc_confidence_interval.GetValue())
-            self.SetStatusText('Confidence interval is changed as ' + self._tc_confidence_interval.GetValue())
+            self._tc_out_confidence_interval.ChangeValue(self._cbx_confidence_interval.GetValue())
+            self.SetStatusText('Confidence interval is changed as ' + self._cbx_confidence_interval.GetValue())
             self._is_ct_updated = True # for the confidence tab updates
         except ValueError:
-            show_precision_error()
             return None 
         
         self._generate_file_samples()
@@ -759,10 +746,10 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         Arguments: Nothing
         '''
         try:
-            self.precision_val = float(self._tc_confidence_interval.GetValue()
+            self.precision_val = float(self._cbx_confidence_interval.GetValue()
                                        ) / 100.0 
         except ValueError:
-            self.precision_val = float(int(self._tc_confidence_interval.GetValue())
+            self.precision_val = float(int(self._cbx_confidence_interval.GetValue())
                                        ) / 100.0 
             
     def _on_confidence_changed(self, event):
@@ -956,9 +943,9 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         '''
         try:
             responsive_status = self._rbx_responsive.GetStringSelection() 
-            if responsive_status == 'Yes': 
+            if responsive_status == 'Valid': 
                 self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
-            elif responsive_status == 'No': 
+            elif responsive_status == 'Invalid': 
                 self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
             elif responsive_status == 'Unknown': 
                 self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
@@ -1030,7 +1017,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._shelf_update_review_tab_state()
         
         # Separate report types
-        report_type = self._cbx_report_types.GetValue()
+        report_type = 'All'#self._cbx_report_types.GetValue()
         try:
             samples_lst = self.shelf['samples']
             if report_type == 'Responsive':
@@ -1145,31 +1132,28 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
     def _gen_complete_html_report(self, samples, responsive, privileged):
         try:
             # Generate HTML tags for all documents 
-            hrow = TableRow(cells=['#', 'File Name', 'Responsive', 'Privileged'], bgcolor='#6E6E6E')
+            hrow = TableRow(cells=['#', 'File Name', 'Valid?'], bgcolor='#6E6E6E')
             all_table = Table(header_row=hrow)
+            
             for fs in samples:
                 
                 rc_colr = resp_colors[rstatus(fs[4])]
-                pc_colr = priv_colors[rstatus(fs[5])]
+                #pc_colr = priv_colors[rstatus(fs[5])]
                 r_colr = row_colors[row_status(fs[4], fs[5])]
                 num_cell = TableCell(fs[0] + 1, bgcolor=r_colr, align='center')
                 file_name = link(fs[1], os.path.join(fs[3], fs[1]))
                 fn_cell = TableCell(file_name, bgcolor=r_colr)
                 resp_cell = TableCell(fs[4], bgcolor=rc_colr, align='center')
-                priv_cell = TableCell(fs[5], bgcolor=pc_colr, align='center')
+                #priv_cell = TableCell(fs[5], bgcolor=pc_colr, align='center')
                 
-                all_table.rows.append([num_cell, fn_cell, resp_cell, priv_cell])
+                all_table.rows.append([num_cell, fn_cell, resp_cell])#, priv_cell])
             
             html_body = """
-            %s 
-    
-            %s 
-    
-            <hr/>
+                    <hr/>
             <h3>Complete Sample</h3>
             %s 
             <br/>
-            """ % (self._gen_responsive_html_report(responsive), self._gen_privileged_html_report(privileged), str(all_table))
+            """ % str(all_table)
             
             return html_body
         except Exception,e:
@@ -1307,7 +1291,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             # Set default confidence interval 
             self.precision_val = DEFAULT_CONFIDENCE_INTERVAL / 100
             str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
-            self._tc_confidence_interval.ChangeValue(str_precision)
+            self._cbx_confidence_interval.SetSelection(int(str_precision)-1)
             self._tc_out_confidence_interval.ChangeValue(str_precision)
     
             # Hides the status messages 
@@ -1417,14 +1401,13 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 str_confidence_level = str(self.confidence_val * Decimal('100'))
                 str_precision = str(int(self.precision_val * 100))
                 self._cbx_confidence_levels.SetValue(str_confidence_level)
-                self._tc_confidence_interval.ChangeValue(str_precision)
+                self._cbx_confidence_interval.SetSelection(int(str_precision)-1)
                 self._tc_out_confidence_levels.ChangeValue(str_confidence_level)
                 self._tc_out_confidence_interval.ChangeValue(str_precision)
                  
         
                 
             # Creates the data shelf for the first time 
-            else:
                 # Initializes the necessary controls 
                 self._init_controls()
                 #if self._is_pst_project==False:
@@ -1558,7 +1541,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             
             # Set status text 
             
-            status_text = '%d sample documents will be selected' % len(self.sampled_files)
+            status_text = '%d documents' % len(self.sampled_files)
             self._st_num_samples.SetLabel(status_text)
             self._st_out_num_samples.SetLabel(status_text)
             self._st_num_samples.Show()
