@@ -1407,7 +1407,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                  
         
                 
-            # Creates the data shelf for the first time 
+            # Creates the data shelf for the first time
+            else: 
                 # Initializes the necessary controls 
                 self._init_controls()
                 #if self._is_pst_project==False:
@@ -1430,7 +1431,9 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         into the shelf
         '''    
         try:
+            print "Hello" 
             cfg = self.shelf['config']
+            print "Hello" 
             cfg._data_folder = self.dir_path
             cfg._output_folder = self.output_dir_path
             cfg._modified_date = datetime.now()
@@ -1443,6 +1446,9 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             self._btn_out_go_to_review.SetBackgroundColour( wx.Colour( 224, 224, 224 ) )
             self.shelf.sync()
         except Exception,e:
+            
+            print e
+            exit()
             self.error(e)
          
     def _shelf_update_confidence_tab_state(self):
