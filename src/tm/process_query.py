@@ -50,6 +50,19 @@ def load_dictionary(dictionary_file):
     return gensim.corpora.Dictionary().load(dictionary_file)
 
 
+def get_tfidf_mdl(ldac_file, ):
+            
+    # loads the corpus 
+    
+    corpus = gensim.corpora.BleiCorpus(ldac_file)
+    
+    # runs the LSA inference
+    
+    tfidf = gensim.models.TfidfModel(corpus) 
+    corpus_tfidf = tfidf[corpus]
+    
+    return corpus_tfidf
+
 '''
 ************************ LDA ****************************
 '''    
@@ -199,12 +212,12 @@ def print_dominant_query_topics(query_td, lda_mdl, TOP_K_TOPICS = 5):
     dominant_topics = heapq.nlargest(TOP_K_TOPICS, dict(query_td).items(), key=itemgetter(1))
     
     # print 'Query distribution:', query_td
-    print '\nTop %s query topic(s):' % min(TOP_K_TOPICS, len(query_td)), dominant_topics
+    print 'Top %s query topic(s):' % min(TOP_K_TOPICS, len(query_td)), dominant_topics
     topic_words = lda_mdl.show_topics(topics=-1, topn=20, log=False, formatted=False)
     for (topic_id, _) in dominant_topics:
         print '\t topic #%d:' % topic_id, 
         for (prob, term) in topic_words[topic_id] :
-            print term, '(%.8f),' % prob, 
+            print term, '(%.5f),' % prob, 
         print 
     print  
         
@@ -234,7 +247,7 @@ def get_dominant_query_topics(query_text, lda_dictionary, lda_mdl, TOP_K_TOPICS 
         logging.info('%d query words are in the dictionary.', len(query_vec))
     
     query_td = lda_mdl[query_vec]
-    # print 'Query distribution:', query_td
+
     print 'Query TF:', [(w_id, lda_dictionary[w_id], count) for (w_id, count) in query_vec]
     print_dominant_query_topics(query_td, lda_mdl, TOP_K_TOPICS)
    

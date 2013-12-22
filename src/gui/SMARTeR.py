@@ -14,7 +14,8 @@ import wx.animate
 import numpy as np 
 import shutil
 
-
+from collections import Counter, defaultdict
+from scipy.cluster.vq import kmeans, vq, whiten
 from lucene import BooleanClause
 from datetime import datetime
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin, \
@@ -39,6 +40,9 @@ from gui.TaggingControlSmarter import TaggingControlSmarter
 from gui.TaggingControlFeedback import TaggingControlFeedback
 import shutil
 from fileinput import filename
+
+SEED = 1983 
+np.random.seed(seed=SEED)
 
 
 '''
@@ -920,7 +924,7 @@ class SMARTeR (SMARTeRGUI):
             self._show_error_message("Missing input", "Please select a project or create a new project.")
         else:
             if self._is_tm_index_available and self._is_lucene_index_available:
-                self._seed_docs_details = self.__seed_docs_Kmeans_selection()
+                self._seed_docs_details = self.__seed_docs_Kmeans_proportional_selection()
                 self.__load_document_feedback()
                 self._current_page = 1
                 self._notebook.ChangeSelection(self._current_page)
@@ -1312,9 +1316,8 @@ class SMARTeR (SMARTeRGUI):
         Selecting seed documents randomly from the initial ranking results
         '''
        
-        import random
         indices = range(0, self._num_documents)
-        random.shuffle(indices)
+        np.random.shuffle(indices)
         selected_random_indices = indices[1:num_seed_docs]
  
         seed_docs_details = []
@@ -1331,9 +1334,7 @@ class SMARTeR (SMARTeRGUI):
         Selecting seed documents from K-means clusters of LDA 
         document topic proportions (theta_d) 
         '''
-        import random 
         
-        from collections import Counter, defaultdict
 
         def __get_seed_doc_details(doc_id):
             
@@ -1357,7 +1358,7 @@ class SMARTeR (SMARTeRGUI):
             exit()
              
         print 'k-Means clustering'
-        from scipy.cluster.vq import kmeans, vq, whiten
+        
         whitened = whiten(self._lda_theta + 1e-15)
         codebook, _ = kmeans(whitened, num_clusters)
         doc_labels, _ = vq(whitened, codebook)
@@ -1393,7 +1394,7 @@ class SMARTeR (SMARTeRGUI):
                     seed_docs_details.append(__get_seed_doc_details(doc_id))
             else: 
                 indices = range(0, class_count)
-                random.shuffle(indices)
+                np.random.shuffle(indices)
                 selected_class_indices = [class_docs_id[class_id][i] for i in indices[1:desired_class_count]]
                 for doc_id in selected_class_indices:
                     # print class_id, 
@@ -1404,7 +1405,59 @@ class SMARTeR (SMARTeRGUI):
         return seed_docs_details
             
     
-    
+    def __seed_docs_Kmeans_proportional_selection(self, num_seed_docs=100, num_clusters=5):
+        '''
+        Selecting seed documents from K-means clusters of LDA 
+        document topic proportions (theta_d) 
+        '''
+        
+        def __get_seed_doc_details(doc_id):
+            
+            is_resp = self.__is_relevant(self._doc_true_class_ids[doc_id])
+            doc_id, dir_path, doc_name = self.lda_file_path_index[doc_id]
+            doc_path = os.path.normpath(os.path.join(dir_path, doc_name))
+            
+            # print doc_id, doc_name, is_resp
+            return [doc_id, doc_path, doc_name, is_resp]
+        
+        # K-means clustering on the LDA theta 
+        
+        if np.isnan(np.min(self._lda_theta)):
+            print "Cannot perform k-means because one of the elements of the document THETA matrix is NAN."
+            exit()
+        
+        whitened = whiten(self._lda_theta + 1e-15)
+        codebook, _ = kmeans(whitened, num_clusters)
+        doc_labels, _ = vq(whitened, codebook)
+        
+        # Gets class elements' document id 
+        cluster_docs_dict = defaultdict(list)
+        for doc_id, doc_label in enumerate(doc_labels):
+            cluster_docs_dict[doc_label] += [doc_id] 
+            
+        for cluster_id in cluster_docs_dict.keys():
+            np.random.shuffle(cluster_docs_dict[cluster_id])
+            
+        seed_doc_ids = []
+        req_num_seeds = min(num_seed_docs, self._num_documents)
+        cluster_counts = Counter(doc_labels).items() # to get cluster counts 
+        
+        for cluster_id, cluster_count in cluster_counts:
+            cluster_prop = float(cluster_count) / float(self._num_documents) 
+            cluster_sample_size = min(math.ceil(cluster_prop * float(req_num_seeds)), cluster_count)
+            seed_doc_ids += cluster_docs_dict[cluster_id][0:int(cluster_sample_size)]
+
+        print 
+        print 'k-Means proportional sampling, seed count:', len(seed_doc_ids)
+        print 
+        
+        seed_docs_details = []
+        for doc_id in seed_doc_ids:
+            seed_docs_details.append(__get_seed_doc_details(doc_id))
+        
+        return seed_docs_details
+
+
     def _on_click_search_start(self, event):
         """
         Actions to be done when the "Run Query" button is clicked

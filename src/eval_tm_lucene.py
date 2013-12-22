@@ -8,7 +8,7 @@ from utils.utils_file import read_config, load_file_paths_index, nexists
 from PyROC.pyroc import ROCData, plot_multiple_roc
 import numpy as np 
 from collections import defaultdict
-
+from utils.utils_email import lemmatize_tokens, stem_tokens, regex_tokenizer
 
 
 METRICS_DICT =  {'SENS': 'Recall (Sensitivity)', 'SPEC': 'Specificity', 'ACC': 'Accuracy', 'EFF': 'Efficiency',
@@ -16,29 +16,6 @@ METRICS_DICT =  {'SENS': 'Recall (Sensitivity)', 'SPEC': 'Specificity', 'ACC': '
     'F1': 'F1 Score', 'TN': 'True Negatives', 'TP': 'True Positives', 'FN': 'False Negatives', 'FP': 'False Positives' }
 
 METRIC_COLORS = ['r', 'b', 'y', 'g', 'c', 'm', 'k', '#eeefff','#ffee00', '#ff00ee','#ccbbff'] # *** depended on the number of metrics used *** 
-
-def parse_query(query):
-    
-    queryText = query.strip() 
-
-    query_words = []
-    fields = []
-    clauses = []
-    filteredQuery = re.split(';', queryText)
-
-    for l in filteredQuery:
-        res = re.split(':', l )
-        if len(res) > 1:
-            fields.append(res[0])
-            query_words.append(res[1])
-            if res[2] is 'MUST':
-                clauses.append(BooleanClause.Occur.MUST)
-            elif res[2] is 'MUST_NOT':
-                clauses.append(BooleanClause.Occur.MUST_NOT)
-            else:
-                clauses.append(BooleanClause.Occur.SHOULD)
-
-    return (query_words, fields, clauses)
 
 
 
@@ -336,12 +313,6 @@ def plot_roc_and_print_metrics(roc_result, roc_title='ROC Curve', file_name='ROC
     roc.evaluateMetrics(roc.confusion_matrix(score_threshold), do_print=True)
 
 
-def plot_results_rocs(results, labels, file_name, img_title): 
-    
-    roc_data_list = [ROCData(result) for result in results]
-    plot_multiple_roc(roc_data_list, title=img_title, labels=labels, include_baseline=True, file_name=file_name)
-    
-    return roc_data_list
 
 
 def print_results_eval_metrics(roc_data_list, labels, score_thresholds):
@@ -764,7 +735,7 @@ def lu_append_nonresp(docs, root_dir):
         result_dict[doc[0]] = doc[1]
         score_list.append(doc[1])
     
-    min_score = np.min(score_list) * 0.1
+    min_score = np.min(score_list) * 1e-5
     
     for _, _, files in os.walk(root_dir):
         for file_name in files:
@@ -859,27 +830,50 @@ def plot_doc_class_predictions(lda_res, file_name, img_extension='.eps'):
     
     
 
-def analyze_query(file_prefix, config_file, test_directory, 
-                  lucene_query, tm_query, 
-                  limit = 1000, img_extension  = '.eps'):
+def eval_ranking_methods(file_prefix, config_file, 
+                         test_directory, 
+                         tm_query, 
+                         limit = 1000, 
+                         img_extension  = '.eps'):
     
+    lucene_query = 'all:(%s)' % tm_query # search in all fields 
+    print 'Lucene query:', lucene_query
+    print 'TM query:', tm_query
     positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
     TOP_K_TOPICS = 5 # the number topics used for Topic-LDA 
     rocs_file_name = '%s-ROCs' % file_prefix + img_extension
-    rocs_img_title = '%s: ROC curves' % file_prefix 
+    rocs_img_title = '' # %s: ROC curves' % file_prefix 
     roc_labels = ['Lucene ranking', 
                   'Keyword-LDA ranking' , 
                   'Keyword-LDA * Lucene ranking', 
-                  'Topic-LDA ranking', 
+                  'Topic-LDA ranking' , 
                   'Topic-LDA * Lucene Ranking',
-                  'Keyword-LSI ranking'] 
-    #              'LSI (w/ keywords) * Lucene ranking']
+                  'Keyword-LSI ranking',
+                  'LSI (w/ keywords) * Lucene ranking']
+    
+    line_styles = ['ro-','kx-','b+-','c^-','yv-.','gd-', 'bd-'] 
     
     
     #---------------------------------------------- Reads the configuration file
     
     mdl_cfg = read_config(config_file)
     
+    
+    #------------ Checks whether the keywords are there in the corpus dictionary
+    
+    dictionary = load_dictionary(mdl_cfg['CORPUS']['dict_file'])
+    valid_tokens  = 0 
+    for token in tm_query.split():
+        if token.strip() not in dictionary.values():
+            print token, "is not in the corpus vocabulary. Hence, this word will be ignored from the topic search."
+        else: 
+            valid_tokens  += 1
+            
+    if valid_tokens  == 0:
+        print 'None of the tokens exist in the dictionary. Exiting topic search!'
+        exit()
+        
+        
     #------------------------------------------------------------- Lucene search
 
     print 'Lucene ranking'
@@ -896,7 +890,7 @@ def analyze_query(file_prefix, config_file, test_directory,
     
     # To display the LDA model topics based on the 
     # increasing order of entropy   
-    print_lda_topics_on_entropy(lda_mdl, file_name='%s-topic-words.csv' % file_prefix, topn=50) 
+    # print_lda_topics_on_entropy(lda_mdl, file_name='%s-topic-words.csv' % file_prefix, topn=50) 
     
     # Gets the dominant topics from the LDA model 
     dominant_topics = get_dominant_query_topics(tm_query, lda_dictionary, lda_mdl, TOP_K_TOPICS)
@@ -914,20 +908,20 @@ def analyze_query(file_prefix, config_file, test_directory,
     lu_tm_docs = fuse_lucene_tm_scores(lu_docs_dict, lda_docs)
     lda_lu_res = convert_to_roc_format(lu_tm_docs, positive_dir)
     
-    plot_doc_class_predictions(lda_lu_res, '%s-Keyword-LDA-Lucene' % file_prefix, img_extension)
+    # plot_doc_class_predictions(lda_lu_res, '%s-Keyword-LDA-Lucene' % file_prefix, img_extension)
     
     
     print 'LDA (w/ query topics) ranking'
     lda_tts_docs = search_tm_topics(dominant_topics_idx, limit, mdl_cfg) 
     lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
     
-    plot_doc_class_predictions(lda_tts_res, '%s-Topic-LDA' % file_prefix, img_extension)
+    # plot_doc_class_predictions(lda_tts_res, '%s-Topic-LDA' % file_prefix, img_extension)
     
     print 'LDA (w/ query topics) * Lucene Ranking'
     final_docs_tts = fuse_lucene_tm_scores(lu_docs_dict, lda_tts_docs)
     lda_tts_lu_res = convert_to_roc_format(final_docs_tts, positive_dir)
     
-    plot_doc_class_predictions(lda_tts_lu_res, '%s-Topic-LDA-Lucene' % file_prefix, img_extension)
+    # plot_doc_class_predictions(lda_tts_lu_res, '%s-Topic-LDA-Lucene' % file_prefix, img_extension)
     
     
     
@@ -937,9 +931,9 @@ def analyze_query(file_prefix, config_file, test_directory,
     lsi_docs = search_lsi(tm_query, limit, mdl_cfg)
     lsi_res = convert_to_roc_format(lsi_docs, positive_dir)
     
-    #print 'LSI (w/ keywords) * Lucene ranking'
-    #lsi_lu_docs = fuse_lucene_tm_scores(lu_docs_dict, lsi_docs)
-    #lsi_lu_res = convert_to_roc_format(lsi_lu_docs, positive_dir)
+    print 'LSI (w/ keywords) * Lucene ranking'
+    lsi_lu_docs = fuse_lucene_tm_scores(lu_docs_dict, lsi_docs)
+    lsi_lu_res = convert_to_roc_format(lsi_lu_docs, positive_dir)
     
     
     ## Plot ROC curves  
@@ -947,13 +941,191 @@ def analyze_query(file_prefix, config_file, test_directory,
     results_list = [lu_res, 
                     lda_res, lda_lu_res, 
                     lda_tts_res, lda_tts_lu_res, 
-                    lsi_res] # , lsi_lu_res]
-    plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
-    print
+                    lsi_res, lsi_lu_res]
+    
+    roc_data_list = [ROCData(result, linestyle=line_styles[idx]) 
+                     for idx, result in enumerate(results_list)]
+    plot_multiple_roc(roc_data_list, title=rocs_img_title, 
+                      labels=roc_labels, include_baseline=True, 
+                      file_name=rocs_file_name)
 
+
+
+def eval_keywordlda_topiclda_lucene(file_prefix, config_file, 
+                                    test_directory, tm_query, 
+                                    limit = 1000, 
+                                    img_extension  = '.eps'):
+    
+    lucene_query = 'all:(%s)' % tm_query # search in all fields 
+    print 'Lucene query:', lucene_query
+    print 'TM query:', tm_query
+    
+    positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
+    TOP_K_TOPICS = 5 # the number topics used for Topic-LDA 
+    rocs_file_name = '%s-ROCs' % file_prefix + img_extension
+    rocs_img_title = '' # %s: ROC curves' % file_prefix 
+    roc_labels = ['Lucene ranking', 
+                  'Keyword-LDA ranking' , 
+                  'Topic-LDA ranking']
+    line_styles = ['ro-','kx-','b+-'] 
+    
+    #---------------------------------------------- Reads the configuration file
+    
+    mdl_cfg = read_config(config_file)
+    
+    # Loads the LDA model 
+    lda_dictionary, lda_mdl, _, _ = load_tm(mdl_cfg)
+    
+    
+    #------------ Checks whether the keywords are there in the corpus dictionary
+
+    valid_tokens  = 0 
+    for token in tm_query.split():
+        if token.strip() not in lda_dictionary.values():
+            print token, "is not in the corpus vocabulary. Hence, this word will be ignored from the topic search."
+        else: 
+            valid_tokens  += 1
+            
+    if valid_tokens  == 0:
+        print 'None of the tokens exist in the dictionary. Exiting topic search!'
+        exit()
+        
+        
+    #------------------------------------------------------------- Lucene search
+
+    print 'Lucene ranking'
+    lu_docs = search_li(lucene_query, limit, mdl_cfg)
+    _, lu_docs_list = lu_append_nonresp(lu_docs, test_directory)
+    lu_res = convert_to_roc_format(lu_docs_list, positive_dir)
+    
+    
+    #---------------------------------------------------------------- LDA search
+    
+    # To display the LDA model topics based on the 
+    # increasing order of entropy   
+    # print_lda_topics_on_entropy(lda_mdl, file_name='%s-topic-words.csv' % file_prefix, topn=50) 
+    
+    # Gets the dominant topics from the LDA model 
+    dominant_topics = get_dominant_query_topics(tm_query, lda_dictionary, lda_mdl, TOP_K_TOPICS)
+    dominant_topics_idx = [idx for (idx, _) in dominant_topics] # get the topic indices 
+    
+    
+    print 'LDA (w/ keywords) ranking'
+    lda_docs = search_tm(tm_query, limit, mdl_cfg)
+    lda_res = convert_to_roc_format(lda_docs, positive_dir)
+    
+    
+    print 'LDA (w/ query topics) ranking'
+    lda_tts_docs = search_tm_topics(dominant_topics_idx, limit, mdl_cfg) 
+    lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
+    
+    
+    ## Plot ROC curves  
+
+    results_list = [lu_res, 
+                    lda_res, 
+                    lda_tts_res]
+
+    roc_data_list = [ROCData(result, linestyle=line_styles[idx]) 
+                     for idx, result in enumerate(results_list)]
+    
+    plot_multiple_roc(roc_data_list, title=rocs_img_title, 
+                      labels=roc_labels, include_baseline=True, 
+                      file_name=rocs_file_name)
      
      
+
+def eval_ranking_varying_topics(query_id, dir_path, 
+                                 keywords, 
+                                 limit = 1000, 
+                                 img_extension  = '.eps'):
+    
+    tm_query = ' '.join( lemmatize_tokens( regex_tokenizer(keywords)  ) ) # Lemmatization 
+    lucene_query = 'all:(%s)' % tm_query # search in all fields 
+    print 'Lucene query:', lucene_query
+    print 'TM query:', tm_query
+
+    test_directory = "%s%d" % (dir_path, query_id)
+    positive_dir = os.path.join(test_directory, "1") # TRUE positive documents 
+
+    TOP_K_TOPICS = 5 # the number topics used for Topic-LDA 
+    topiclda_rocs_file_name = '%d-LT-Topic-LDA-VaryingTopics-ROCs' % query_id + img_extension
+    topiclda_rocs_img_title = 'Q%d Topic-LDA with Varying Number of Topics' % query_id  
+    keywordlda_rocs_file_name = '%d-LT-Keyword-LDA-VaryingTopics-ROCs' % query_id + img_extension
+    keywordlda_rocs_img_title = 'Q%d Keyword-LDA with Varying Number of Topics' % query_id  
+    topics = [5, 10, 15, 20, 30, 40, 50, 60, 70, 80]
+    roc_labels = []
+    roc_topiclda_list = []
+    roc_keywordlda_list = []
+
+    for idx, num_topics in enumerate(topics): 
+
+        #---------------------------------------------- Reads the configuration file
+        
+        config_file = "%sQ%d-LT-%dT.cfg" % (dir_path, query_id, num_topics)  # configuration file, created using the SMARTeR GUI 
+        mdl_cfg = read_config(config_file)
+        
+        # Loads the LDA model 
+        lda_dictionary, lda_mdl, _, _ = load_tm(mdl_cfg)
+        
+        
+        #------------ Checks whether the keywords are there in the corpus dictionary
+    
+        valid_tokens  = 0 
+        for token in tm_query.split():
+            if token.strip() not in lda_dictionary.values():
+                print token, "is not in the corpus vocabulary. Hence, this word will be ignored from the topic search."
+            else: 
+                valid_tokens  += 1
+                
+        if valid_tokens  == 0:
+            print 'None of the tokens exist in the dictionary. Exiting topic search!'
+            exit()
+            
+            
+        #------------------------------------------------------------- Lucene search
+    
+        if idx == 0: # the first Lucene ranking is added as a reference 
+            print 'Lucene ranking'
+            lu_docs = search_li(lucene_query, limit, mdl_cfg)
+            _, lu_docs_list = lu_append_nonresp(lu_docs, test_directory)
+            lu_res = convert_to_roc_format(lu_docs_list, positive_dir)
+            roc_topiclda_list.append(ROCData(lu_res))
+            roc_keywordlda_list.append(ROCData(lu_res))
+            roc_labels.append('Lucene')
+        
+        #---------------------------------------------------------------- LDA search
+        
+        # Gets the dominant topics from the LDA model 
+        dominant_topics = get_dominant_query_topics(tm_query, lda_dictionary, lda_mdl, TOP_K_TOPICS)
+        dominant_topics_idx = [idx for (idx, _) in dominant_topics] # get the topic indices 
+        
+        
+        print 'LDA (w/ keywords) ranking'
+        lda_docs = search_tm(tm_query, limit, mdl_cfg)
+        lda_res = convert_to_roc_format(lda_docs, positive_dir)
+        
+        
+        print 'LDA (w/ query topics) ranking'
+        lda_tts_docs = search_tm_topics(dominant_topics_idx, limit, mdl_cfg) 
+        lda_tts_res = convert_to_roc_format(lda_tts_docs, positive_dir)
+    
+        
+        roc_topiclda_list.append(ROCData(lda_tts_res))
+        roc_keywordlda_list.append(ROCData(lda_res))
+        roc_labels.append('%d topics' % num_topics)
+        
+    
+    ## Plot ROC curves  
+    
+    plot_multiple_roc(roc_topiclda_list, title=topiclda_rocs_img_title, 
+                      labels=roc_labels, include_baseline=True, 
+                      file_name=topiclda_rocs_file_name)
      
+    plot_multiple_roc(roc_keywordlda_list, title=keywordlda_rocs_img_title, 
+                      labels=roc_labels, include_baseline=True, 
+                      file_name=keywordlda_rocs_file_name)
+         
 #===============================================================================
 # '''
 # TEST SCRIPTS 
@@ -970,296 +1142,114 @@ if __name__ == '__main__':
     
     ## ***** BEGIN change the following each query *********
     
+    ## ***** BEGIN change the following each query *********
+    
 #    query_id = 201
-#    config_file = "project-201.cfg" # configuration file, created using the SMARTeR GUI 
+#    file_prefix = '%d' % query_id
+#    config_file = "project4.cfg" # configuration file, created using the SMARTeR GUI 
 #    test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 #    lucene_query = 'all:(pre-pay swap)'
 #    tm_query = 'pre-pay swap'
+#    
+#
+
+#    query_id = 202
+#    file_prefix = '%d-raw' % query_id
+#    config_file = "project-202-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    lucene_query = 'all:(FAS transaction swap trust Transferor Transferee)'
+#    tm_query = 'FAS transaction swap trust Transferor Transferee'
+#
+#
+#    query_id = 202
+#    file_prefix = '%d-LT' % query_id
+#    config_file = "F:\\Research\\datasets\\trec2010\\Q202-LT-30T.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\202" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    keywords = 'FAS transaction swap trust Transferor Transferee'
+#    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) ) # Lemmatization 
+
+#    
+#    query_id = 202
+#    file_prefix = '%d-LST' % query_id
+#    config_file = "F:\\Research\\datasets\\trec2010\\Q202-LST-30T.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\202" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    keywords = 'FAS transaction swap trust Transferor Transferee'
+#    norm_tokens = ' '.join( stem_tokens( lemmatize_tokens( regex_tokenizer(keywords) ) ) ) # Stemming and Lemmatization 
+
+
+    
+#    query_id = 204
+#    config_file = "project-204-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\204"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    lucene_query = 'all:(retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail)'
+#    tm_query = 'retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail'
+    
+   
+#    # ---------------------------------------------------------------------------------------------------------------  
+#    # Evaluates differnent Ranking models using 
+#    # RAW (UNT), LEMMATIZED (LT), LEMMATIZED and STEMMED (LST) 
+#    # word tokens   
+#    
+#    query_id = 201
+#    file_prefix = '%d-UNT' % query_id
+#    config_file = "F:\\Research\\datasets\\trec2010\\Q201-UNT-30T.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    keywords = 'pre-pay swap'
+#    norm_tokens = keywords # Unnormalized keywords 
+#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
+#                                    norm_tokens, limit = 1000, img_extension = '.eps')
+#    query_id = 201
+#    file_prefix = '%d-LT' % query_id
+#    config_file = "F:\\Research\\datasets\\trec2010\\Q201-LT-30T.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    keywords = 'pre-pay swap'
+#    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) ) # Lemmatization 
+#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
+#                                    norm_tokens, limit = 1000, img_extension = '.eps')
+#    query_id = 201
+#    file_prefix = '%d-LST' % query_id
+#    config_file = "F:\\Research\\datasets\\trec2010\\Q201-LST-30T.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    keywords = 'pre-pay swap'
+#    norm_tokens = ' '.join( stem_tokens( lemmatize_tokens( regex_tokenizer(keywords) ) ) ) # Stemming and Lemmatization 
+#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
+#                                    norm_tokens, limit = 1000, img_extension = '.eps')
+#    
+#    query_id = 207
+#    file_prefix = '%d-LT' % query_id
+#    config_file = "F:\\Research\\datasets\\trec2010\\Q207-LT-5T.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\207" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    keywords = 'football Eric Bass'
+#    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords)  ) ) # Lemmatization 
+#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
+#                                    norm_tokens, limit = 1000, img_extension = '.eps')
+#    
+#    query_id = 207
+#    file_prefix = '%d-LST' % query_id
+#    config_file = "F:\\Research\\datasets\\trec2010\\Q207-LST-5T.cfg" # configuration file, created using the SMARTeR GUI 
+#    test_directory = "F:\\Research\\datasets\\trec2010\\207" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+#    keywords = 'football Eric Bass'
+#    norm_tokens = ' '.join( stem_tokens( lemmatize_tokens( regex_tokenizer(keywords) ) ) ) # Stemming and Lemmatization
+#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
+#                                    norm_tokens, limit = 1000, img_extension = '.eps')
+#        
+#    # ---------------------------------------------------------------------------------------------------------------  
+#    
+    # ---------------------------------------------------------------------------------------------------------------  
+    # Evaluate Topic-lDA with varying number of topics 
+    # and using Lemmatized tokens 
     
     
-    query_id = 202
-    config_file = "project-202.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
-    test_directory = "F:\\Research\\datasets\\trec2010\\202"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-    lucene_query = 'all:(FAS transaction swap trust Transferor Transferee)'
-    tm_query = 'FAS transaction swap trust Transferor Transferee'
+    query_id = 201
+    dir_path = "F:\\Research\\datasets\\trec2010\\"
+    keywords = 'pre-pay swap'
+    eval_ranking_varying_topics(query_id, dir_path, keywords)
     
-    # query_id = 204
-    # config_file = "project-204-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
-    # test_directory = "F:\\Research\\datasets\\trec2010\\204"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-    # lucene_query = 'all:(retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail)'
-    # tm_query = 'retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail'
-    
-    #query_id = 207
-    #config_file = "project-207-raw.cfg" # "gui/project3.cfg" # configuration file, created using the SMARTeR GUI 
-    #test_directory = "F:\\Research\\datasets\\trec2010\\207"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-    #lucene_query = 'all:(football Eric Bass)'
-    #tm_query = 'football Eric Bass'
-    
-    ## ***** END change this each query *********
-    
-    # ************************************************************************************
-    
-    file_prefix = '%d' % query_id
-    analyze_query(file_prefix, config_file, test_directory, 
-                      lucene_query, tm_query, 
-                      limit = 1000, img_extension = '.png')
-    
-    
-    #===============================================================================
-    
+    query_id = 207
+    dir_path = "F:\\Research\\datasets\\trec2010\\"
+    keywords = 'football Eric Bass'
+    eval_ranking_varying_topics(query_id, dir_path, keywords)
+
+    # ---------------------------------------------------------------------------------------------------------------  
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#201
-# query = "all:pre-pay:May;all:swap:May"
-# seed_doc_name = os.path.join(positive_dir, '3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.txt') # query specific seed document
-#202
-#query = "all:FAS:May;all:transaction:May;all:swap:May;all:trust:May;all:Transferor:May;all:Transferee:May"
-#seed_doc_name = os.path.join(positive_dir, '3.347.FXJYYKNIL4HGYJ4O5M3XWQS13XPQA2DBA.txt') # query specific seed document
-#203
-#seed_doc_name = os.path.join(positive_dir, '3.61439.MP1MJADJGZCPXM4LTCWDOCJDCL20JRYEB.txt') # query specific seed document
-#query = "all:forecast:May;all:earnings:May;all:profit:May;all:quarter:May;all:balance sheet:May"
-#204
-#seed_doc_name = os.path.join(positive_dir, '3.76893.LECLWOBIZDO00GYS41VBF3KKWFL1G2RJA.txt') # query specific seed document
-#query = "all:retention:May;all:compliance:May;all:preserve:May;all:discard:May;all:destroy:May;all:delete:May;all:clean:May;all:eliminate:May;all:shred:May;all:schedule:May;all:period:May;all:documents:May;all:file:May;all:policy:May;all:e-mail:May"
-#205
-#query = "all:electricity:May;all:electric:May;all:loads:May;all:hydro:May;all:generator:May;all:power:May"
-#seed_doc_name = os.path.join(positive_dir, '3.24517.JQ2KBXZBBQ1YGHFCC30JOU2QUANNINE2B.txt') # query specific seed document
-#206 
-#query = "all:analyst:May;all:credit:May;all:rating:May;all:grade:May"
-#seed_doc_name = os.path.join(positive_dir, '3.272223.IJVCMQKKAFUIQ3VDIUKIRUEMO2H4EOKNA.txt') # query specific seed document
-#207     
-#query = "all:football:May;all:Eric Bass:May" 
-#seed_doc_name = os.path.join(positive_dir, '3.16296.KD0CXPYOCOXT15ZTVIGVF44AUNQD2I23B.txt') # query specific seed document 
-
-
-
-
-
-#===============================================================================
-# Reads the configuration file 
-# Parses the user query  
-# Combines the query with a seed 
-#===============================================================================
-# mdl_cfg = read_config(config_file)
-#query_words, fields, clauses = parse_query(query)
-## print query_words, fields
-#
-#query_text = ' '.join(query_words)
-#print 'Query:', query_text
-#(receiver, sender, cc, subject, body_text, bcc, date) = parse_plain_text_email(seed_doc_name)
-#seed_doc_text = body_text + u' ' + query_text 
-#print 'Seed doc: ', seed_doc_text
-
-
-
-# eval_file_name = '%s_eval_bars' % query_id + img_extension
-# roc_file_names = ['LS_ROC', 'LDA_ROC_KW', 'LSI_ROC_KW', 'LDA_ROC_SEED', 'LSI_ROC_SEED'] 
-# score_thresholds = [0.51, 0.7, 0.51, 0.51, 0.8, 0.52,0.51,0.8]
-# NO_OF_SEED = 5
-#
-#'''
-#docs1 = search_li([query_words, fields, clauses], limit, mdl_cfg)
-#docs2 = search_tm(query_text, limit, mdl_cfg)
-#
-#docs1_dict, docs1_list = lu_append_nonresp(docs1, test_directory)
-#docs3 = fuse_lucene_tm_scores(docs1_dict, docs2)
-#
-#docs4 = search_tm_topics([17, 3, 14, 1, 19], limit, mdl_cfg)
-#docs5 = fuse_lucene_tm_scores(docs1_dict, docs4)
-##docs3 = search_lsi(query_text, limit, mdl_cfg)
-##docs4 = lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
-##docs5 = lsi_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
-##docs6 = search_tm_topics([19, 3], limit, mdl_cfg)
-#compare_true_retrieved_documents(docs1, docs5, positive_dir, [0, 0.42])
-#
-#exit()
-#'''
-#
-#
-#'''
-#LDA search using a set of selected dominating query topics 
-#'''
-## docs = search_tm_sel_topics_cos([7, 24], [0.011111111111172993, 0.011111111111123317], limit, mdl_cfg)
-#
-#'''
-#####After score normalization 
-#docs1_norm = lu_normalize_scores_wrt_tm_scores(docs1_list, lda_docs)
-#docs1_norm_dict = dict()
-#for doc in docs1_norm:
-#    docs1_norm_dict[doc[0]] = doc[1]
-#lu_tm_docs_norm = fuse_lucene_tm_scores(docs1_norm_dict, lda_docs)
-#res_tm_norm = convert_to_roc_format(lu_tm_docs_norm, positive_dir)
-#
-#docs1_norm = lu_normalize_scores_wrt_tm_scores(docs1_list, lda_tts_docs)
-#docs1_norm_dict = dict()
-#for doc in docs1_norm:
-#    docs1_norm_dict[doc[0]] = doc[1]
-#final_docs_tts_norm = fuse_lucene_tm_scores(docs1_norm_dict, lda_tts_docs)
-#lda_tts_lu_norm_res = convert_to_roc_format(final_docs_tts_norm, positive_dir)
-#''' 
-#
-#'''
-#Here, we search on the score thresholds and plots 
-#the corresponding evaluation metrics
-#'''
-## roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
-#
-#
-##'''
-##The below plot compare Recall and Precision in a single plot 
-##'''
-##metrics = ['PPV', 'SENS']
-##line_styles = ["-",":"]
-##multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id))
-#
-#
-#
-#
-#
-##===============================================================================
-## Here, we perform Lucene, LDA, and LSI search based on a given query. 
-##===============================================================================
-#
-#print "\nLucene Search:\n"
-# 
-#docs = search_li([query_words, fields, clauses], limit, mdl_cfg)
-#docs = normalize_lucene_score(docs)
-#docs = append_negative_docs(docs, test_directory)
-#r1 = convert_to_roc_format(docs, positive_dir)
-## plot_roc_and_print_metrics(r1, roc_labels[0], roc_file_names[0] + img_extension, score_thresholds[0])
-#
-#print "\nLDA Search (with keywords):\n"
-#
-#docs = search_tm(query_text, limit, mdl_cfg)
-#r2 = convert_to_roc_format(docs, positive_dir)    
-## plot_roc_and_print_metrics(r2, roc_labels[1], roc_file_names[1] + img_extension, score_thresholds[1])
-#
-#print "\nLDA Search (using a seed doc):\n"
-#docs = search_tm(seed_doc_text, limit, mdl_cfg)
-#r4 = convert_to_roc_format(docs, positive_dir)
-#
-#print "\nLDA Search  (using the centroid of all responsive docs):\n"
-#docs = lda_with_all_responsive(positive_dir, limit, mdl_cfg)
-#r6 = convert_to_roc_format(docs, positive_dir)
-#
-#print "\nLDA Search (with multiple seeds):\n"
-#results = lda_multiple_seeds(positive_dir, limit, mdl_cfg)
-#r7 = prepare_results_roc_max(results,positive_dir)
-#
-#
-#print "\nLSI Search (with keywords):\n"
-#
-#docs = search_lsi(query_text, limit, mdl_cfg)
-#r3 = convert_to_roc_format(docs, positive_dir)
-## plot_roc_and_print_metrics(r3, roc_labels[2], roc_file_names[2] + img_extension, score_thresholds[2])
-#
-#print "\nLSI Search  (using a seed doc):\n"
-#docs = search_lsi(seed_doc_text, limit, mdl_cfg)
-#r5 = convert_to_roc_format(docs, positive_dir)
-#
-#print "\nLSI Search (with multiple seeds):\n"
-#results = lsi_multiple_seeds(positive_dir, limit, mdl_cfg)
-#r8 = prepare_results_roc_max(results,positive_dir)
-#
-#print "\nLDA+Lucene Search (with multiple seeds):\n"
-#results = lda_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
-#r9 = prepare_results_roc_max(results,positive_dir)
-#
-#print "\nLSI+Lucene Search (with multiple seeds):\n"
-#results = lsi_multiple_seeds_lu(positive_dir, limit, mdl_cfg,[query_words, fields, clauses])
-#r10 = prepare_results_roc_max(results,positive_dir)
-##===============================================================================
-## # plot ROCs for all different methods 
-##===============================================================================
-#rocs_file_name = '%s_ROC_plots' % query_id + img_extension
-#rocs_img_title = 'Query %s: ROCs of all methods' % query_id 
-#roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LSI: with keywords', 'LDA+Lucene: with multiple seeds.', 'LSI+Lucene: with multiple seeds.']
-#results_list = [r1, r2, r3, r9, r10]
-#roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
-#print 
-#
-#roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id))
-#
-#metrics = ['PPV', 'SENS']
-#line_styles = ["-",":"]
-#multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id))
-#
-##===============================================================================
-## # LDA methods 
-##===============================================================================
-#exit()
-#
-#rocs_file_name = '%s_LDA_ROC_plots' % query_id + img_extension
-#rocs_img_title = 'Query %s: ROCs of LDA methods' % query_id 
-#roc_labels = ['Lucene: with keywords', 'LDA: with keywords', 'LDA: with a seed doc', 'LDA: with the centroid of resp.', 'LDA: with multiple seeds.', 'LDA+Lucene: with multiple seeds.']
-#results_list = [r1, r2, r4, r6, r7, r9]
-#roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
-#print 
-#
-#roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id) + '_LDA')
-#
-#metrics = ['PPV', 'SENS']
-#line_styles = ["-",":"]
-#multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id) + '_LDA')
-#
-#
-##===============================================================================
-## # LSI methods 
-##===============================================================================
-#
-#rocs_file_name = '%s_LSI_ROC_plots' % query_id + img_extension
-#rocs_img_title = 'Query %s: ROCs of LSI methods' % query_id 
-#roc_labels = ['Lucene: with keywords', 'LSI: with keywords', 'LSI: with a seed doc', 'LSI: with multiple seeds.', 'LSI+Lucene: with multiple seeds.']
-#results_list = [r1, r3, r5, r8, r10]
-#roc_data_list = plot_results_rocs(results_list, roc_labels, rocs_file_name, rocs_img_title)
-#print 
-#
-#roc_search_em, score_thresholds = plot_search_on_eval_metrics(roc_data_list, roc_labels, str(query_id) + '_LSI')
-#
-#metrics = ['PPV', 'SENS']
-#line_styles = ["-",":"]
-#multi_plot_search_on_eval_metrics(roc_search_em, score_thresholds, roc_labels, metrics, line_styles, str(query_id) + '_LSI')
-#
-#
-#
-##===============================================================================
-## # Best methods 
-##===============================================================================
-#
-#
-###===============================================================================
-### # plot evaluation metrics for all different methods 
-###===============================================================================
-##
-##roc_evals = print_results_eval_metrics(roc_data_list, roc_labels, score_thresholds)
-##plot_roc_evals(roc_evals, roc_labels, score_thresholds, eval_file_name)
