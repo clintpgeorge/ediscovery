@@ -12,7 +12,7 @@ from file_utils import get_destination_file_path
 class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
     def __init__(self, parent, rs):
         
-        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size( 420,200 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
+        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size( 315,270 ), style=wx.LC_REPORT | wx.SUNKEN_BORDER | wx.EXPAND)
         ListCtrlAutoWidthMixin.__init__(self)
         self.random_sampler = rs
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected)
