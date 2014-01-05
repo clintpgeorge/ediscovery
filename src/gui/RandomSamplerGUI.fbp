@@ -5439,7 +5439,7 @@
                                                     <property name="gripper">0</property>
                                                     <property name="hidden">0</property>
                                                     <property name="id">wxID_ANY</property>
-                                                    <property name="label">The documents can be reviewed by two methods:&#x0A;1. Single Click on the document:If it is an email or a text document you will be able to review the document in Document Preview Pane.&#x0A;2. Double Click on the document: A window will ask you for a document viewer installed on your computer. To view the document you must have a software installed.</property>
+                                                    <property name="label">The documents can be reviewed by two methods:&#x0A;1. Single click on the document: If it is an email or a text document you will be able to review the document in Document Preview pane.&#x0A;2. Double click on the document: A window will ask you for a document viewer installed on your computer. To view the document you must have a software installed that can open the document.</property>
                                                     <property name="max_size"></property>
                                                     <property name="maximize_button">0</property>
                                                     <property name="maximum_size"></property>
@@ -5464,7 +5464,7 @@
                                                     <property name="window_extra_style"></property>
                                                     <property name="window_name"></property>
                                                     <property name="window_style"></property>
-                                                    <property name="wrap">1000</property>
+                                                    <property name="wrap">900</property>
                                                     <event name="OnChar"></event>
                                                     <event name="OnEnterWindow"></event>
                                                     <event name="OnEraseBackground"></event>
@@ -5494,7 +5494,7 @@
                                                 <property name="border">5</property>
                                                 <property name="colspan">1</property>
                                                 <property name="column">0</property>
-                                                <property name="flag">wxALIGN_BOTTOM|wxALIGN_RIGHT|wxLEFT|wxRIGHT</property>
+                                                <property name="flag">wxTOP</property>
                                                 <property name="row">7</property>
                                                 <property name="rowspan">1</property>
                                                 <object class="wxButton" expanded="0">
@@ -5685,7 +5685,7 @@
                                                                 <property name="caption"></property>
                                                                 <property name="caption_visible">1</property>
                                                                 <property name="center_pane">0</property>
-                                                                <property name="choices">&quot;Valid&quot; &quot;Invalid&quot; &quot;Unknown&quot;</property>
+                                                                <property name="choices">&quot;Valid&quot; &quot;Invalid&quot; &quot;Further Review Required&quot;</property>
                                                                 <property name="close_button">1</property>
                                                                 <property name="context_help"></property>
                                                                 <property name="context_menu">1</property>
@@ -5701,7 +5701,7 @@
                                                                 <property name="hidden">0</property>
                                                                 <property name="id">wxID_ANY</property>
                                                                 <property name="label">Feedback</property>
-                                                                <property name="majorDimension">2</property>
+                                                                <property name="majorDimension">3</property>
                                                                 <property name="max_size"></property>
                                                                 <property name="maximize_button">0</property>
                                                                 <property name="maximum_size"></property>
@@ -6294,10 +6294,10 @@
                                                 </object>
                                             </object>
                                             <object class="gbsizeritem" expanded="0">
-                                                <property name="border">5</property>
+                                                <property name="border">20</property>
                                                 <property name="colspan">5</property>
                                                 <property name="column">3</property>
-                                                <property name="flag">wxALL</property>
+                                                <property name="flag">wxLEFT</property>
                                                 <property name="row">5</property>
                                                 <property name="rowspan">4</property>
                                                 <object class="wxTextCtrl" expanded="0">
@@ -6334,7 +6334,7 @@
                                                     <property name="maxlength"></property>
                                                     <property name="min_size"></property>
                                                     <property name="minimize_button">0</property>
-                                                    <property name="minimum_size">420,240</property>
+                                                    <property name="minimum_size">420,255</property>
                                                     <property name="moveable">1</property>
                                                     <property name="name">_tc_preview</property>
                                                     <property name="pane_border">1</property>
@@ -6388,10 +6388,10 @@
                                                 </object>
                                             </object>
                                             <object class="gbsizeritem" expanded="0">
-                                                <property name="border">5</property>
+                                                <property name="border">20</property>
                                                 <property name="colspan">2</property>
                                                 <property name="column">3</property>
-                                                <property name="flag">wxALL</property>
+                                                <property name="flag">wxLEFT|wxRIGHT</property>
                                                 <property name="row">4</property>
                                                 <property name="rowspan">1</property>
                                                 <object class="wxStaticText" expanded="0">
@@ -6560,7 +6560,7 @@
                                             <object class="gbsizeritem" expanded="0">
                                                 <property name="border">5</property>
                                                 <property name="colspan">3</property>
-                                                <property name="column">6</property>
+                                                <property name="column">7</property>
                                                 <property name="flag">wxEXPAND</property>
                                                 <property name="row">10</property>
                                                 <property name="rowspan">1</property>
@@ -6599,7 +6599,7 @@
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
                                                             <property name="gripper">0</property>
-                                                            <property name="hidden">0</property>
+                                                            <property name="hidden">1</property>
                                                             <property name="id">wxID_ANY</property>
                                                             <property name="label">Select a Tag</property>
                                                             <property name="max_size"></property>
@@ -6683,7 +6683,7 @@
                                                             <property name="floatable">1</property>
                                                             <property name="font"></property>
                                                             <property name="gripper">0</property>
-                                                            <property name="hidden">0</property>
+                                                            <property name="hidden">1</property>
                                                             <property name="id">wxID_ANY</property>
                                                             <property name="max_size"></property>
                                                             <property name="maximize_button">0</property>

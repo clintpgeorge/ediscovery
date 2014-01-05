@@ -38,7 +38,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
             
         
         self.InsertColumn(0, '#', wx.LIST_FORMAT_CENTRE, width=30)
-        self.InsertColumn(1, 'File Name', width=200)
+        self.InsertColumn(1, 'Document Name', width=200)
         self.InsertColumn(2, 'Valid?', wx.LIST_FORMAT_CENTRE)
         #self.InsertColumn(3, 'Privileged', wx.LIST_FORMAT_CENTRE)
         rs._lc_review_loaded = True
@@ -71,7 +71,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
         elif responsive.Text == 'No':
             rs._rbx_responsive.SetStringSelection('Invalid')
         elif responsive.Text == '':
-            rs._rbx_responsive.SetStringSelection('Unknown')
+            rs._rbx_responsive.SetStringSelection('Further Review Required')
             
         '''
         if privileged.Text == 'Yes':
@@ -165,7 +165,7 @@ class TaggingControl ( wx.ListCtrl, ListCtrlAutoWidthMixin):
                     self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
                 elif responsive_status == 'Invalid': 
                     self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
-                elif responsive_status == 'Unknown': 
+                elif responsive_status == 'Further Review Required': 
                     self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
                 '''
                 self._rbx_privileged.SetStringSelection(privileged_status)
@@ -220,7 +220,7 @@ class TagDocument():
         '''
         
         self._rbx_privileged.SetStringSelection("Unknown")
-        self._rbx_responsive.SetStringSelection("Unknown")
+        self._rbx_responsive.SetStringSelection("Further Review Required")
         
         
 #class PDFViewer(sc.SizedFrame):

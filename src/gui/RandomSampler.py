@@ -947,7 +947,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 self._lc_review.SetStringItem(self.selected_doc_id, 2, 'Yes')
             elif responsive_status == 'Invalid': 
                 self._lc_review.SetStringItem(self.selected_doc_id, 2, 'No')
-            elif responsive_status == 'Unknown': 
+            elif responsive_status == 'Further Review Required': 
                 self._lc_review.SetStringItem(self.selected_doc_id, 2, '')
             self._is_rt_updated = True
         except Exception,e:
@@ -980,7 +980,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 self._lc_review.SetStringItem(i, 2, '')
                 self._lc_review.SetStringItem(i, 3, '')       
             
-            self._rbx_responsive.SetStringSelection('Unknown')    
+            self._rbx_responsive.SetStringSelection('Further Review Required')    
             self._rbx_privileged.SetStringSelection('Unknown')  
                 
     

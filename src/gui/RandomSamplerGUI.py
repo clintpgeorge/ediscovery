@@ -381,20 +381,20 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_review.SetFlexibleDirection( wx.BOTH )
 		gbsizer_review.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
-		self.m_staticText33 = wx.StaticText( self._panel_review, wx.ID_ANY, u"The documents can be reviewed by two methods:\n1. Single Click on the document:If it is an email or a text document you will be able to review the document in Document Preview Pane.\n2. Double Click on the document: A window will ask you for a document viewer installed on your computer. To view the document you must have a software installed.", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText33.Wrap( 1000 )
+		self.m_staticText33 = wx.StaticText( self._panel_review, wx.ID_ANY, u"The documents can be reviewed by two methods:\n1. Single click on the document: If it is an email or a text document you will be able to review the document in Document Preview pane.\n2. Double click on the document: A window will ask you for a document viewer installed on your computer. To view the document you must have a software installed that can open the document.", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText33.Wrap( 900 )
 		self.m_staticText33.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
 		gbsizer_review.Add( self.m_staticText33, wx.GBPosition( 2, 0 ), wx.GBSpan( 2, 8 ), wx.ALIGN_BOTTOM|wx.ALL, 5 )
 		
 		self._btn_review_clear_all_tags = wx.Button( self._panel_review, wx.ID_ANY, u"Clear All Tags", wx.DefaultPosition, wx.DefaultSize, 0 )
-		gbsizer_review.Add( self._btn_review_clear_all_tags, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.LEFT|wx.RIGHT, 5 )
+		gbsizer_review.Add( self._btn_review_clear_all_tags, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.TOP, 5 )
 		
 		self._panel_doc_tags = wx.Panel( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_doc_tags = wx.BoxSizer( wx.VERTICAL )
 		
-		_rbx_responsiveChoices = [ u"Valid", u"Invalid", u"Unknown" ]
-		self._rbx_responsive = wx.RadioBox( self._panel_doc_tags, wx.ID_ANY, u"Feedback", wx.DefaultPosition, wx.DefaultSize, _rbx_responsiveChoices, 2, wx.RA_SPECIFY_ROWS )
+		_rbx_responsiveChoices = [ u"Valid", u"Invalid", u"Further Review Required" ]
+		self._rbx_responsive = wx.RadioBox( self._panel_doc_tags, wx.ID_ANY, u"Feedback", wx.DefaultPosition, wx.DefaultSize, _rbx_responsiveChoices, 3, wx.RA_SPECIFY_ROWS )
 		self._rbx_responsive.SetSelection( 2 )
 		bsizer_doc_tags.Add( self._rbx_responsive, 0, wx.ALL, 5 )
 		
@@ -439,13 +439,13 @@ class RandomSamplerGUI ( wx.Frame ):
 		gbsizer_review.Add( self._panel_review_tag, wx.GBPosition( 4, 0 ), wx.GBSpan( 3, 3 ), wx.EXPAND, 5 )
 		
 		self._tc_preview = wx.TextCtrl( self._panel_review, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TE_CHARWRAP|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP )
-		self._tc_preview.SetMinSize( wx.Size( 420,240 ) )
+		self._tc_preview.SetMinSize( wx.Size( 420,255 ) )
 		
-		gbsizer_review.Add( self._tc_preview, wx.GBPosition( 5, 3 ), wx.GBSpan( 4, 5 ), wx.ALL, 5 )
+		gbsizer_review.Add( self._tc_preview, wx.GBPosition( 5, 3 ), wx.GBSpan( 4, 5 ), wx.LEFT, 20 )
 		
 		self.m_staticText25 = wx.StaticText( self._panel_review, wx.ID_ANY, u"Document Preview (Only Emails and Text)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText25.Wrap( -1 )
-		gbsizer_review.Add( self.m_staticText25, wx.GBPosition( 4, 3 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
+		gbsizer_review.Add( self.m_staticText25, wx.GBPosition( 4, 3 ), wx.GBSpan( 1, 2 ), wx.LEFT|wx.RIGHT, 20 )
 		
 		self._sl_header31 = wx.StaticLine( self._panel_review, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_review.Add( self._sl_header31, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 12 ), wx.EXPAND |wx.ALL, 5 )
@@ -454,18 +454,22 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		self.m_staticText34 = wx.StaticText( self._panel_review, wx.ID_ANY, u"Select a Tag", wx.Point( -1,-1 ), wx.DefaultSize, wx.ALIGN_RIGHT )
 		self.m_staticText34.Wrap( -1 )
+		self.m_staticText34.Hide()
+		
 		bsizer_generate_reports.Add( self.m_staticText34, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
 		
 		_cbx_report_typesChoices = [ u"Responsive", u"Privileged", u"All" ]
 		self._cbx_report_types = wx.ComboBox( self._panel_review, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_report_typesChoices, wx.CB_READONLY|wx.CB_SORT )
 		self._cbx_report_types.SetSelection( 0 )
+		self._cbx_report_types.Hide()
+		
 		bsizer_generate_reports.Add( self._cbx_report_types, 0, wx.ALIGN_RIGHT|wx.ALL, 5 )
 		
 		self._btn_review_gen_report = wx.Button( self._panel_review, wx.ID_ANY, u"Generate Report", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bsizer_generate_reports.Add( self._btn_review_gen_report, 0, wx.ALL, 5 )
 		
 		
-		gbsizer_review.Add( bsizer_generate_reports, wx.GBPosition( 10, 6 ), wx.GBSpan( 1, 3 ), wx.EXPAND, 5 )
+		gbsizer_review.Add( bsizer_generate_reports, wx.GBPosition( 10, 7 ), wx.GBSpan( 1, 3 ), wx.EXPAND, 5 )
 		
 		
 		sbsizer_review.Add( gbsizer_review, 0, wx.BOTTOM|wx.EXPAND, 5 )
