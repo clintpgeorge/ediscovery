@@ -14,7 +14,7 @@ import os
 import logging
 from gensim import corpora
 from lucene import SimpleFSDirectory, File, initVM, Version, IndexReader
-from utils.utils_email import load_en_stopwords, whitespace_tokenize
+from utils.utils_email import load_en_stopwords, whitespace_tokenize, regex_tokenizer
 from lucenesearch.lucene_index_dir import MetadataType 
 
 
@@ -42,14 +42,15 @@ def process_index_doc(doc):
     '''
     tokens = []
     if doc is not None:
-        body_text = doc.get(MetadataType.EMAIL_BODY)
-        if body_text is None:
-            file_path = doc.get(MetadataType.FILE_PATH)
-            file_name = doc.get(MetadataType.FILE_NAME)
-            logging.error('%s does not have any contents.', os.path.join(file_path, file_name))
+        all_text = doc.get(MetadataType.ALL)
+        file_path = doc.get(MetadataType.FILE_PATH)
+        if all_text is None:
+            # file_name = doc.get(MetadataType.FILE_NAME)
+            logging.error('%s does not have any contents.', file_path)
             tokens = []
         else:
-            tokens = whitespace_tokenize(body_text)
+            tokens = whitespace_tokenize(all_text) # regex_tokenizer(all_text)# 
+        
     return tokens
 
 def create_dictionary(en_sw_file, index_reader, dictionary_file, MIN_FREQUENCY, MIN_WORD_LENGTH, MAX_WORD_LENGTH):
@@ -65,17 +66,17 @@ def create_dictionary(en_sw_file, index_reader, dictionary_file, MIN_FREQUENCY, 
         MIN_WORD_LENGTH - min word length of a valid vocabulary term 
     '''
     
-    # loads stop words 
-    stoplist = load_en_stopwords(en_sw_file)
+#    # loads stop words 
+#    stoplist = load_en_stopwords(en_sw_file)
     # collect statistics about all tokens
     dictionary = corpora.Dictionary(process_index_doc(index_reader.document(i)) for i in range(0, index_reader.maxDoc()))
     
     # remove stop words and words that appear only once
-    stop_ids = [dictionary.token2id[stopword] for stopword in stoplist if stopword in dictionary.token2id]
+#    stop_ids = [dictionary.token2id[stopword] for stopword in stoplist if stopword in dictionary.token2id]
     once_ids = [tokenid for tokenid, docfreq in dictionary.dfs.iteritems() if docfreq < MIN_FREQUENCY]
     sw_ids = [tokenid for tokenid, docfreq in dictionary.dfs.iteritems() if (len(dictionary[tokenid]) < MIN_WORD_LENGTH)]
     max_word_ids = [tokenid for tokenid, docfreq in dictionary.dfs.iteritems() if (len(dictionary[tokenid]) > MAX_WORD_LENGTH)]
-    dictionary.filter_tokens(stop_ids + once_ids + sw_ids + max_word_ids) # remove stop words and words that appear only once
+    dictionary.filter_tokens(once_ids + sw_ids + max_word_ids) # remove stop words and words that appear only once
     dictionary.compactify() # remove gaps in id sequence after words that were removed
     dictionary.save(dictionary_file) # store the dictionary, for future reference
     
@@ -124,6 +125,7 @@ def build_lda_corpus(index_folder, paths_index_file, stop_words_file, dictionary
     # Creates the dictionary 
     create_dictionary(stop_words_file, index_reader, dictionary_file, min_frequency, min_word_len, max_word_len)
     
+
     # Creates the corpus 
     dictionary = corpora.Dictionary().load(dictionary_file)       
     corpus_memory_friendly = TextCorpus(dictionary, index_reader) # doesn't load the corpus into the memory!

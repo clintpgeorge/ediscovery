@@ -53,7 +53,10 @@ class MetadataType:
               'email_bcc', 'email_date']
 
 
-def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize = False, stem = False, nonascii = True):
+def index_plain_text_emails(data_folder, 
+                            path_index_file, store_dir, 
+                            lemmatize = False, stem = False, 
+                            nonascii = True):
     '''
     Indexes all the plain text emails in the input directory 
     and stores the index in the store_dir  
@@ -84,21 +87,24 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize =
         store_file_paths_index(path_index_file, file_tuples)
         logging.info('File paths index is stored into %s' % path_index_file)
     
-    logging.info('Lucene indexing: Stem = %s, Lemmatize = %s, Number of documents = %d' % (stem, lemmatize, len(file_tuples)))
+    logging.info('Lucene: Stem = %s, Lemmatize = %s, Number of documents = %d' % (stem, lemmatize, len(file_tuples)))
         
     store = SimpleFSDirectory(File(store_dir))
     writer = IndexWriter(store, STD_ANALYZER, True, IndexWriter.MaxFieldLength.LIMITED)
     
-    print len(file_tuples), 'files found in %s.' % data_folder
-    
-    print 'Stem: ', stem, 'Lemmatize:', lemmatize, 'Allow non-ASCII:', nonascii  
+    print 'Lucene:', len(file_tuples), 'files found in %s.' % data_folder
+    print 'Lucene: Stem =', stem, 'Lemmatize =', lemmatize, 'Allow non-ASCII =', nonascii  
     
     for ft in file_tuples: 
         idx, root, file_name = ft
         file_path = os.path.join(root, file_name)
-        logging.info("[%d] file: %s - waiting to add to index.", idx, file_name)
+        logging.info("[%d] file: %s - adding to Lucene index.", idx, file_name)
         # parses the emails in plain text format 
-        receiver, sender, cc, subject, message_text, bcc, date = parse_plain_text_email(file_path, tokenize = True, lemmatize = lemmatize, stem = stem, nonascii = nonascii)
+        receiver, sender, cc, subject, message_text, bcc, date, email_text = parse_plain_text_email(file_path, 
+                                                                                                    tokenize = True, 
+                                                                                                    lemmatize = lemmatize, 
+                                                                                                    stem = stem, 
+                                                                                                    nonascii = nonascii)
 
         doc = Document()
         doc.add(Field(MetadataType.FILE_ID, str(idx), Field.Store.YES, Field.Index.NOT_ANALYZED))
@@ -116,20 +122,19 @@ def index_plain_text_emails(data_folder, path_index_file, store_dir, lemmatize =
         if len(message_text) > 0:
             doc.add(Field(MetadataType.EMAIL_BODY, message_text, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES))
         else:
-            logging.error("[%d] file: %s - no contents found.", idx, file_name)
+            logging.error("[%d] file: %s - body text is empty.", idx, file_name)
             
         # Adds all documents fields as a separate index so that we can search through them 
-        all_text = receiver + ' ' + sender + ' ' + cc + ' ' + bcc + ' ' + subject + ' ' + message_text  
-        doc.add(Field(MetadataType.ALL, all_text, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES))
+        doc.add(Field(MetadataType.ALL, email_text, Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES))
 
         writer.addDocument(doc)
-        logging.info("[%d] file: %s - added to index.", idx, file_name)
+        logging.info("[%d] file: %s - added to Lucene index.", idx, file_name)
 
 
     writer.commit()
     writer.close()
 
-    logging.info('All files are indexed.')
+    logging.info('Lucene: All files are indexed.')
 
 def test_search(index_dir):
     '''
@@ -190,6 +195,37 @@ def get_indexed_file_details(ts_results, lucene_index_dir):
         rows.append(row)
     
     return rows
+
+def get_doc_details(doc_id, lucene_index_dir):
+    '''
+    This function gets a file's details from 
+    the lucene index. 
+    
+    Arguments: 
+        doc_id - file id
+        lucene_index_dir - lucene index directory 
+    
+    Returns: 
+        file details as a list 
+    '''
+    
+    store = SimpleFSDirectory(File(lucene_index_dir))
+    searcher = IndexSearcher(store, True)
+    
+    doc = searcher.doc(doc_id)
+    table = dict((field.name(), field.stringValue())
+                 for field in doc.getFields())
+    row = []
+    metadata = MetadataType._types
+    for field in metadata:
+        if table.get(field,'empty') != 'empty' :
+            row.append(table.get(field,'empty'))
+        else: 
+            row.append('')
+    row.append(str(table.get(MetadataType.FILE_ID,'empty')))
+
+    return row 
+
     
     
 def retrieve_document_details(docid, index_dir):
@@ -275,7 +311,7 @@ def boolean_search_lucene_index(index_dir, query_text, limit):
     scoreDocs = searcher.search(query, limit).scoreDocs
     duration = datetime.datetime.now() - start
     
-    print "Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
+    print "Lucene Search: Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
 
     
     rows = []

@@ -83,7 +83,6 @@ def _remove_duplicate_styles(rocList):
 						break
 						
 
-
 def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, equal_aspect=True, file_name='ROC_plots.png'):
 	""" Plots multiple ROC curves on the same chart. 
 		Parameters:
@@ -93,6 +92,12 @@ def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, eq
 			include_baseline: if it's  True include the random baseline
 			equal_aspect: keep equal aspect for all roc curves
 	"""
+	from matplotlib.font_manager import FontProperties
+	font0 = FontProperties()
+	cust_font = font0.copy()
+	cust_font.set_family('arial')
+	cust_font.set_size(12)
+	
 	pylab.clf()
 	pylab.ylim((0,1))
 	pylab.xlim((0,1))
@@ -102,25 +107,26 @@ def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, eq
 	if equal_aspect:
 		cax = pylab.gca()
 		cax.set_aspect('equal')
-	pylab.xlabel('1 - Specificity (True negative rate)', fontsize=10)
-	pylab.ylabel('Sensitivity (Recall)', fontsize=10)
+	pylab.xlabel('1 - Specificity (True negative rate)', fontproperties=cust_font)
+	pylab.ylabel('Sensitivity (Recall)', fontproperties=cust_font)
 		# We change the fontsize of minor ticks label 
-	pylab.tick_params(axis='both', which='major', labelsize=9)
-	pylab.tick_params(axis='both', which='minor', labelsize=8)
+	pylab.tick_params(axis='both', which='major', labelsize=10)
+	pylab.tick_params(axis='both', which='minor', labelsize=10)
 	pylab.title(title)
 	if not labels:
 		labels = [ '' for x in rocList]
 	_remove_duplicate_styles(rocList)
 	for ix, r in enumerate(rocList):
-		pylab.plot([x[0] for x in r.derived_points], [y[1] for y in r.derived_points], r.linestyle, linewidth=1, label=labels[ix])
+		pylab.plot([x[0] for x in r.derived_points], [y[1] for y in r.derived_points], r.linestyle, linewidth=2, label=labels[ix])
 	if include_baseline:
 		pylab.plot([0.0,1.0], [0.0, 1.0], 'k-', label= 'Random')
 	if labels:
 		# pylab.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0., prop={'size':6})
-		pylab.legend(loc='lower right', prop={'size':9})
+		pylab.legend(loc='lower right', prop={'size':12, 'family':'arial'})
 		
-	pylab.savefig(file_name, dpi=300, bbox_inches='tight', pad_inches=0.1)
+	pylab.savefig(file_name, dpi=700, bbox_inches='tight', pad_inches=0.1)
 	# pylab.show()
+		
 		
 
 def load_decision_function(path):

@@ -22,7 +22,7 @@ from tm.lsi_estimation import run_lsi_estimation
 LUCENE_FOLDER_NAME = 'lucene'
 TM_FOLDER_NAME = 'tm' 
 STOP_WORDS_FILE_NAME = 'en_stopwords'
-MIN_TOKEN_FREQ = 1
+MIN_TOKEN_FREQ = 2
 MIN_TOKEN_LEN = 2 
 DEFAULT_NUM_TOPICS = 30
 DEFAULT_NUM_PASSES = 100 
@@ -59,8 +59,14 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
 
     
     # Handling the project configuration file 
-    print cfg_folder
-    cfg_file_name = os.path.join( cfg_folder , project_name+'.cfg' )
+    
+    print 'Indexing Configurations:'
+    print 'Project:', project_name
+    print 'Number of LDA topics:', num_topics
+    print 'Number of LDA passes:', num_passes
+    print 'Number of LSA topics:', LSI_DEFAULT_NUM_TOPICS
+    
+    cfg_file_name = os.path.join( cfg_folder , project_name + '.cfg' )
     config = ConfigParser.RawConfigParser()
 
     config.add_section('DATA')
@@ -100,7 +106,7 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
     config.set('CORPUS', 'blei_corpus_file', os.path.normpath(ldac_file))
     config.set('CORPUS', 'dict_file', os.path.normpath(dict_file))
     config.set('CORPUS', 'vocab_file', os.path.normpath(ldac_file + '.vocab'))  
-    
+
     
     logging.info('================================================== END CORPUS BUILDING ==================================================')
     
@@ -138,13 +144,17 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
     # 
     
     run_lsi_estimation(dict_file, ldac_file, lsi_model_file, lsi_beta_file, lsi_theta_file, lsi_cos_index_file, LSI_DEFAULT_NUM_TOPICS)
-    
+
+    config.add_section('TFIDF')
+    config.set('TFIDF', 'tfidf_file', lsi_theta_file.replace('lsi', 'tfidf'))
+        
     config.add_section('LSI')
     config.set('LSI', 'lsi_model_file', lsi_model_file)
     config.set('LSI', 'lsi_beta_file', lsi_beta_file)
     config.set('LSI', 'lsi_theta_file', lsi_theta_file)
     config.set('LSI', 'lsi_cos_index_file', lsi_cos_index_file)
     config.set('LSI', 'lsi_num_topics', str(LSI_DEFAULT_NUM_TOPICS))
+
     
     logging.info('================================================== END LSI ESTIMATION ==================================================')    
     
@@ -154,6 +164,7 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
         config.write(configfile)
         
     logging.info('The project configuration file is written to %s', cfg_file_name)
+    print 'Indexing is completed. The project configuration file is written to', cfg_file_name
 
 
 
@@ -163,45 +174,83 @@ if __name__=="__main__":
     '''
 
     
-    arg_parser = argparse.ArgumentParser('''
+#    arg_parser = argparse.ArgumentParser('''
+#    
+#    Lucene index builder for email files  
+#
+#    Examples: 
+#        python index_data.py -h # for help 
+#        python index_data.py -l -d "F:\\Research\\datasets\\trec2010\\201" -o "F:\\Research\\datasets\\trec2010" -p project-201 -z -s -a      
+#
+#    ''')
+#    arg_parser.add_argument("-d", dest="data_folder", type=str, help="data folder", required=True)
+#    arg_parser.add_argument("-o", dest="output_folder", type=str, help="output folder", required=True)
+#    arg_parser.add_argument("-p", dest="project_name", type=str, help="project name", required=True)
+#    arg_parser.add_argument("-t", dest="num_topics", type=int, help="number of topics", default=DEFAULT_NUM_TOPICS)
+#    arg_parser.add_argument("-n", dest="num_passes", type=int, help="number of passes", default=DEFAULT_NUM_PASSES)
+#    arg_parser.add_argument("-s", dest="stem", action="store_true", help="stem tokens", default=False)
+#    arg_parser.add_argument("-z", dest="lemmatize", action="store_true", help="lemmatize tokens", default=False)
+#    arg_parser.add_argument("-a", dest="nonascii", action="store_true", help="allow non-ASCII tokens", default=False)
+#    arg_parser.add_argument("-l", "--log", dest="log", default=False, action="store_true", help="log details into a file")
+#    args = arg_parser.parse_args()
+#    
+#    
+#    data_folder = os.path.normpath(args.data_folder)
+#    output_folder = os.path.normpath(args.output_folder)
+#    project_name = args.project_name
+#    num_topics = args.num_topics
+#    num_passes = args.num_passes 
+#    
+#    import time 
+#    start_time = time.time()
+#    
+#    index_data(data_folder, output_folder, project_name, "", 
+#               num_topics, num_passes, 
+#               min_token_freq=MIN_TOKEN_FREQ, 
+#               min_token_len=MIN_TOKEN_LEN, 
+#               log_to_file=args.log,
+#               lemmatize=args.lemmatize, 
+#               stem=args.stem, 
+#               nonascii=args.nonascii)
+#    
+#    print '\nIndexing time:', time.time() - start_time, 'seconds'
     
-    Lucene index builder for email files  
+    query_ids = [201]
+    topic_counts = [30] # [5, 10, 15, 20, 30, 40, 50, 60, 70, 80]
+    
+    for num_topics in topic_counts:
+        for query_id in query_ids:
+            data_folder = "F:\\Research\\datasets\\trec2010\\%d" % query_id
+            output_folder = "F:\\Research\\datasets\\trec2010"
+            num_passes = 100
+            
+#            # With stemmed and lemmatized tokens 
+#            project_name = "Q%d-LST-%dT" % (query_id, num_topics)
+#            index_data(data_folder, output_folder, 
+#                       project_name, output_folder, 
+#                       num_topics, num_passes, 
+#                       min_token_freq=2, 
+#                       lemmatize=True, 
+#                       stem=True)
+#    
+#
+#            # With lemmatized tokens 
+#            project_name = "Q%d-LT-%dT" % (query_id, num_topics)
+#            index_data(data_folder, output_folder, 
+#                       project_name, output_folder, 
+#                       num_topics, num_passes, 
+#                       min_token_freq=2, 
+#                       lemmatize=True, 
+#                       stem=False)
+    
 
-    Examples: 
-        python index_data.py -h # for help 
-        python index_data.py -l -d "F:\\Research\\datasets\\trec2010\\201" -o "F:\\Research\\datasets\\trec2010" -p project-201 -z -s -a      
-
-    ''')
-    arg_parser.add_argument("-d", dest="data_folder", type=str, help="data folder", required=True)
-    arg_parser.add_argument("-o", dest="output_folder", type=str, help="output folder", required=True)
-    arg_parser.add_argument("-p", dest="project_name", type=str, help="project name", required=True)
-    arg_parser.add_argument("-t", dest="num_topics", type=int, help="number of topics", default=DEFAULT_NUM_TOPICS)
-    arg_parser.add_argument("-n", dest="num_passes", type=int, help="number of passes", default=DEFAULT_NUM_PASSES)
-    arg_parser.add_argument("-s", dest="stem", action="store_true", help="stem tokens", default=False)
-    arg_parser.add_argument("-z", dest="lemmatize", action="store_true", help="lemmatize tokens", default=False)
-    arg_parser.add_argument("-a", dest="nonascii", action="store_true", help="allow non-ASCII tokens", default=False)
-    arg_parser.add_argument("-l", "--log", dest="log", default=False, action="store_true", help="log details into a file")
-    args = arg_parser.parse_args()
-    
-    
-    data_folder = os.path.normpath(args.data_folder)
-    output_folder = os.path.normpath(args.output_folder)
-    project_name = args.project_name
-    num_topics = args.num_topics
-    num_passes = args.num_passes 
-    
-    import time 
-    start_time = time.time()
-    
-    index_data(data_folder, output_folder, project_name, "", 
-               num_topics, num_passes, 
-               min_token_freq=MIN_TOKEN_FREQ, 
-               min_token_len=MIN_TOKEN_LEN, 
-               log_to_file=args.log,
-               lemmatize=args.lemmatize, 
-               stem=args.stem, 
-               nonascii=args.nonascii)
-    
-    print '\nIndexing time:', time.time() - start_time, 'seconds'
-    
-
+            # With lemmatized tokens 
+            project_name = "Q%d-UNT-%dT" % (query_id, num_topics)
+            index_data(data_folder, output_folder, 
+                       project_name, output_folder, 
+                       num_topics, num_passes, 
+                       min_token_freq=1, 
+                       lemmatize=False, 
+                       stem=False)
+            
+            
