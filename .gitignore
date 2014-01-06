@@ -47,3 +47,4 @@ Thumbs.db
 #/build/
 #/dist/
 
+/src/.settings
