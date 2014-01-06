@@ -83,7 +83,13 @@ def _remove_duplicate_styles(rocList):
 						break
 						
 
-def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, equal_aspect=True, file_name='ROC_plots.png'):
+def plot_multiple_roc(rocList, 
+					title='', 
+					labels=None, 
+					include_baseline=True, 
+					equal_aspect=True, 
+					lengend_inside=True,
+					file_name=None):
 	""" Plots multiple ROC curves on the same chart. 
 		Parameters:
 			rocList: the list of ROCData objects
@@ -107,25 +113,47 @@ def plot_multiple_roc(rocList, title='', labels=None, include_baseline=False, eq
 	if equal_aspect:
 		cax = pylab.gca()
 		cax.set_aspect('equal')
-	pylab.xlabel('1 - Specificity (True negative rate)', fontproperties=cust_font)
-	pylab.ylabel('Sensitivity (Recall)', fontproperties=cust_font)
-		# We change the fontsize of minor ticks label 
 	pylab.tick_params(axis='both', which='major', labelsize=10)
 	pylab.tick_params(axis='both', which='minor', labelsize=10)
+			
+	pylab.xlabel('False Positive Rate', fontproperties=cust_font) # 1 - True Negative Rate
+	pylab.ylabel('True Positive Rate (Recall)', fontproperties=cust_font) # Sensitivity 
+
 	pylab.title(title)
-	if not labels:
-		labels = [ '' for x in rocList]
+	
+	if not labels: labels = [ '' for x in rocList]
+	
 	_remove_duplicate_styles(rocList)
+	
 	for ix, r in enumerate(rocList):
-		pylab.plot([x[0] for x in r.derived_points], [y[1] for y in r.derived_points], r.linestyle, linewidth=2, label=labels[ix])
+		pylab.plot([x[0] for x in r.derived_points], 
+				[y[1] for y in r.derived_points], 
+				r.linestyle, 
+				linewidth=1, 
+				label=labels[ix] + ', AUC: %.2f' % r.auc())
+	
 	if include_baseline:
-		pylab.plot([0.0,1.0], [0.0, 1.0], 'k-', label= 'Random')
+		pylab.plot([0.0,1.0], [0.0, 1.0], 'k-', label= 'Random Guess')
+	
+#		pylab.annotate('Line of Perfect Classification', xy=(0, 1), xytext=(.1, .9),
+#	            arrowprops=dict(facecolor='black', shrink=0.05))
+#		pylab.annotate('Line of No-discrimination', xy=(0.55, 0.55), xytext=(.58, .5),
+#	            arrowprops=dict(facecolor='black', shrink=0.05))
+	
 	if labels:
-		# pylab.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0., prop={'size':6})
-		pylab.legend(loc='lower right', prop={'size':12, 'family':'arial'})
+		if lengend_inside: # to place inside the plot 
+			pylab.legend(loc='lower right', 
+						prop={'size':12, 'family':'arial'})  
+		else: # to place right outside 
+			pylab.legend(bbox_to_anchor=(1.02, 1), loc=2, 
+						borderaxespad=0., 
+						prop={'size':9, 'family':'arial'}) 
 		
-	pylab.savefig(file_name, dpi=700, bbox_inches='tight', pad_inches=0.1)
-	# pylab.show()
+	if file_name:
+		pylab.savefig(file_name, dpi=700, bbox_inches='tight', pad_inches=0.1)
+	else:
+		pylab.show() 
+		
 		
 		
 
@@ -164,76 +192,100 @@ class ROCData(object):
 					  t[0] = 1 for positive class and 0 for negative class
 					  t[1] = a score
 			 		  t[2] = any label (optional)
-				lineStyle: THe matplotlib style string for plots.
+				lineStyle: The matplotlib style string for plots.
 				
 			Note: The ROCData is still usable w/o matplotlib. The AUC is still available, 
 			      but plots cannot be generated.
 		"""
-		self.data = sorted(data,lambda x,y: cmp(y[1],x[1]))
+		# Sort the tuples in the descending order of the decision scores 
+		self.data = sorted(data, lambda x,y: cmp(y[1],x[1]))
+		
 		self.linestyle = linestyle
-		self.auc() #Seed initial points with default full ROC
+		
+		# Seed initial points with default full ROC
+		self.auc() 
 	
 	def auc(self, fpnum=0):
-		""" Uses the trapezoidal rule to calculate the area under the curve. If fpnum is supplied, it will 
-			calculate a partial AUC, up to the number of false positives in fpnum (the partial AUC is scaled
-			to between 0 and 1).
-			It assumes that the positive class is expected to have the higher of the scores (s(+) < s(-))
-			Parameters:
-				fpnum: The cumulative FP count (fps)
-			Return:
-			
+		""" 
+		Uses the trapezoidal rule to calculate the area under the 
+		curve. If fpnum is supplied, it will calculate a partial 
+		AUC, up to the number of false positives in fpnum (the 
+		partial AUC is scaled to between 0 and 1). It assumes that 
+		the positive class is expected to have the higher of the 
+		scores (s(+) < s(-))
+		
+		Parameters:
+			fpnum: The cumulative FP count (fps)
+		
+		Return:
+			The Area Under the ROC Curve (AUC) value 
 		"""
+		
 		fps_count = 0
 		relevant_pauc = []
 		current_index = 0
-		max_n = len([x for x in self.data if x[0] == 0])
+		max_n = len([x for x in self.data if x[0] == 0]) 		
 		if fpnum == 0:
 			relevant_pauc = [x for x in self.data]
 		elif fpnum > max_n:
 			fpnum = max_n
-		#Find the upper limit of the data that does not exceed n FPs
 		else:
+			# Find the upper limit of the data 
+			# that does not exceed n FPs
 			while fps_count < fpnum:
 				relevant_pauc.append(self.data[current_index])
 				if self.data[current_index][0] == 0:
 					fps_count += 1
 				current_index += 1
 
-		total_n = len([x for x in relevant_pauc if x[0] == 0])
-		total_p = len(relevant_pauc) - total_n
+		total_n = len([x for x in relevant_pauc if x[0] == 0]) # Total Negatives, (TP + FN)
+		total_p = len(relevant_pauc) - total_n # Total Positives, (TN + FP)
 		
-		#Convert to points in a ROC
+		# Generate the ROC points 
+		
 		previous_df = -1000000.0
 		current_index = 0
-		points = []
-		tp_count, fp_count = 0.0 , 0.0
-		tpr, fpr = 0, 0
+		points = [] # The AUC plot points 
+		tp_count, fp_count = 0.0, 0.0 # TP, FP
+		tpr, fpr = 0, 0 # True Positive Rate, False Positive Rate 
+		
 		while current_index < len(relevant_pauc):
 			df = relevant_pauc[current_index][1]
 			if previous_df != df:
 				points.append((fpr, tpr, fp_count))
+			
 			if relevant_pauc[current_index][0] == 0:
 				fp_count += 1
 			elif relevant_pauc[current_index][0] == 1:
 				tp_count += 1
-			fpr = fp_count / total_n # false positive rate 
-			tpr = tp_count / total_p # true positive rate 
+			fpr = fp_count / total_n # FPR 
+			tpr = tp_count / total_p # TPR 
+			
 			previous_df = df
 			current_index += 1
+		
 		points.append((fpr, tpr, fp_count)) # to add the last point
-		points.sort(key=lambda i: (i[0], i[1])) # sorts based on fpr and then tpr 
+		points.sort(key=lambda i: (i[0], i[1])) # sorts based on FPR and then TPR  
 		self.derived_points = points
 		
 		return self._trapezoidal_rule(points)
 
 
-	def _trapezoidal_rule(self,curve_pts):
-		""" Method to calculate the area under the ROC curve"""
+	def _trapezoidal_rule(self, curve_pts):
+		""" 
+		Method to calculate the area under the ROC curve
+		"""
+#		print 
+#		print 'Trapezoidal Rule to Compute AUC:'
 		cum_area = 0.0
 		for ix,x in enumerate(curve_pts[0:-1]):
 			cur_pt = x
-			next_pt = curve_pts[ix+1]
-			cum_area += ((cur_pt[1]+next_pt[1])/2.0) * (next_pt[0]-cur_pt[0])
+			next_pt = curve_pts[ix + 1]
+			cum_area += 0.5 * (cur_pt[1] + next_pt[1]) * (next_pt[0] - cur_pt[0]) # 1/2 * TPR * FPR 
+#			print "Line #%d: x(%.2f -> %.2f) y(%.2f -> %.2f) area(%.4f)" % (ix + 1, 
+#																			cur_pt[0], next_pt[0], 
+#																			cur_pt[1], next_pt[1], 
+#																			0.5 * (cur_pt[1] + next_pt[1]) * (next_pt[0] - cur_pt[0]))
 		return cum_area
 		
 	def calculateStandardError(self,fpnum=0):
@@ -390,22 +442,39 @@ class ROCData(object):
 		tn_count = len([x for x in neg_data if x[0] == 0])
 		return tp_count,fp_count,fn_count, tn_count
 		
-
+def demo():
+	'''
+	Demonstrate ROC curve analysis 
+	'''
+	
+	ds1 = [(1, .98), (1, .89), (0, .81), (1, .79), (1, .7), (1, .69), (0, .5), (0, .49), (1, .45), (0, .2)]
+	ds2 = [(0, .9), (1, .89), (0, .75), (1, .72), (0, .7), (1, .65), (1, .5), (0, .49), (0, .45), (0, .2)]
+	roc_ds_list= [ROCData(ds1), ROCData(ds2)]
+	rocs_img_title = 'ROC Curve Analysis (demo)'
+	roc_labels = ['Classifier I', 'Classifier II']
+	rocs_output_file = 'ROC-Demo.eps'
+	
+	plot_multiple_roc(roc_ds_list, title=rocs_img_title, 
+					  labels=roc_labels, 
+					  file_name=rocs_output_file)
 		
 if __name__ == '__main__':
 	print "PyRoC - ROC Curve Generator"
 	print "By Marcel Pinheiro Caraciolo (@marcelcaraciolo)"
-	print "http://aimotion.bogspot.com\n"
+	print "http://aimotion.blogspot.com\n"
 	from optparse import OptionParser
 	
 	parser = OptionParser()
 	parser.add_option('-f', '--file', dest='origFile', help="Path to a file with the class and decision function. The first column of each row is the class, and the second the decision score.")
 	parser.add_option("-n", "--max fp", dest = "fp_n", default=0, help= "Maximum false positives to calculate up to (for partial AUC).")
-	parser.add_option("-p","--plot", action="store_true",dest='plotFlag', default=False, help="Plot the ROC curve (matplotlib required)")
+	parser.add_option("-p","--plot", action="store_true", dest='plotFlag', default=False, help="Plot the ROC curve (matplotlib required)")
 	parser.add_option("-t",'--title', dest= 'ptitle' , default='' , help = 'Title of plot.')
-	
+	parser.add_option("-d","--demo", action="store_true", dest='plot_demo', default=False, help="Plot the ROC curve demo (matplotlib required)")
 	(options,args) = parser.parse_args()
 
+	if options.plot_demo:
+		demo()
+		exit()
 
 	if (not options.origFile):
 		parser.print_help()

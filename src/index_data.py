@@ -215,37 +215,37 @@ if __name__=="__main__":
 #    
 #    print '\nIndexing time:', time.time() - start_time, 'seconds'
     
-    query_ids = [201]
+    query_ids = [202] # [201, 207]
     topic_counts = [30] # [5, 10, 15, 20, 30, 40, 50, 60, 70, 80]
     
     for num_topics in topic_counts:
         for query_id in query_ids:
             data_folder = "F:\\Research\\datasets\\trec2010\\%d" % query_id
             output_folder = "F:\\Research\\datasets\\trec2010"
-            num_passes = 100
+            num_passes = 300
             
-#            # With stemmed and lemmatized tokens 
-#            project_name = "Q%d-LST-%dT" % (query_id, num_topics)
-#            index_data(data_folder, output_folder, 
-#                       project_name, output_folder, 
-#                       num_topics, num_passes, 
-#                       min_token_freq=2, 
-#                       lemmatize=True, 
-#                       stem=True)
-#    
-#
-#            # With lemmatized tokens 
-#            project_name = "Q%d-LT-%dT" % (query_id, num_topics)
-#            index_data(data_folder, output_folder, 
-#                       project_name, output_folder, 
-#                       num_topics, num_passes, 
-#                       min_token_freq=2, 
-#                       lemmatize=True, 
-#                       stem=False)
+            # With stemmed and lemmatized tokens 
+            project_name = "Q%d-LSW-%dT" % (query_id, num_topics)
+            index_data(data_folder, output_folder, 
+                       project_name, output_folder, 
+                       num_topics, num_passes, 
+                       min_token_freq=2, 
+                       lemmatize=True, 
+                       stem=True)
     
 
             # With lemmatized tokens 
-            project_name = "Q%d-UNT-%dT" % (query_id, num_topics)
+            project_name = "Q%d-LW-%dT" % (query_id, num_topics)
+            index_data(data_folder, output_folder, 
+                       project_name, output_folder, 
+                       num_topics, num_passes, 
+                       min_token_freq=2, 
+                       lemmatize=True, 
+                       stem=False)
+    
+
+            # With raw tokens 
+            project_name = "Q%d-UNW-%dT" % (query_id, num_topics)
             index_data(data_folder, output_folder, 
                        project_name, output_folder, 
                        num_topics, num_passes, 

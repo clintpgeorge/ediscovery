@@ -848,10 +848,9 @@ def eval_ranking_methods(file_prefix, config_file,
                   'Keyword-LDA * Lucene ranking', 
                   'Topic-LDA ranking' , 
                   'Topic-LDA * Lucene Ranking',
-                  'Keyword-LSI ranking',
-                  'LSI (w/ keywords) * Lucene ranking']
+                  'Keyword-LSI ranking']
     
-    line_styles = ['ro-','kx-','b+-','c^-','yv-.','gd-', 'bd-'] 
+    line_styles = ['ro-','kx-','b+-','c^-','yv-.','gd-'] 
     
     
     #---------------------------------------------- Reads the configuration file
@@ -930,10 +929,7 @@ def eval_ranking_methods(file_prefix, config_file,
     print 'LSI (w/ keywords) ranking'
     lsi_docs = search_lsi(tm_query, limit, mdl_cfg)
     lsi_res = convert_to_roc_format(lsi_docs, positive_dir)
-    
-    print 'LSI (w/ keywords) * Lucene ranking'
-    lsi_lu_docs = fuse_lucene_tm_scores(lu_docs_dict, lsi_docs)
-    lsi_lu_res = convert_to_roc_format(lsi_lu_docs, positive_dir)
+
     
     
     ## Plot ROC curves  
@@ -941,7 +937,7 @@ def eval_ranking_methods(file_prefix, config_file,
     results_list = [lu_res, 
                     lda_res, lda_lu_res, 
                     lda_tts_res, lda_tts_lu_res, 
-                    lsi_res, lsi_lu_res]
+                    lsi_res]
     
     roc_data_list = [ROCData(result, linestyle=line_styles[idx]) 
                      for idx, result in enumerate(results_list)]
@@ -1185,35 +1181,35 @@ if __name__ == '__main__':
 #    tm_query = 'retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail'
     
    
-#    # ---------------------------------------------------------------------------------------------------------------  
-#    # Evaluates differnent Ranking models using 
-#    # RAW (UNT), LEMMATIZED (LT), LEMMATIZED and STEMMED (LST) 
-#    # word tokens   
-#    
-#    query_id = 201
-#    file_prefix = '%d-UNT' % query_id
-#    config_file = "F:\\Research\\datasets\\trec2010\\Q201-UNT-30T.cfg" # configuration file, created using the SMARTeR GUI 
-#    test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
-#    keywords = 'pre-pay swap'
-#    norm_tokens = keywords # Unnormalized keywords 
-#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
-#                                    norm_tokens, limit = 1000, img_extension = '.eps')
-#    query_id = 201
-#    file_prefix = '%d-LT' % query_id
-#    config_file = "F:\\Research\\datasets\\trec2010\\Q201-LT-30T.cfg" # configuration file, created using the SMARTeR GUI 
-#    test_directory = "F:\\Research\\datasets\\trec2010\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
-#    keywords = 'pre-pay swap'
-#    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) ) # Lemmatization 
-#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
-#                                    norm_tokens, limit = 1000, img_extension = '.eps')
+    # ---------------------------------------------------------------------------------------------------------------  
+    # Evaluates differnent Ranking models using 
+    # RAW (UNT), LEMMATIZED (LT), LEMMATIZED and STEMMED (LST) 
+    # word tokens   
+    
+    query_id = 201
+    file_prefix = '%d-UNT-ALL' % query_id
+    config_file = "F:\\Research\\datasets\\trec2010\\Q201-UNT-30T.cfg" # configuration file, created using the SMARTeR GUI 
+    test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
+    keywords = 'pre-pay swap'
+    norm_tokens = keywords # Unnormalized keywords 
+    eval_ranking_methods(file_prefix, config_file, test_directory, norm_tokens)
+    
+    
+    query_id = 201
+    file_prefix = '%d-LT-ALL' % query_id
+    config_file = "F:\\Research\\datasets\\trec2010\\Q201-LT-30T.cfg" # configuration file, created using the SMARTeR GUI 
+    test_directory = "F:\\Research\\datasets\\trec2010\\201" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
+    keywords = 'pre-pay swap'
+    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) ) # Lemmatization 
+    eval_ranking_methods(file_prefix, config_file, test_directory, norm_tokens)
+    
 #    query_id = 201
 #    file_prefix = '%d-LST' % query_id
 #    config_file = "F:\\Research\\datasets\\trec2010\\Q201-LST-30T.cfg" # configuration file, created using the SMARTeR GUI 
 #    test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 #    keywords = 'pre-pay swap'
 #    norm_tokens = ' '.join( stem_tokens( lemmatize_tokens( regex_tokenizer(keywords) ) ) ) # Stemming and Lemmatization 
-#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
-#                                    norm_tokens, limit = 1000, img_extension = '.eps')
+#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, norm_tokens)
 #    
 #    query_id = 207
 #    file_prefix = '%d-LT' % query_id
@@ -1221,8 +1217,7 @@ if __name__ == '__main__':
 #    test_directory = "F:\\Research\\datasets\\trec2010\\207" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
 #    keywords = 'football Eric Bass'
 #    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords)  ) ) # Lemmatization 
-#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
-#                                    norm_tokens, limit = 1000, img_extension = '.eps')
+#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, norm_tokens)
 #    
 #    query_id = 207
 #    file_prefix = '%d-LST' % query_id
@@ -1230,26 +1225,25 @@ if __name__ == '__main__':
 #    test_directory = "F:\\Research\\datasets\\trec2010\\207" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
 #    keywords = 'football Eric Bass'
 #    norm_tokens = ' '.join( stem_tokens( lemmatize_tokens( regex_tokenizer(keywords) ) ) ) # Stemming and Lemmatization
-#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, 
-#                                    norm_tokens, limit = 1000, img_extension = '.eps')
-#        
+#    eval_keywordlda_topiclda_lucene(file_prefix, config_file, test_directory, norm_tokens)
+        
+    # ---------------------------------------------------------------------------------------------------------------  
+    
+#    # ---------------------------------------------------------------------------------------------------------------  
+#    # Evaluate Topic-lDA with varying number of topics 
+#    # and using Lemmatized tokens 
+#    
+#    
+#    query_id = 201
+#    dir_path = "F:\\Research\\datasets\\trec2010\\"
+#    keywords = 'pre-pay swap'
+#    eval_ranking_varying_topics(query_id, dir_path, keywords)
+#    
+#    query_id = 207
+#    dir_path = "F:\\Research\\datasets\\trec2010\\"
+#    keywords = 'football Eric Bass'
+#    eval_ranking_varying_topics(query_id, dir_path, keywords)
+#
 #    # ---------------------------------------------------------------------------------------------------------------  
 #    
-    # ---------------------------------------------------------------------------------------------------------------  
-    # Evaluate Topic-lDA with varying number of topics 
-    # and using Lemmatized tokens 
-    
-    
-    query_id = 201
-    dir_path = "F:\\Research\\datasets\\trec2010\\"
-    keywords = 'pre-pay swap'
-    eval_ranking_varying_topics(query_id, dir_path, keywords)
-    
-    query_id = 207
-    dir_path = "F:\\Research\\datasets\\trec2010\\"
-    keywords = 'football Eric Bass'
-    eval_ranking_varying_topics(query_id, dir_path, keywords)
-
-    # ---------------------------------------------------------------------------------------------------------------  
-    
 

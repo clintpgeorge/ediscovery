@@ -109,6 +109,36 @@ def get_lda_query_td(doc_text, lda_dictionary, lda_mdl):
     return query_td
 
 
+def get_lda_query_td2(doc_text, lda_dictionary, lda_beta):
+    '''Tokenize the input query and returns its topic 
+    distributions using the learned LDA model
+    
+    Returns:
+        topic distribution 
+    Arguments:
+        doc_text - the document in text format 
+        lda_dictionary - the dictionary object 
+        lda_beta - the LDA model's beta matrix  
+    
+    '''
+    # process the query 
+    
+    query_vec = lda_dictionary.doc2bow(whitespace_tokenize(doc_text))
+    
+    if len(query_vec) == 0: 
+        logging.exception('Query words are not in the dictionary. Exiting topic search!')
+        return [] 
+    else: 
+        logging.info('%d query words are in the dictionary.', len(query_vec))
+    
+    query_term_theta2 = np.array([lda_beta[:,vocab_id] * count for (vocab_id, count) in query_vec]).sum(axis=0)
+    query_term_theta2 /= sum(query_term_theta2.tolist()) # normalizes
+    query_td2 = [(idx, val) for idx, val in enumerate(query_term_theta2)] 
+    
+    return query_td2
+
+
+
 def compute_topic_similarities(doc_text, src_docs, lda_dictionary, lda_mdl, lda_num_topics):
     '''Tokenize the document and finds document similarities between
     the given document and the documents listed, based on topic modeling 
@@ -255,9 +285,26 @@ def get_dominant_query_topics(query_text, lda_dictionary, lda_mdl, TOP_K_TOPICS 
 
     return dominant_topics # (topic_id, topic_prob)  
 
-
-
+def get_query_top_topic_idx(query_td, lda_mdl, TOP_K_TOPICS = 5):
+    '''Tokenize the input query and finds the top K dominant query 
+    topics from an LDA model 
     
+    Returns:
+        dominant_topics - a tuple list of (topic_id, topic_prob)
+    Arguments:
+        query_td - the query topic distribution 
+        lda_mdl - the LDA model object 
+    
+    '''
+    from operator import itemgetter
+    import heapq
+    
+    print_dominant_query_topics(query_td, lda_mdl, TOP_K_TOPICS)
+   
+    dominant_topics = heapq.nlargest(TOP_K_TOPICS, dict(query_td).items(), key=itemgetter(1)) # (topic_id, topic_prob)  
+    dominant_topics_idx = [idx for (idx, _) in dominant_topics] # get the topic indices 
+    
+    return dominant_topics_idx 
 
 def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_path_index, limit):
     '''Tokenize the input query and finds topically 
@@ -304,6 +351,36 @@ def search_lda_model(query_text, lda_dictionary, lda_mdl, lda_index, lda_file_pa
     
     return responsive_docs
     
+def search_lda_model2(query_td, lda_index, lda_file_path_index, limit):
+    '''Tokenize the input query and finds topically 
+    similar documents (responsive) using the LDA based 
+    document search. 
+    
+    Returns:
+        responsive_docs - [doc_id, doc_dir_path, doc_name, score] 
+    Arguments:
+        query_td - the query topic distribution  
+        lda_index - the index object 
+        lda_file_path_index - the list of file details 
+        limit - the limit on the number of responsive records 
+    
+    '''
+    
+    # querying based on cosine distance
+    
+    sims = lda_index[query_td] # perform a similarity query against the corpus
+    sims = sorted(enumerate(sims), key=lambda item: -item[1])
+    
+    ## Identifies responsive documents
+     
+    responsive_docs_idx = sims[0:limit]
+    responsive_docs = [] 
+    for (doc_id, score) in responsive_docs_idx: 
+        doc = list(lda_file_path_index[doc_id]) # i.e., [doc_id, doc_dir_path, doc_name]
+        doc.append(score)
+        responsive_docs.append(doc)
+    
+    return responsive_docs
     
     
 '''
