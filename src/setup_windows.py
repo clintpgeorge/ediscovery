@@ -11,7 +11,7 @@ for dbmodule in ['dbhash', 'gdbm', 'dbm', 'dumbdbm','_pybsddb', 'bsddb3.dbutils'
         # If we found the module, ensure it's copied to the build directory.
         packages.append(dbmodule)
 setup(
-    options = {'py2exe': {'bundle_files': 3, "dll_excludes": ["mswsock.dll", "MSWSOCK.dll"], "packages": packages}},
+    options = {'py2exe': {'bundle_files': 3, "dll_excludes": ["mswsock.dll", "MSWSOCK.dll","MSVCP90.dll"], "packages": packages}},
     zipfile = None,
     windows = [{
             "script": 'gui/RandomSampler.py',

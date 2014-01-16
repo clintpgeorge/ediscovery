@@ -60,7 +60,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._st_header1 = wx.StaticText( self._panel_io, wx.ID_ANY, u"Select the Source Document Folder and the desired Sampled Output Folder. \n\nThe Source Document Folder is the folder which contains the document population to be sampled. The Sampled Output Folder indicates a location where the Random Sampler will store the sampled documents based of the confidence level provided by you in the next tab.", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
 		self._st_header1.Wrap( 1050 )
 		self._st_header1.SetFont( wx.Font( 8, 70, 90, 91, False, wx.EmptyString ) )
-		self._st_header1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
+		self._st_header1.SetForegroundColour( wx.Colour( 0, 0, 255 ) )
 		self._st_header1.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 		
 		gbsizer_io.Add( self._st_header1, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 3 ), wx.ALL, 5 )
@@ -95,7 +95,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self.m_staticText251.Wrap( -1 )
 		gbsizer_io.Add( self.m_staticText251, wx.GBPosition( 5, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_io_new_project = wx.TextCtrl( self._panel_io, wx.ID_ANY, u"Title of new project...", wx.DefaultPosition, wx.Size( 300,-1 ), wx.TE_LEFT )
+		self._tc_io_new_project = wx.TextCtrl( self._panel_io, wx.ID_ANY, u"Title of the new project...", wx.DefaultPosition, wx.Size( 300,-1 ), wx.TE_LEFT )
 		self._tc_io_new_project.Enable( False )
 		
 		gbsizer_io.Add( self._tc_io_new_project, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
@@ -164,7 +164,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_io.SetSizer( sbsizer_io )
 		self._panel_io.Layout()
 		sbsizer_io.Fit( self._panel_io )
-		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", False )
+		self.nb_config_sampler.AddPage( self._panel_io, u"Data and Ouput", True )
 		self._panel_confidence = wx.Panel( self.nb_config_sampler, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bsizer_confidence = wx.BoxSizer( wx.VERTICAL )
 		
@@ -177,7 +177,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._st_header2 = wx.StaticText( self._panel_confidence, wx.ID_ANY, u"Select the Confidence Level and the Confidence Interval to compute sample size. The selected Confidence Interval and Confidence Level determines the sample size.", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
 		self._st_header2.Wrap( -1 )
 		self._st_header2.SetFont( wx.Font( 8, 70, 90, 91, False, wx.EmptyString ) )
-		self._st_header2.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
+		self._st_header2.SetForegroundColour( wx.Colour( 0, 0, 255 ) )
 		self._st_header2.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 		
 		gbsizer_confidence.Add( self._st_header2, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 6 ), wx.ALL, 5 )
@@ -208,12 +208,12 @@ class RandomSamplerGUI ( wx.Frame ):
 		
 		gbsizer_confidence.Add( self._st_confidence_interval1, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._st_num_samples = wx.StaticText( self._panel_confidence, wx.ID_ANY, u"0 samples found out of 0 files", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self._st_num_samples = wx.StaticText( self._panel_confidence, wx.ID_ANY, u"0 samples found out of 0 files", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_num_samples.Wrap( -1 )
 		self._st_num_samples.SetFont( wx.Font( 8, 72, 94, 90, False, wx.EmptyString ) )
 		self._st_num_samples.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		gbsizer_confidence.Add( self._st_num_samples, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT, 5 )
+		gbsizer_confidence.Add( self._st_num_samples, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT|wx.TOP, 5 )
 		
 		self.m_staticText26 = wx.StaticText( self._panel_confidence, wx.ID_ANY, u"Sample Size", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText26.Wrap( -1 )
@@ -254,7 +254,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._st_header = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"Below are your Randam Sampler specifications", wx.DefaultPosition, wx.Size( -1,-1 ), wx.ALIGN_LEFT )
 		self._st_header.Wrap( -1 )
 		self._st_header.SetFont( wx.Font( 8, 70, 90, 91, False, wx.EmptyString ) )
-		self._st_header.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
+		self._st_header.SetForegroundColour( wx.Colour( 0, 0, 255 ) )
 		self._st_header.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 		
 		gbsizer_sampler1.Add( self._st_header, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 3 ), wx.ALL, 5 )
@@ -321,7 +321,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._st_out_num_samples.SetFont( wx.Font( 8, 72, 94, 90, False, wx.EmptyString ) )
 		self._st_out_num_samples.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		gbsizer_sampler1.Add( self._st_out_num_samples, wx.GBPosition( 8, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT, 5 )
+		gbsizer_sampler1.Add( self._st_out_num_samples, wx.GBPosition( 8, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT|wx.TOP, 5 )
 		
 		self.m_staticText29 = wx.StaticText( self._panel_create_sample, wx.ID_ANY, u"Documents in sample", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText29.Wrap( -1 )
@@ -332,7 +332,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._st_out_num_data_dir_files.SetFont( wx.Font( 8, 72, 94, 90, False, wx.EmptyString ) )
 		self._st_out_num_data_dir_files.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
-		gbsizer_sampler1.Add( self._st_out_num_data_dir_files, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT, 5 )
+		gbsizer_sampler1.Add( self._st_out_num_data_dir_files, wx.GBPosition( 4, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_LEFT|wx.ALIGN_TOP|wx.LEFT|wx.TOP, 5 )
 		
 		self._sl_tailer = wx.StaticLine( self._panel_create_sample, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbsizer_sampler1.Add( self._sl_tailer, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 6 ), wx.ALL|wx.EXPAND, 5 )
@@ -426,7 +426,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self.m_staticText21 = wx.StaticText( self._panel_review, wx.ID_ANY, u"This tab shows the documents selected by the Random Sampler for review based on your specifications.", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText21.Wrap( -1 )
 		self.m_staticText21.SetFont( wx.Font( 8, 70, 90, 90, False, wx.EmptyString ) )
-		self.m_staticText21.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_ACTIVECAPTION ) )
+		self.m_staticText21.SetForegroundColour( wx.Colour( 0, 0, 255 ) )
 		
 		gbsizer_review.Add( self.m_staticText21, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 4 ), wx.ALL, 5 )
 		
@@ -478,7 +478,7 @@ class RandomSamplerGUI ( wx.Frame ):
 		self._panel_review.SetSizer( sbsizer_review )
 		self._panel_review.Layout()
 		sbsizer_review.Fit( self._panel_review )
-		self.nb_config_sampler.AddPage( self._panel_review, u"Sample Review", True )
+		self.nb_config_sampler.AddPage( self._panel_review, u"Sample Review", False )
 		
 		bsizer_main.Add( self.nb_config_sampler, 1, wx.EXPAND |wx.ALL, 5 )
 		

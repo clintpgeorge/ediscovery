@@ -1018,6 +1018,8 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
         
         # Separate report types
         report_type = 'All'#self._cbx_report_types.GetValue()
+        valid = 0
+        invalid = 0
         try:
             samples_lst = self.shelf['samples']
             if report_type == 'Responsive':
@@ -1045,15 +1047,19 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 responsive = []
                 privileged = []
                 for fs in samples_lst: 
-                    if fs[4] == 'Yes': 
+                    if fs[4] == 'Yes':
+                        valid = valid +1 
                         responsive.append(fs)
+                    elif fs[4] == 'No':
+                        invalid = invalid +1 
+                        
                     if fs[5] == 'Yes': 
                         privileged.append(fs)
                 html_body = self._gen_complete_html_report(samples_lst, responsive, privileged)
             
             
             # Saves into a file path 
-            self._save_html_report(html_body, file_name)
+            self._save_html_report(html_body, file_name, valid, invalid)
             
             # Open the HTML report in the default web browser 
             webbrowser.open(file_name)
@@ -1061,7 +1067,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             # Report generation failed 
             self.error(e)
                     
-    def _save_html_report(self, html_body, file_name):
+    def _save_html_report(self, html_body, file_name, valid, invalid):
         '''
         Stores into a file 
         '''
@@ -1082,7 +1088,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
                 <br/><br/>
                 """))
                 
-                hw.write(unicode(self._gen_specifications_html()))
+                hw.write(unicode(self._gen_specifications_html(valid, invalid)))
     
                 hw.write(unicode(html_body))
     
@@ -1096,7 +1102,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             print e
             self.error(e)
 
-    def _gen_specifications_html(self): 
+    def _gen_specifications_html(self, valid, invalid): 
         try:
             hrow = TableRow(cells=['Sampler Specifications', 'Entries'], bgcolor='#6E6E6E')
             setting_table = Table(header_row=hrow, border=0)
@@ -1125,6 +1131,14 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
             setting_cell = TableCell(len(self.sampled_files), bgcolor = '#CEF6F5', align = 'right')
             setting_table.rows.append([config_cell, setting_cell])
             
+            config_cell = TableCell("Number of Valid Documents", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(valid, bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
+            config_cell = TableCell("Number of Invalid Documents", bgcolor = '#CEF6F5', align = 'left')
+            setting_cell = TableCell(invalid, bgcolor = '#CEF6F5', align = 'right')
+            setting_table.rows.append([config_cell, setting_cell])
+            
             return str(setting_table)
         except Exception,e:
             self.error(e)
@@ -1132,7 +1146,7 @@ class RandomSampler(RandomSamplerGUI,LicenseDialog):
     def _gen_complete_html_report(self, samples, responsive, privileged):
         try:
             # Generate HTML tags for all documents 
-            hrow = TableRow(cells=['#', 'File Name', 'Valid?'], bgcolor='#6E6E6E')
+            hrow = TableRow(cells=['#', 'Document Name', 'Valid?'], bgcolor='#6E6E6E')
             all_table = Table(header_row=hrow)
             
             for fs in samples:
