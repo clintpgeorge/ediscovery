@@ -57,7 +57,7 @@ The following are some useful ***git*** commands
 
 **pyLucene Installation**
 
-**Ubuntu**
+Ubuntu
 
 - Install g++
 - Install python-dev
@@ -73,25 +73,26 @@ The following are some useful ***git*** commands
       - sudo make install
       - make test
 
-**Windows 7 and Python 32 bit**
+Windows 7 and 8
 
 - Install Java JDK (32 bit) latest version 
-- Install Python [setup tools](http://pypi.python.org/pypi/setuptools) 
-- Follow instructions in [pyLucene Extra](https://code.google.com/a/apache-extras.org/p/pylucene-extra/wiki/PyLucene). Direct installation using the installation files from the Apache site is cumbersome some times. 
+- Install [PythonXY](https://code.google.com/p/pythonxy/) 
+- Add JRE & JDK paths to the Path Environment variable, e.g., G:\Program Files (x86)\Java\jre7\bin;G:\Program Files (x86)\Java\jre7\bin\client;G:\Program Files (x86)\Java\jdk1.7.0_51\bin;
+- Install msvcr71.dll in C:\Windows\System32 and C:\Windows\SysWOW64
+- Install [pyLucene Extras](https://code.google.com/a/apache-extras.org/p/pylucene-extra/wiki/PyLucene) using easy_install. 
+
 
 
 **Topic Modeling**
 
-- Topic modeling is performed using the package Gensim -- http://radimrehurek.com/gensim/ 
+Topic modeling packages can be installed from the [Gensim](http://radimrehurek.com/gensim) website. 
 
 
 **Development Environment Setup**
 
-Please follow the following steps in the order given below for setting up development 
-environment, The executables can be found in the software folder(Coming Soon)
+Please follow the following steps in the order given below for setting up development environment. The executables can be found in the software folder (Coming Soon)
 
-- Install Python27
-- Install sciPy, NumPy, wxPython, pywin32, Py2exe
+- Install wxPython, pywin32, Py2exe
 - Install wxFormBuilder
 - Delete files boot_common.py, and boot_common.pyc from C:\Python27\Lib\site-packages\py2exe. Add the boot_common.py from the software folder to the given path, compile it using the following code in python CLI
 
@@ -100,13 +101,7 @@ environment, The executables can be found in the software folder(Coming Soon)
     py_compile.compile('boot_common.py')
     
 
-*for SMARTeR*
 
-- Install both Visual Studio Express 2008 and 2010
-- Run the script ez_setup.py
-- Using the following command install gensim, JCC and lucene
-
-    easy_install <file_name>.egg
 
 
 --------------------------------------
