@@ -2011,11 +2011,12 @@ class SMARTeR (SMARTeRGUI):
         # Set default confidence interval 
         self.precision_val = DEFAULT_CONFIDENCE_INTERVAL / 100
         str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
-        self._tc_confidence_interval.ChangeValue(str_precision)
+        self._cbx_confidence_interval.SetSelection(int(str_precision)-1)
         
         self.precision_val_unres = DEFAULT_CONFIDENCE_INTERVAL / 100
         str_precision = str(int(DEFAULT_CONFIDENCE_INTERVAL))
-        self._tc_confidence_interval_unres.ChangeValue(str_precision)
+        
+        self._cbx_confidence_interval_unres.SetSelection(int(str_precision)-1)
 
         # Hides the status messages 
         self._st_num_samples_res.Show(False)
@@ -2050,19 +2051,19 @@ class SMARTeR (SMARTeRGUI):
         Returns: Nothing
         '''
         
-        def show_precision_error():
-            self._show_error_message("Value Error!", "Please enter a confidence interval between 0 and 100.")
-            self._tc_confidence_interval.ChangeValue(str(int(DEFAULT_CONFIDENCE_INTERVAL))) # Sets the default value 
-            self._tc_confidence_interval.SetFocus()
+       #def show_precision_error():
+       #     self._show_error_message("Value Error!", "Please enter a confidence interval between 0 and 100.")
+       #     self._tc_confidence_interval.ChangeValue(str(int(DEFAULT_CONFIDENCE_INTERVAL))) # Sets the default value 
+       #     self._tc_confidence_interval.SetFocus()
             
 
         # Maybe intermittently null string, escaping 
         try:
             # Checks for positive values 
-            ci = float(self._tc_confidence_interval.GetValue())
-            if ci <= 0 or ci > 99:
-                show_precision_error()
-                return 
+            ci = float(self._cbx_confidence_interval.GetValue())
+            #if ci <= 0 or ci > 99:
+            #    show_precision_error()
+            #    return 
             
             self.get_precision_as_float()
             if self._chk_toggle_cl_level.Value==True:
@@ -2070,7 +2071,7 @@ class SMARTeR (SMARTeRGUI):
             #self._tc_out_confidence_interval.ChangeValue(self._tc_confidence_interval.GetValue())
             #self.SetStatusText('Confidence interval is changed as ' + self._tc_confidence_interval.GetValue())
         except ValueError:
-            show_precision_error()
+            #show_precision_error()
             return None 
         
         self._generate_file_samples()
@@ -2083,25 +2084,25 @@ class SMARTeR (SMARTeRGUI):
         Returns: Nothing
         '''
         
-        def show_precision_error():
-            self._show_error_message("Value Error!", "Please enter a confidence interval between 0 and 100.")
-            self._tc_confidence_interval.ChangeValue(str(int(DEFAULT_CONFIDENCE_INTERVAL))) # Sets the default value 
-            self._tc_confidence_interval.SetFocus()
+        #def show_precision_error():
+        #    self._show_error_message("Value Error!", "Please enter a confidence interval between 0 and 100.")
+        #    self._tc_confidence_interval.ChangeValue(str(int(DEFAULT_CONFIDENCE_INTERVAL))) # Sets the default value 
+        #    self._tc_confidence_interval.SetFocus()
             
 
         # Maybe intermittently null string, escaping 
         try:
             # Checks for positive values 
-            ci = float(self._tc_confidence_interval.GetValue())
-            if ci <= 0 or ci > 99:
-                show_precision_error()
-                return 
+            ci = float(self._cbx_confidence_interval.GetValue())
+            #if ci <= 0 or ci > 99:
+            #    show_precision_error()
+            #    return 
             
             self.get_precision_as_float_unres()
             #self._tc_out_confidence_interval.ChangeValue(self._tc_confidence_interval.GetValue())
             #self.SetStatusText('Confidence interval is changed as ' + self._tc_confidence_interval.GetValue())
         except ValueError:
-            show_precision_error()
+            #show_precision_error()
             return None 
         
         self._generate_file_samples_unres()
@@ -2182,10 +2183,10 @@ class SMARTeR (SMARTeRGUI):
         Arguments: Nothing
         '''
         try:
-            self.precision_val = float(self._tc_confidence_interval.GetValue()
+            self.precision_val = float(self._cbx_confidence_interval.GetValue()
                                        ) / 100.0 
         except ValueError:
-            self.precision_val = float(int(self._tc_confidence_interval.GetValue())
+            self.precision_val = float(int(self._cbx_confidence_interval.GetValue())
                                        ) / 100.0
                                        
     def get_precision_as_float_unres(self):
@@ -2195,10 +2196,10 @@ class SMARTeR (SMARTeRGUI):
         Arguments: Nothing
         '''
         try:
-            self.precision_val_unres = float(self._tc_confidence_interval_unres.GetValue()
+            self.precision_val_unres = float(self._cbx_confidence_interval_unres.GetValue()
                                        ) / 100.0 
         except ValueError:
-            self.precision_val_unres = float(int(self._tc_confidence_interval_unres.GetValue())
+            self.precision_val_unres = float(int(self._cbx_confidence_interval_unres.GetValue())
                                        ) / 100.0
                                        
     def _on_confidence_changed(self, event):
@@ -2242,7 +2243,7 @@ class SMARTeR (SMARTeRGUI):
             self._st_num_samples_unres.Show(True)
         else:
             self.confidence_val_unres = Decimal(self._cbx_confidence_levels_unres.GetValue()) / Decimal('100')
-            self.precision_val_unres = float(self._tc_confidence_interval_unres.GetValue()) / 100.0
+            self.precision_val_unres = float(self._cbx_confidence_interval_unres.GetValue()) / 100.0
             self._generate_file_samples_unres()
             self._panel_unres_cl.Show(True)
             self._st_num_samples_unres.Show(False)

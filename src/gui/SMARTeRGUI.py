@@ -104,7 +104,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self._panel_index.SetSizer( bSizer5 )
 		self._panel_index.Layout()
-		self._notebook.AddPage( self._panel_index, _(u"Index Data"), False )
+		self._notebook.AddPage( self._panel_index, _(u"Index Data"), True )
 		self._panel_feedback = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer8 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -112,7 +112,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self._st_document_feedback_title = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Please review all 100 documents to increase the accuracy of document retrieval"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_document_feedback_title.Wrap( -1 )
-		self._st_document_feedback_title.SetFont( wx.Font( 9, 70, 90, 90, False, wx.EmptyString ) )
+		self._st_document_feedback_title.SetFont( wx.Font( 9, 74, 90, 92, False, "Tahoma" ) )
 		self._st_document_feedback_title.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		sbSizer7.Add( self._st_document_feedback_title, 0, wx.ALL, 5 )
@@ -136,7 +136,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		gbSizer8.Add( self._doc_feedback_preview, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self.m_staticText1411 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText1411 = wx.StaticText( self._panel_feedback, wx.ID_ANY, _(u"Document Preview Pane"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText1411.Wrap( -1 )
 		self.m_staticText1411.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
@@ -266,7 +266,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self.m_staticText40 = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Please reveiw as many documents as possible, click on continue to sample documents or click on update query to refine search terms."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText40.Wrap( -1 )
-		self.m_staticText40.SetFont( wx.Font( 8, 74, 93, 92, False, "Tahoma" ) )
+		self.m_staticText40.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
 		self.m_staticText40.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		sbSizer11.Add( self.m_staticText40, 0, wx.ALL, 5 )
@@ -377,10 +377,10 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		gbSizer30.Add( self._tc_file_preview_pane, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
 		
-		self.m_staticText54 = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Document Preview"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText54 = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Document Preview Pane"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText54.Wrap( -1 )
-		self.m_staticText54.SetFont( wx.Font( 8, 74, 93, 92, False, "Tahoma" ) )
-		self.m_staticText54.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
+		self.m_staticText54.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		self.m_staticText54.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNTEXT ) )
 		
 		gbSizer30.Add( self.m_staticText54, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -417,7 +417,7 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer13.Add( self.m_staticText20, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		_cbx_confidence_levelsChoices = []
-		self._cbx_confidence_levels = wx.ComboBox( self._panel_sample_conf, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_confidence_levelsChoices, wx.CB_DROPDOWN|wx.CB_READONLY )
+		self._cbx_confidence_levels = wx.ComboBox( self._panel_sample_conf, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 110,-1 ), _cbx_confidence_levelsChoices, wx.CB_DROPDOWN|wx.CB_READONLY )
 		self._cbx_confidence_levels.SetSelection( 0 )
 		gbSizer13.Add( self._cbx_confidence_levels, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -425,8 +425,10 @@ class SMARTeRGUI ( wx.Frame ):
 		self.m_staticText23.Wrap( -1 )
 		gbSizer13.Add( self.m_staticText23, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_confidence_interval = wx.TextCtrl( self._panel_sample_conf, wx.ID_ANY, _(u"5"), wx.DefaultPosition, wx.Size( 50,-1 ), 0 )
-		gbSizer13.Add( self._tc_confidence_interval, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_cbx_confidence_intervalChoices = [ _(u"1"), _(u"2"), _(u"3"), _(u"4"), _(u"5"), _(u"6"), _(u"7"), _(u"8"), _(u"9"), _(u"10") ]
+		self._cbx_confidence_interval = wx.ComboBox( self._panel_sample_conf, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 110,-1 ), _cbx_confidence_intervalChoices, wx.CB_READONLY )
+		self._cbx_confidence_interval.SetSelection( 4 )
+		gbSizer13.Add( self._cbx_confidence_interval, wx.GBPosition( 3, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._st_num_samples_res = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Responsive: 0 of 0 documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_num_samples_res.Wrap( -1 )
@@ -455,7 +457,7 @@ class SMARTeRGUI ( wx.Frame ):
 		gbSizer131.Add( self.m_staticText201, wx.GBPosition( 1, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		_cbx_confidence_levels_unresChoices = []
-		self._cbx_confidence_levels_unres = wx.ComboBox( self._panel_unres_cl, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, _cbx_confidence_levels_unresChoices, wx.CB_DROPDOWN|wx.CB_READONLY )
+		self._cbx_confidence_levels_unres = wx.ComboBox( self._panel_unres_cl, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 110,-1 ), _cbx_confidence_levels_unresChoices, wx.CB_DROPDOWN|wx.CB_READONLY )
 		self._cbx_confidence_levels_unres.SetSelection( 0 )
 		gbSizer131.Add( self._cbx_confidence_levels_unres, wx.GBPosition( 1, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -463,8 +465,10 @@ class SMARTeRGUI ( wx.Frame ):
 		self.m_staticText231.Wrap( -1 )
 		gbSizer131.Add( self.m_staticText231, wx.GBPosition( 2, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
-		self._tc_confidence_interval_unres = wx.TextCtrl( self._panel_unres_cl, wx.ID_ANY, _(u"5"), wx.DefaultPosition, wx.Size( 50,-1 ), 0 )
-		gbSizer131.Add( self._tc_confidence_interval_unres, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_cbx_confidence_interval_unresChoices = [ _(u"1"), _(u"2"), _(u"3"), _(u"4"), _(u"5"), _(u"6"), _(u"7"), _(u"8"), _(u"9"), _(u"10") ]
+		self._cbx_confidence_interval_unres = wx.ComboBox( self._panel_unres_cl, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 110,-1 ), _cbx_confidence_interval_unresChoices, wx.CB_DROPDOWN|wx.CB_READONLY )
+		self._cbx_confidence_interval_unres.SetSelection( 4 )
+		gbSizer131.Add( self._cbx_confidence_interval_unres, wx.GBPosition( 2, 1 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._st_num_samples_ind_unres = wx.StaticText( self._panel_unres_cl, wx.ID_ANY, _(u"Unresponsive: 0 of 0 documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_num_samples_ind_unres.Wrap( -1 )
@@ -488,8 +492,9 @@ class SMARTeRGUI ( wx.Frame ):
 		self.m_staticline10 = wx.StaticLine( self._panel_sample_conf, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		gbSizer13.Add( self.m_staticline10, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 4 ), wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_staticText531 = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Select Confidence Interval and Confidence Level to compute sample size. "), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText531 = wx.StaticText( self._panel_sample_conf, wx.ID_ANY, _(u"Select the Confidence Level and the Confidence Interval to compute sample size. The selected Confidence Interval and Confidence Level determines the sample size."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText531.Wrap( -1 )
+		self.m_staticText531.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
 		self.m_staticText531.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		gbSizer13.Add( self.m_staticText531, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
@@ -530,11 +535,18 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_sbsizer_review_unrep = wx.StaticBoxSizer( wx.StaticBox( self._panel_review_unresp, wx.ID_ANY, _(u"Sample of Irrelevant Documents") ), wx.VERTICAL )
 		
-		self.m_staticText49 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"Click Next if you pass the confidence test.\n"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText49 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"Click Next if you pass the confidence test on irrelevant documents else please try refining the search keywords."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText49.Wrap( -1 )
+		self.m_staticText49.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
 		self.m_staticText49.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		_sbsizer_review_unrep.Add( self.m_staticText49, 0, wx.ALL, 5 )
+		
+		self.m_staticText541 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"The documents can be reviewed by two methods:\n1. Single click on the document: If it is an email or a text document you will be able to review the document in Document Preview pane.\n2. Double click on the document: A window will ask you for a document viewer installed on your computer. To view the document you must have a software installed that can open the document."), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText541.Wrap( -1 )
+		self.m_staticText541.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		
+		_sbsizer_review_unrep.Add( self.m_staticText541, 0, wx.ALL, 5 )
 		
 		_gbsizer_review_unresp = wx.GridBagSizer( 0, 0 )
 		_gbsizer_review_unresp.SetFlexibleDirection( wx.BOTH )
@@ -557,14 +569,14 @@ class SMARTeRGUI ( wx.Frame ):
 		self._tc_preview_tags_unres = wx.TextCtrl( self._panel_review_unresp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,175 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
 		_gbsizer_review_unresp.Add( self._tc_preview_tags_unres, wx.GBPosition( 5, 0 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
 		
-		self.m_staticText141 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText141 = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"Document Preview Pane"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText141.Wrap( -1 )
 		self.m_staticText141.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
 		_gbsizer_review_unresp.Add( self.m_staticText141, wx.GBPosition( 4, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self.m_staticline61 = wx.StaticLine( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		_gbsizer_review_unresp.Add( self.m_staticline61, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
+		_gbsizer_review_unresp.Add( self.m_staticline61, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._panel_doc_tag_unres = wx.Panel( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer12 = wx.BoxSizer( wx.VERTICAL )
@@ -587,18 +599,11 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_gbsizer_review_unresp.Add( self._st_revew_doc_help, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
-		self._st_revew_pane_help = wx.StaticText( self._panel_review_unresp, wx.ID_ANY, _(u"* Text files only"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_revew_pane_help.Wrap( -1 )
-		self._st_revew_pane_help.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
-		self._st_revew_pane_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
-		
-		_gbsizer_review_unresp.Add( self._st_revew_pane_help, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
 		self._btn_back_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Back (Sample Confidence)"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_review_unresp.Add( self._btn_back_unres, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_review_unresp.Add( self._btn_back_unres, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._btn_next_unres = wx.Button( self._panel_review_unresp, wx.ID_ANY, _(u"Next (Sample Relevant)"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_review_unresp.Add( self._btn_next_unres, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_review_unresp.Add( self._btn_next_unres, wx.GBPosition( 8, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		_sbsizer_review_unrep.Add( _gbsizer_review_unresp, 1, wx.EXPAND, 5 )
@@ -616,11 +621,17 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_sbsizer_review_resp = wx.StaticBoxSizer( wx.StaticBox( self._panel_review_resp, wx.ID_ANY, _(u"Sample of Relevant Documents") ), wx.VERTICAL )
 		
-		self.m_staticText491 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"Click Next if you pass the confidence test.\n"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText491 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"Click Next if you pass the confidence test on relevant documents else please try refining the search keywords."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText491.Wrap( -1 )
 		self.m_staticText491.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		_sbsizer_review_resp.Add( self.m_staticText491, 0, wx.ALL, 5 )
+		
+		self.m_staticText56 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"The documents can be reviewed by two methods:\n1. Single click on the document: If it is an email or a text document you will be able to review the document in Document Preview pane.\n2. Double click on the document: A window will ask you for a document viewer installed on your computer. To view the document you must have a software installed that can open the document."), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText56.Wrap( -1 )
+		self.m_staticText56.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		
+		_sbsizer_review_resp.Add( self.m_staticText56, 0, wx.ALL, 5 )
 		
 		_gbsizer_review_res = wx.GridBagSizer( 0, 0 )
 		_gbsizer_review_res.SetFlexibleDirection( wx.BOTH )
@@ -641,7 +652,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._tc_preview_tags = wx.TextCtrl( self._panel_review_resp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,175 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
 		_gbsizer_review_res.Add( self._tc_preview_tags, wx.GBPosition( 5, 0 ), wx.GBSpan( 2, 3 ), wx.ALL, 5 )
 		
-		self.m_staticText14 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"Document Preview Pane*"), wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText14 = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"Document Preview Pane"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText14.Wrap( -1 )
 		self.m_staticText14.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		
@@ -662,7 +673,7 @@ class SMARTeRGUI ( wx.Frame ):
 		_gbsizer_review_res.Add( self._panel_doc_tag_res, wx.GBPosition( 5, 3 ), wx.GBSpan( 1, 1 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self.m_staticline6 = wx.StaticLine( self._panel_review_resp, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		_gbsizer_review_res.Add( self.m_staticline6, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
+		_gbsizer_review_res.Add( self.m_staticline6, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 7 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._st_resp_revew_doc_help = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"* Double click on a document to open it in the default system viewer."), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_resp_revew_doc_help.Wrap( -1 )
@@ -671,18 +682,11 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_gbsizer_review_res.Add( self._st_resp_revew_doc_help, wx.GBPosition( 3, 0 ), wx.GBSpan( 1, 2 ), wx.ALL, 5 )
 		
-		self._st_resp_revew_pane_help = wx.StaticText( self._panel_review_resp, wx.ID_ANY, _(u"* Text files only"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		self._st_resp_revew_pane_help.Wrap( -1 )
-		self._st_resp_revew_pane_help.SetFont( wx.Font( 8, 70, 93, 90, False, wx.EmptyString ) )
-		self._st_resp_revew_pane_help.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
-		
-		_gbsizer_review_res.Add( self._st_resp_revew_pane_help, wx.GBPosition( 7, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
-		
 		self._btn_back_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Back (Sample Irrelevant)"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_review_res.Add( self._btn_back_res, wx.GBPosition( 9, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_review_res.Add( self._btn_back_res, wx.GBPosition( 8, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		self._btn_next_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Next (Reports)"), wx.DefaultPosition, wx.DefaultSize, 0 )
-		_gbsizer_review_res.Add( self._btn_next_res, wx.GBPosition( 9, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
+		_gbsizer_review_res.Add( self._btn_next_res, wx.GBPosition( 8, 3 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
 		
 		_sbsizer_review_resp.Add( _gbsizer_review_res, 1, wx.EXPAND, 5 )
@@ -863,7 +867,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_search_report.SetSizer( _bsizer_comprehensive_report )
 		self._panel_search_report.Layout()
 		_bsizer_comprehensive_report.Fit( self._panel_search_report )
-		self._notebook.AddPage( self._panel_search_report, _(u"Search Report"), True )
+		self._notebook.AddPage( self._panel_search_report, _(u"Search Report"), False )
 		
 		_bsizer_main.Add( self._notebook, 1, wx.EXPAND |wx.ALL, 5 )
 		
@@ -897,10 +901,10 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_update_results.Bind( wx.EVT_BUTTON, self._on_click_update_results )
 		self._btn_continue .Bind( wx.EVT_BUTTON, self._on_click_continue )
 		self._cbx_confidence_levels.Bind( wx.EVT_COMBOBOX, self._on_confidence_changed )
-		self._tc_confidence_interval.Bind( wx.EVT_KILL_FOCUS, self._on_precision_changed )
+		self._cbx_confidence_interval.Bind( wx.EVT_COMBOBOX, self._on_precision_changed )
 		self._chk_toggle_cl_level.Bind( wx.EVT_CHECKBOX, self._on_click_change_unres_focus )
 		self._cbx_confidence_levels_unres.Bind( wx.EVT_COMBOBOX, self._on_confidence_changed_unres )
-		self._tc_confidence_interval_unres.Bind( wx.EVT_KILL_FOCUS, self._on_precision_changed_unres )
+		self._cbx_confidence_interval_unres.Bind( wx.EVT_COMBOBOX, self._on_precision_changed_unres )
 		self._btn_conf_back.Bind( wx.EVT_BUTTON, self._on_click_cl_goback )
 		self._btn_conf_next.Bind( wx.EVT_BUTTON, self._on_click_cl_next )
 		self._btn_clear_unres.Bind( wx.EVT_BUTTON, self._on_click_irrelevant_clear_tags )
