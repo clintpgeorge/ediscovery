@@ -31,6 +31,7 @@ class TaggingControlFeedback(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.InsertColumn(1, 'Document Name', width=450)
         self.InsertColumn(2, 'Relevant', wx.LIST_FORMAT_CENTRE, width=60)
 
+
         for row_id, fs in enumerate(sm._seed_docs_details):
             self.InsertStringItem(row_id, str(row_id + 1))
             self.SetStringItem(row_id, 1, str(fs[2]))

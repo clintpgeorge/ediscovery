@@ -39,10 +39,10 @@
             <property name="hidden">0</property>
             <property name="id">wxID_ANY</property>
             <property name="maximum_size"></property>
-            <property name="minimum_size">1100,768</property>
+            <property name="minimum_size">650,730</property>
             <property name="name">SMARTeRGUI</property>
             <property name="pos"></property>
-            <property name="size">1100,768</property>
+            <property name="size">1100,730</property>
             <property name="style">wxCAPTION|wxCLOSE_BOX|wxDEFAULT_FRAME_STYLE|wxFRAME_SHAPED|wxMAXIMIZE_BOX|wxMINIMIZE_BOX|wxRESIZE_BORDER|wxSYSTEM_MENU</property>
             <property name="subclass"></property>
             <property name="title">SMARTeR</property>
@@ -318,7 +318,7 @@
                         <object class="notebookpage" expanded="0">
                             <property name="bitmap"></property>
                             <property name="label">Index Data</property>
-                            <property name="select">1</property>
+                            <property name="select">0</property>
                             <object class="wxPanel" expanded="0">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
@@ -3570,7 +3570,7 @@
                                                                     <property name="aui_position"></property>
                                                                     <property name="aui_row"></property>
                                                                     <property name="best_size"></property>
-                                                                    <property name="bg"></property>
+                                                                    <property name="bg">wxSYS_COLOUR_HIGHLIGHT</property>
                                                                     <property name="caption"></property>
                                                                     <property name="caption_visible">1</property>
                                                                     <property name="center_pane">0</property>
@@ -4065,7 +4065,7 @@
                                                                     <property name="aui_position"></property>
                                                                     <property name="aui_row"></property>
                                                                     <property name="best_size"></property>
-                                                                    <property name="bg"></property>
+                                                                    <property name="bg">255,128,0</property>
                                                                     <property name="caption"></property>
                                                                     <property name="caption_visible">1</property>
                                                                     <property name="center_pane">0</property>
@@ -6587,7 +6587,7 @@
                         <object class="notebookpage" expanded="1">
                             <property name="bitmap"></property>
                             <property name="label">Sample Irrelevant</property>
-                            <property name="select">0</property>
+                            <property name="select">1</property>
                             <object class="wxPanel" expanded="1">
                                 <property name="BottomDockable">1</property>
                                 <property name="LeftDockable">1</property>
@@ -7088,7 +7088,7 @@
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
                                                             <property name="show">1</property>
-                                                            <property name="size">500,200</property>
+                                                            <property name="size">500,160</property>
                                                             <property name="subclass"></property>
                                                             <property name="toolbar_pane">0</property>
                                                             <property name="tooltip"></property>
@@ -8342,7 +8342,7 @@
                                                             <property name="pos"></property>
                                                             <property name="resize">Resizable</property>
                                                             <property name="show">1</property>
-                                                            <property name="size">500,200</property>
+                                                            <property name="size">500,160</property>
                                                             <property name="subclass"></property>
                                                             <property name="toolbar_pane">0</property>
                                                             <property name="tooltip"></property>
@@ -9763,7 +9763,7 @@
                                                                     <property name="gripper">0</property>
                                                                     <property name="hidden">0</property>
                                                                     <property name="id">wxID_ANY</property>
-                                                                    <property name="label">$ Number of Actual Relevant documents sampled as Relevant / Total Number of documents sampled as Relevant</property>
+                                                                    <property name="label">$ Number of documents sampled as Relevant that were Relevant/ Total Number of documents sampled as Relevant</property>
                                                                     <property name="max_size"></property>
                                                                     <property name="maximize_button">0</property>
                                                                     <property name="maximum_size"></property>
@@ -9846,7 +9846,7 @@
                                                                     <property name="gripper">0</property>
                                                                     <property name="hidden">0</property>
                                                                     <property name="id">wxID_ANY</property>
-                                                                    <property name="label">^ Number of Actual Non Relevant documents sampled as Non Relevant / Total Number of documents sampled as Non Relevant</property>
+                                                                    <property name="label">^ Number of documents sampled as Non Relevant that were  Non Relevant / Total Number of documents sampled as Non Relevant</property>
                                                                     <property name="max_size"></property>
                                                                     <property name="maximize_button">0</property>
                                                                     <property name="maximum_size"></property>

@@ -14,7 +14,7 @@ class TaggingControlSmarter(wx.ListCtrl, ListCtrlAutoWidthMixin):
     
     def __init__(self, parent, review_docs, rbx_feedback, tc_preview, panel_tagging, get_row_color):
         
-        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size(410, 250), style=wx.LC_REPORT|wx.SUNKEN_BORDER|wx.ALIGN_TOP)
+        wx.ListCtrl.__init__(self, parent , id = wx.ID_ANY, size = wx.Size(410, 160), style=wx.LC_REPORT|wx.SUNKEN_BORDER|wx.ALIGN_TOP)
         ListCtrlAutoWidthMixin.__init__(self)
         
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_review_list_item_selected)

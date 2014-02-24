@@ -21,9 +21,9 @@ _ = gettext.gettext
 class SMARTeRGUI ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = _(u"SMARTeR"), pos = wx.DefaultPosition, size = wx.Size( 1100,768 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.FRAME_SHAPED|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.SYSTEM_MENU|wx.TAB_TRAVERSAL, name = u"SMARTeR" )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = _(u"SMARTeR"), pos = wx.DefaultPosition, size = wx.Size( 1100,730 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_FRAME_STYLE|wx.FRAME_SHAPED|wx.MAXIMIZE_BOX|wx.MINIMIZE_BOX|wx.RESIZE_BORDER|wx.SYSTEM_MENU|wx.TAB_TRAVERSAL, name = u"SMARTeR" )
 		
-		self.SetSizeHintsSz( wx.Size( 1100,768 ), wx.DefaultSize )
+		self.SetSizeHintsSz( wx.Size( 650,730 ), wx.DefaultSize )
 		self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
 		
 		self._satusbar = self.CreateStatusBar( 1, wx.ST_SIZEGRIP, wx.ID_ANY )
@@ -104,7 +104,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		self._panel_index.SetSizer( bSizer5 )
 		self._panel_index.Layout()
-		self._notebook.AddPage( self._panel_index, _(u"Index Data"), True )
+		self._notebook.AddPage( self._panel_index, _(u"Index Data"), False )
 		self._panel_feedback = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer8 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -291,6 +291,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_Resp_documents = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Responsive Documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_Resp_documents.Wrap( -1 )
 		self._st_Resp_documents.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		self._st_Resp_documents.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
 		
 		gbSizer23.Add( self._st_Resp_documents, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -334,6 +335,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._st_unresp_documents = wx.StaticText( self._panel_query_results, wx.ID_ANY, _(u"Unresponsive Documents"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		self._st_unresp_documents.Wrap( -1 )
 		self._st_unresp_documents.SetFont( wx.Font( 8, 74, 90, 92, False, "Tahoma" ) )
+		self._st_unresp_documents.SetBackgroundColour( wx.Colour( 255, 128, 0 ) )
 		
 		gbSizer24.Add( self._st_unresp_documents, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL, 5 )
 		
@@ -563,7 +565,7 @@ class SMARTeRGUI ( wx.Frame ):
 		
 		_gbsizer_review_unresp.Add( self._btn_clear_unres, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_RIGHT|wx.ALIGN_TOP, 0 )
 		
-		self._panel_review_unres = wx.Panel( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,200 ), wx.TAB_TRAVERSAL )
+		self._panel_review_unres = wx.Panel( self._panel_review_unresp, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,160 ), wx.TAB_TRAVERSAL )
 		_gbsizer_review_unresp.Add( self._panel_review_unres, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._tc_preview_tags_unres = wx.TextCtrl( self._panel_review_unresp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,175 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )
@@ -615,7 +617,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._panel_review_unresp.SetSizer( _bsizer_review_unresp )
 		self._panel_review_unresp.Layout()
 		_bsizer_review_unresp.Fit( self._panel_review_unresp )
-		self._notebook.AddPage( self._panel_review_unresp, _(u"Sample Irrelevant"), False )
+		self._notebook.AddPage( self._panel_review_unresp, _(u"Sample Irrelevant"), True )
 		self._panel_review_resp = wx.Panel( self._notebook, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		_bsizer_review_resp = wx.BoxSizer( wx.VERTICAL )
 		
@@ -646,7 +648,7 @@ class SMARTeRGUI ( wx.Frame ):
 		self._btn_clear_res = wx.Button( self._panel_review_resp, wx.ID_ANY, _(u"Clear All Tags"), wx.DefaultPosition, wx.DefaultSize, 0 )
 		_gbsizer_review_res.Add( self._btn_clear_res, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALIGN_RIGHT|wx.ALL, 0 )
 		
-		self._panel_review_res = wx.Panel( self._panel_review_resp, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,200 ), wx.TAB_TRAVERSAL )
+		self._panel_review_res = wx.Panel( self._panel_review_resp, wx.ID_ANY, wx.DefaultPosition, wx.Size( 500,160 ), wx.TAB_TRAVERSAL )
 		_gbsizer_review_res.Add( self._panel_review_res, wx.GBPosition( 1, 0 ), wx.GBSpan( 2, 2 ), wx.EXPAND |wx.ALL, 5 )
 		
 		self._tc_preview_tags = wx.TextCtrl( self._panel_review_resp, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,175 ), wx.TE_MULTILINE|wx.TE_WORDWRAP )

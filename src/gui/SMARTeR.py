@@ -121,13 +121,15 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         
         self.ClearAll()
         #Remove this after Testing
-        columnHeaders = ['File Name','File Path','File Score']# MetadataType._types
+        columnHeaders = ['File Name','File Path',]# MetadataType._types
         columnNumber = 0
         #for c in columnHeaders:
         self.InsertColumn(columnNumber, columnHeaders[0])
+        self.SetColumnWidth(columnNumber,100)
         columnNumber = columnNumber + 1
         self.InsertColumn(columnNumber, "File Path")
-        self.InsertColumn(columnNumber + 1, "File Score")
+        self.SetColumnWidth(columnNumber,200)
+        #sself.InsertColumn(columnNumber + 1, "File Score")
         
         
     
@@ -171,8 +173,17 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
             self.SetStringItem(index, 0, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
             cell = str(doc_list[i][1])
             self.SetStringItem(index, 1, cell)
-            cell = str(doc_list[i][2])
-            self.SetStringItem(index, 2, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
+            #'not_reviewed':'#C8C8C8', 'uncertain':'#00FF33', 'relevant':'', 'irrelevant':''
+            if doc_list[i][3]=='Yes':
+                self.SetItemBackgroundColour(index,'#0066CC')
+            elif doc_list[i][3]=='No':
+                self.SetItemBackgroundColour(index,'#FF6600')
+            else:
+                self.SetItemBackgroundColour(index,'#C8C8C8s')
+            
+                
+            #cell = str(doc_list[i][2])
+            #self.SetStringItem(index, 2, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
             #cell = str("")
             #self.SetStringItem(index, 3, cell[:CHAR_LIMIT_IN_RESULTS_TAB_CELLS])
             i= i+1
@@ -269,7 +280,6 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         '''
         
         focussed_item_index = self.GetFocusedItem()
-        print self.GetItemText(focussed_item_index,3)
         
         responsive=self.GetItemText(focussed_item_index,3)
         if responsive == 'Yes':
@@ -308,7 +318,7 @@ class ResultsCheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMix
         """
         This method is used to sort the rows in the RESULTS ResultsCheckListCtrl
         """
-        self._populate_results(present_chunk)
+        #self._populate_results(present_chunk)
         
 
 
@@ -1661,10 +1671,10 @@ class SMARTeR (SMARTeRGUI):
             
             if svm_predicted_class == self.RESPONSIVE_CLASS_ID: # float(display_doc_details[3]) >= CUT_OFF_NORM:
                 self._responsive_files.append([doc_path, self.__is_relevant(self._doc_true_class_ids[doc_id]), "", doc_score, doc_id])
-                self._responsive_files_display.append([display_doc_details[2],display_doc_details[1],display_doc_details[3]])
+                self._responsive_files_display.append([display_doc_details[2],display_doc_details[1],display_doc_details[3],self.__is_relevant(self._doc_true_class_ids[doc_id])])
             else:
                 self._unresponsive_files.append([doc_path, self.__is_irrelevant(self._doc_true_class_ids[doc_id]), "", doc_score, doc_id])
-                self._unresponsive_files_display.append([display_doc_details[2],display_doc_details[1],display_doc_details[3]])
+                self._unresponsive_files_display.append([display_doc_details[2],display_doc_details[1],display_doc_details[3],self.__is_relevant(self._doc_true_class_ids[doc_id])])
                 
             if self.__is_relevant(self._doc_true_class_ids[doc_id]) =='Yes':
                 self.add_update_seedlist(doc_id, doc_path, os.path.basename(doc_path), 'Yes')
@@ -1676,7 +1686,8 @@ class SMARTeR (SMARTeRGUI):
 #            key += 1
         
         #------------------------------------------------------ Generate samples
-        
+        self._unresponsive_files_display=sorted(self._unresponsive_files_display,key=lambda  disp:float(disp[2]))
+        self._responsive_files_display  =sorted(  self._responsive_files_display,key=lambda  disp:float(disp[2]),reverse=True)
         
         seed_dict = dict()
         for seed in self._seed_docs_details:
@@ -2273,7 +2284,7 @@ class SMARTeR (SMARTeRGUI):
             tm_score = get_tm_score(fs_row[num_metadata_types], ts_results)
             fs_row[num_metadata_types + 1] = tm_score
             rows.append(fs_row) 
-            print fs_row
+            
         
         return rows 
         
