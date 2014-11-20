@@ -7,6 +7,7 @@ Created on Oct 22, 2013
 import os 
 import numpy as np 
 from utils.utils_file import read_config, load_file_paths_index
+from collections import defaultdict 
 
 RELEVANT_CLASS_ID = 0
 IRRELEVANT_CLASS_ID = 1
@@ -62,12 +63,9 @@ def get_KFold_train_test(class_ids, num_folds = 5):
     current = 0
     for fold_size in fold_sizes:
         start, stop = current, current + fold_size
-        # print fold_size, start, stop
-        # print random_indices[start:stop]
-        # print np.concatenate((random_indices[:start], random_indices[stop:]))
-        # print len(random_indices[start:stop])
-        
-        K_fold_indices.append((random_indices[start:stop], np.concatenate((random_indices[:start], random_indices[stop:]))))
+        K_fold_indices.append((random_indices[start:stop], 
+                               np.concatenate((random_indices[:start], 
+                                               random_indices[stop:]))))
         
         current = stop
         
@@ -77,23 +75,16 @@ def get_KFold_train_test(class_ids, num_folds = 5):
 
 def get_symm_KFold_train_test(class_ids, num_folds = 5):
     
-    from collections import defaultdict    
-    
-    class_dict = defaultdict(list)
+    class_indices = defaultdict(list)
     for i, class_id in enumerate(class_ids):
-        class_dict[class_id] += [i]
+        class_indices[class_id] += [i]
     
-    # print class_dict[0]
-    # print class_dict[1]
+    min_class_len = min([len(class_indices[class_id]) for class_id in class_indices.keys()]) 
     
-    
-    min_class_len = min([len(class_dict[class_id]) for class_id in class_dict.keys()]) 
-    
-    balanced_class_dict = defaultdict(list)
-    for key, values in class_dict.items():
-        balanced_class_dict[key] = np.random.permutation(values)[:min_class_len]
-    
-    
+    balanced_class_indices = defaultdict(list)
+    for key, values in class_indices.items():
+        balanced_class_indices[key] = np.random.permutation(values)[:min_class_len]
+
     K_fold_indices = []
     fold_sizes = (min_class_len // num_folds) * np.ones(num_folds, dtype=np.int)
     
@@ -101,18 +92,54 @@ def get_symm_KFold_train_test(class_ids, num_folds = 5):
     for fold_size in fold_sizes:
         start, stop = current, current + fold_size
 
-        test = []
-        train = []
-        for key, values in balanced_class_dict.items():
-            test += values[start:stop].tolist()
-            train += np.concatenate((values[:start], values[stop:])).tolist()
-
-        K_fold_indices.append((test, train))
+        test_fold = []
+        train_fold = []
+        for key, values in balanced_class_indices.items():
+            # print key, len(values[start:stop]), len(np.concatenate((values[:start], values[stop:])))
+            test_fold += values[start:stop]
+            train_fold += np.concatenate((values[:start], values[stop:])).tolist()
+        K_fold_indices.append((test_fold, train_fold))
+        #print test_fold, train_fold
 
         current = stop
   
     return K_fold_indices
     
     
+def get_stratified_KFold_train_test(class_ids, num_folds = 5):
+    
+    class_indices = defaultdict(list)
+    for i, class_id in enumerate(class_ids):
+        class_indices[class_id] += [i]
+    
+    fold_sizes = {}
+    class_doc_idx = {}  
+    for j, (_, values) in enumerate(class_indices.items()):
+        fold_sizes[j] = (len(values) // num_folds) * np.ones(num_folds, dtype=np.int)
+        class_doc_idx[j] = values  
+
+    folds_counts = []
+    for i in range(0, num_folds):
+        folds_counts.append([fold_sizes[j][i] for j in fold_sizes.keys()])
+
+    K_fold_indices = []      
+    current = np.zeros(len(fold_sizes)).astype(int)
+    
+    for fold_counts in folds_counts:
+        start, stop = current, current + fold_counts
+
+        test_fold = []
+        train_fold = []
+        for j, values in class_doc_idx.items():
+            # print key, len(values[start:stop]), len(np.concatenate((values[:start], values[stop:])))
+            test_fold += values[start[j]:stop[j]]
+            train_fold += np.concatenate((values[:start[j]], values[stop[j]:])).tolist()
+        K_fold_indices.append((test_fold, train_fold))
+        
+        # print len(test_fold), len(train_fold)
+
+        current = stop
+  
+    return K_fold_indices
 
 

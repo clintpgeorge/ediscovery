@@ -506,7 +506,7 @@ def eval_ranking_varying_topics(query_id, dir_path,
                                  limit = 1000, 
                                  img_extension  = '.eps'):
     
-    tm_query = ' '.join( lemmatize_tokens( regex_tokenizer(keywords)  ) ) # Lemmatization 
+    tm_query = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) ) # Lemmatization 
     lucene_query = 'all:(%s)' % tm_query # search in all fields 
     print 'Lucene query:', lucene_query
     print 'TM query:', tm_query
@@ -639,8 +639,6 @@ if __name__ == '__main__':
 #    test_directory = "F:\\Research\\datasets\\trec2010\\201"# the directory where we keep the training set (TRUE negatives and TRUE positives) 
 #    lucene_query = 'all:(pre-pay swap)'
 #    tm_query = 'pre-pay swap'
-#    
-#
 
 #    query_id = 202
 #    file_prefix = '%d-raw' % query_id
@@ -656,7 +654,6 @@ if __name__ == '__main__':
 #    test_directory = "F:\\Research\\datasets\\trec2010\\202" # the directory where we keep the training set (TRUE negatives and TRUE positives) 
 #    keywords = 'FAS transaction swap trust Transferor Transferee'
 #    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) ) # Lemmatization 
-
 #    
 #    query_id = 202
 #    file_prefix = '%d-LST' % query_id
@@ -675,7 +672,7 @@ if __name__ == '__main__':
     
    
     # ---------------------------------------------------------------------------------------------------------------  
-    # Evaluates differnent Ranking models using 
+    # Evaluates different Ranking models using 
     # RAW (UNT), LEMMATIZED (LT), LEMMATIZED and STEMMED (LST) 
     # word tokens   
     

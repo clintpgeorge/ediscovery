@@ -7,6 +7,7 @@ based on LDA and pyLucene
 Created by: Clint P. George and Abhiram J. 
 Created on: Jan 28, 2013 
 
+@deprecated: July 15, 2014 
 '''
 import os
 import datetime

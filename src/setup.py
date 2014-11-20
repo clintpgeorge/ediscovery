@@ -1,3 +1,7 @@
+'''
+@deprecated: July 15, 2014    
+
+'''
 import os
 import csv
 import shutil

@@ -1,3 +1,7 @@
+'''
+@deprecated: July 15, 2014 
+'''
+
 from distutils.core import setup
 import py2exe
 

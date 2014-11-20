@@ -79,6 +79,19 @@ def find_files_in_folder(input_dir):
     return file_list
 
 
+def get_file_type(file_path, file_name):
+    '''This is a very crude way to determine the file type of a file. This 
+    works only with the Enron edrmv2txt-v2 data set  
+    
+    http://trec-legal.umiacs.umd.edu/corpora/trec/legal10/
+    
+    '''
+    parts = file_name.strip().split(".")
+    if len(parts) == 4:
+        return "E" # email 
+    else: 
+        return "A" # attachment 
+
 def get_file_paths_index(input_dir):
     '''
     Recursive descent to find files in folder.
@@ -94,7 +107,8 @@ def get_file_paths_index(input_dir):
     
     for root, _, files in os.walk(input_dir):
         for file_name in files:
-            file_path_tuples.append((idx, root, file_name))
+            file_type = get_file_type(root, file_name)
+            file_path_tuples.append((idx, root, file_name, file_type))
             idx += 1
     
     return file_path_tuples
@@ -113,9 +127,9 @@ def store_file_paths_index(index_file, file_path_tuples):
     ''' 
     with open(index_file, 'w') as fw:
         for ft in file_path_tuples: 
-            (idx, root, file_name) = ft
-            
-            fw.write(str(idx)+";"+str(root)+";"+str(file_name)+"\n")
+            # (idx, root, file_name, file_type) = ft
+            print >>fw, "%d;%s;%s;%s" % ft
+            # fw.write(str(idx)+";"+str(root)+";"+str(file_name)+";"+str(file_type)+"\n")
 
 
 def load_file_paths_index(index_file):
@@ -132,8 +146,9 @@ def load_file_paths_index(index_file):
     
     with open(index_file) as fp:
         for line in fp: 
-            (idx, root, file_name) = line.strip().split(";") # ";"
-            file_path_tuples.append((int(idx), os.path.normpath(root), file_name))
+            (idx, root, file_name, file_type) = line.strip().split(";") # ";"
+            file_path_tuples.append((int(idx), os.path.normpath(root), 
+                                     file_name, file_type))
     
     return file_path_tuples
 

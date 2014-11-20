@@ -3,7 +3,7 @@ Created on Feb 5, 2014
 
 @author: Clint
 '''
-
+import time 
 from index_data import index_data 
 
 
@@ -15,11 +15,17 @@ from index_data import index_data
 
 data_folder = "E:\\E-Discovery\\trec2010dataset"
 output_folder = "E:\\E-Discovery\\trec2010index"
-query_ids = [202] # [201, 207]
-topic_counts = [5, 10, 15, 20, 30, 40, 50, 60, 70, 80]
-num_passes = 300
+query_ids = [201]
+topic_counts = [5] # , 10, 15, 20, 30, 40, 50, 60, 70, 80
+num_passes = 200
+
 #########################################################
 
+
+print "Indexing documents...."
+
+start_time = time.time()
+    
 for query_id in query_ids:
     
     query_data_folder = "%s\\%d" % (data_folder, query_id)
@@ -58,4 +64,4 @@ for query_id in query_ids:
                    lemmatize=False, 
                    stem=False)
         
-        
+print '\nIndexing time:', time.time() - start_time, 'seconds'        

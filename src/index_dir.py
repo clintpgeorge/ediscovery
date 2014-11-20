@@ -6,6 +6,8 @@ in a given folder using the Lucene index.
 
 Created On: Feb 28, 2013
 @author: Clint P. George 
+
+@deprecated: July 15, 2014 
 '''
 
 import os 

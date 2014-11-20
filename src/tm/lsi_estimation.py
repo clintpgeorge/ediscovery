@@ -14,6 +14,17 @@ Created By: Clint P. George
 import numpy as np
 import gensim
 
+def run_tfidf(dictionary_file, ldac_file, tfidf_file):
+    
+    corpus = gensim.corpora.BleiCorpus(ldac_file)    
+    tfidf = gensim.models.TfidfModel(corpus) 
+    corpus_tfidf = tfidf[corpus]
+
+    with open(tfidf_file, 'w') as fw:
+        for doc_tfidf in corpus_tfidf:
+            print >>fw, doc_tfidf        
+
+    
 
 def run_lsi_estimation(dictionary_file, ldac_file, lsi_mdl_file, lsi_beta_file, lsi_theta_file, lsi_index_file, num_topics):
     '''The main function that does the LSI estimation 

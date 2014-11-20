@@ -16,8 +16,7 @@ import ConfigParser
 
 from lucenesearch.lucene_index_dir import index_plain_text_emails
 from preprocess.lucene_enron_create_corpus import build_lda_corpus
-from tm.lda_estimation import run_lda_estimation 
-from tm.lsi_estimation import run_lsi_estimation
+from topicmodels import run_tfidf, run_lda_estimation
 
 LUCENE_FOLDER_NAME = 'lucene'
 TM_FOLDER_NAME = 'tm' 
@@ -27,7 +26,6 @@ MIN_TOKEN_LEN = 2
 DEFAULT_NUM_TOPICS = 30
 DEFAULT_NUM_PASSES = 100
 LSI_DEFAULT_NUM_TOPICS = 200
-
 
 
 
@@ -53,9 +51,12 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
     log_file_name = '%s.log' % os.path.join(project_folder, project_name)
 
     if log_to_file: 
-        logging.basicConfig(filename=log_file_name, format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
+        logging.basicConfig(filename=log_file_name, 
+                            format='%(asctime)s : %(levelname)s : %(message)s', 
+                            level=logging.DEBUG)
     else: 
-        logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
+        logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', 
+                            level=logging.DEBUG)
 
     
     # Handling the project configuration file 
@@ -82,7 +83,8 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
     if not os.path.exists(lucene_folder): os.makedirs(lucene_folder)
     path_index_file_name = os.path.join(project_folder, project_name + '.path.index')
     
-    index_plain_text_emails(data_folder, path_index_file_name, lucene_folder, lemmatize=lemmatize, stem=stem, nonascii=nonascii)
+    index_plain_text_emails(data_folder, path_index_file_name, lucene_folder, 
+                            lemmatize=lemmatize, stem=stem, nonascii=nonascii)
     
     config.add_section('LUCENE')
     config.set('LUCENE', 'lucene_index_dir', os.path.normpath(lucene_folder))
@@ -92,13 +94,19 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
 
     logging.info('================================================== BEGIN CORPUS BUILDING ==================================================')
 
+    '''
+    Consider all elements in emails for creating the LDA corpus, 
+    i.e., it uses the MetaDataType.ALL field in the Lucene index 
+    '''
+    
     tm_folder = os.path.join(project_folder, TM_FOLDER_NAME)
     if not os.path.exists(tm_folder): os.makedirs(tm_folder)
     dict_file = os.path.join(tm_folder, project_name + '.dict')
     ldac_file = os.path.join(tm_folder, project_name + '.ldac')
     path_index_file_name = os.path.join(tm_folder, project_name + '.path.index') # it's for topic modeling alone 
     
-    build_lda_corpus(lucene_folder, path_index_file_name, STOP_WORDS_FILE_NAME, dict_file, ldac_file, min_token_freq, min_token_len)
+    build_lda_corpus(lucene_folder, path_index_file_name, dict_file, ldac_file, 
+                     min_token_freq, min_token_len)
     
     config.add_section('CORPUS')
     config.set('CORPUS', 'tm_folder', os.path.normpath(tm_folder))
@@ -119,7 +127,8 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
     lda_theta_file = os.path.join(tm_folder, project_name + '.lda.theta')
     lda_cos_index_file = os.path.join(tm_folder, project_name + '.lda.cos.index')
     
-    run_lda_estimation(dict_file, ldac_file, lda_model_file, lda_beta_file, lda_theta_file, lda_cos_index_file, num_topics, num_passes)
+    run_lda_estimation(dict_file, ldac_file, lda_model_file, lda_beta_file, 
+                       lda_theta_file, lda_cos_index_file, num_topics, num_passes)
     
     # run_hdp_estimation(dict_file, ldac_file, lda_model_file, lda_beta_file, lda_theta_file, lda_cos_index_file)
     
@@ -135,30 +144,44 @@ def index_data(data_folder, output_folder, project_name, cfg_folder,
     
     
     
-    logging.info('================================================== BEGIN LSI ESTIMATION ==================================================')
-    
-    # Commented LSI due to an error from python interpreter on Feb 04, 2014
-
+#     logging.info('================================================== BEGIN LSI ESTIMATION ==================================================')
+#     
+#     # Commented LSI due to an error from python interpreter on Feb 04, 2014
+#  
 #     lsi_model_file = os.path.join(tm_folder, project_name + '.lsi')
 #     lsi_beta_file = os.path.join(tm_folder, project_name + '.lsi.beta')
 #     lsi_theta_file = os.path.join(tm_folder, project_name + '.lsi.theta')
 #     lsi_cos_index_file = os.path.join(tm_folder, project_name + '.lsi.cos.index')
 #     # 
-#     
+#       
 #     run_lsi_estimation(dict_file, ldac_file, lsi_model_file, lsi_beta_file, lsi_theta_file, lsi_cos_index_file, LSI_DEFAULT_NUM_TOPICS)
-# 
+#   
 #     config.add_section('TFIDF')
 #     config.set('TFIDF', 'tfidf_file', lsi_theta_file.replace('lsi', 'tfidf'))
-#         
+#           
 #     config.add_section('LSI')
 #     config.set('LSI', 'lsi_model_file', lsi_model_file)
 #     config.set('LSI', 'lsi_beta_file', lsi_beta_file)
 #     config.set('LSI', 'lsi_theta_file', lsi_theta_file)
 #     config.set('LSI', 'lsi_cos_index_file', lsi_cos_index_file)
 #     config.set('LSI', 'lsi_num_topics', str(LSI_DEFAULT_NUM_TOPICS))
+# 
+#     
+#     logging.info('================================================== END LSI ESTIMATION ==================================================')    
+
+    logging.info('================================================== BEGIN TFIDF ==================================================')
+
+    tfidf_theta_file = os.path.join(tm_folder, project_name + '.tfidf.theta')
+    run_tfidf(dict_file, ldac_file, tfidf_theta_file)
+ 
+    config.add_section('TFIDF')
+    config.set('TFIDF', 'tfidf_file', tfidf_theta_file)
+
 
     
-    logging.info('================================================== END LSI ESTIMATION ==================================================')    
+    logging.info('================================================== END TFIDF ==================================================')    
+
+
     
     
     # Writing our configuration file to 'project.cfg'

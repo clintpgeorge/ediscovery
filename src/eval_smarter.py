@@ -1,34 +1,56 @@
 '''
-Created on Nov 21, 2013
+This script is created to test the end-to-end working 
+of the SMARTeR GUI interface. This uses the Lucene 
+indices and topic models such as TFIDF, LSI, and LDA 
+which are created using the script index_trec2010_data.py. 
+This script can generate plots of several metrics 
+varying the number seeds used for classification (
+fixing the number of topics) and varying the number 
+of topics used for topic modeling (fixing the number 
+of seeds)   
+
+Created on: Nov 21, 2013
+Last modified on: Feb 20, 2014  
 
 @author: Clint
 '''
+
+
+print __doc__
+
 import os 
 import numpy as np 
-import random 
 import pandas as pd
 import math 
-import heapq
 import matplotlib.pyplot as plt
 
-from operator import itemgetter
 from scipy.cluster.vq import kmeans, vq, whiten
 from collections import Counter, defaultdict
 from libsvm.python.svmutil import svm_problem, svm_parameter, svm_train, svm_predict
-from libsvm.tools.grid import find_parameters
+# from libsvm.tools.grid import find_parameters
 
 from utils.utils_file import read_config, load_file_paths_index, nexists
 from utils.utils_email import lemmatize_tokens, stem_tokens, regex_tokenizer, whitespace_tokenize 
 from tm.process_query import load_lda_variables, load_dictionary, load_lsi_variables, get_dominant_query_topics
 from lucenesearch.lucene_index_dir import boolean_search_lucene_index, get_doc_details
-from eval_tm_svm import save_tm_svm_data
-from PCA import PCA, Center 
+# from eval_tm_svm import save_tm_svm_data
+# from PCA import PCA, Center 
 from PyROC.pyroc import ROCData, plot_multiple_roc
-
 from matplotlib.font_manager import FontProperties
 
+from eval_tm_svm import find_optimal_RBF_C_gamma, eval_SVC_classifier
+from sklearn.metrics import roc_curve, auc
+from sklearn import svm
+
 SEED = 1983 
+score_names = ['Accuracy', 'Precision', 'Recall', 'AUC'] 
+line_styles = ['ro-', 'kx-', 'c^-', 'gv-', 'bd-', 'y+-'] # for each model 
+
+
+
 np.random.seed(seed=SEED)
+
+
 
 
 class SMARTeRTest: 
@@ -40,23 +62,30 @@ class SMARTeRTest:
         self.RESPONSIVE_CLASS_ID = 1
         self.UNRESPONSIVE_CLASS_ID = -1
         self.TOP_K_TOPICS = 5 
+        self._has_tfidf = False 
+        self._has_lsi = False
+        self._has_lda = False  
         
         self._doc_true_class_ids = {}
         
         self.__load_model(model_cfg_file)
         
-        # To find high entropy topics 
-        self._topic_entropy = [-sum((p * math.log(p)) 
-                                    for p in self._lda_theta[:, topic_idx] if p > 0.) 
-                                        for topic_idx in range(0, self._lda_num_topics)] 
-
-        print 'Entropy of topics:',
-        print sorted(enumerate(self._topic_entropy), key=lambda x: -x[1])
-        print
+        '''
+        To find high entropy topics
+        '''
          
+#         self._topic_entropy = [-sum((p * math.log(p)) 
+#                                     for p in self._lda_theta[:, topic_idx] if p > 0.) 
+#                                         for topic_idx in range(0, self._lda_num_topics)] 
+# 
+#         print 'Entropy of topics:',
+#         print sorted(enumerate(self._topic_entropy), key=lambda x: -x[1])
+#         print
          
-        # Do PCA on LDA theta matrix 
-        self._pc_fraction = .95 # get principal components that account for 90 % of the total variance 
+        ''' 
+        Do PCA on the LDA theta matrix 
+        '''
+        # self._pc_fraction = .95 # get principal components that account for 90 % of the total variance 
         # X = np.copy(self._lda_theta)
         # Center(X, axis=0, scale=False, verbose=0) # Center data 
         # p = PCA(X, fraction=fraction)
@@ -71,14 +100,14 @@ class SMARTeRTest:
         # print p.eigen  
         # print
         
-        from numpy import linalg as LA
-        cv_matrix = np.cov(self._lda_theta)
-        eigen_values, _ = LA.eig(cv_matrix)
-        sort_index = np.argsort(eigen_values)[::-1]
-        eigen_values = eigen_values[sort_index]
-        sum_variance = np.cumsum(eigen_values) # do cumulative sum 
-        sum_variance /= sum_variance[-1] # divide the total of all elements 
-        self._theta_npc = np.searchsorted( sum_variance, self._pc_fraction, side='right' ) 
+#         from numpy import linalg as LA
+#         cv_matrix = np.cov(self._lda_theta)
+#         eigen_values, _ = LA.eig(cv_matrix)
+#         sort_index = np.argsort(eigen_values)[::-1]
+#         eigen_values = eigen_values[sort_index]
+#         sum_variance = np.cumsum(eigen_values) # do cumulative sum 
+#         sum_variance /= sum_variance[-1] # divide the total of all elements 
+#         self._theta_npc = np.searchsorted( sum_variance, self._pc_fraction, side='right' ) 
         
     def __load_model(self, model_cfg_file):
         '''
@@ -100,10 +129,7 @@ class SMARTeRTest:
         lda_cos_index_file = self._mdl_cfg['LDA']['lda_cos_index_file']
         lda_num_topics = self._mdl_cfg['LDA']['num_topics']
         lda_theta_file = self._mdl_cfg['LDA']['lda_theta_file']
-        lsi_mdl_file = self._mdl_cfg['LSI']['lsi_model_file']
-        lsi_cos_index_file = self._mdl_cfg['LSI']['lsi_cos_index_file']
-        lsi_theta_file = self._mdl_cfg['LSI']['lsi_theta_file']
-        tfidf_file = self._mdl_cfg['TFIDF']['tfidf_file']
+        
 
         # Loads learned topic models and file details 
         if nexists(dictionary_file) and nexists(path_index_file):
@@ -115,14 +141,15 @@ class SMARTeRTest:
                 
             
             # Loads documents' TRUE classes
-            # TODO: hard coding for the TRUTH data. This needs to be removed from the final version 
-            if os.path.exists(os.path.join(self._data_dir_path, "1")):
-                positive_dir = os.path.normpath(os.path.join(self._data_dir_path, "1")) # TRUE positive documents  
+
+            if os.path.exists(os.path.join(self._data_dir_path, RELEVANT_DIR_NAME)):
+                positive_dir = os.path.normpath(os.path.join(self._data_dir_path, RELEVANT_DIR_NAME)) # TRUE positive documents  
                 for doc_id, dirname, _ in self._corpus_doc_paths:
                     if dirname == positive_dir:
                         self._doc_true_class_ids[doc_id] = self.RESPONSIVE_CLASS_ID 
                     else: 
                         self._doc_true_class_ids[doc_id] = self.UNRESPONSIVE_CLASS_ID
+                        
             else: 
                 for doc_id, _, _ in self._corpus_doc_paths:
                     self._doc_true_class_ids[doc_id] = self.NOTREVIEWED_CLASS_ID
@@ -132,30 +159,41 @@ class SMARTeRTest:
             if nexists(lda_mdl_file) and nexists(lda_cos_index_file): 
                 self._lda_mdl, self._lda_index = load_lda_variables(lda_mdl_file, lda_cos_index_file)
                 self._lda_num_topics = int(lda_num_topics)
-                self._is_tm_index_available = True 
+                self._has_lda = True 
                 self._lda_theta = np.loadtxt(lda_theta_file) # loads the LDA theta from the model theta file 
                 # print 'LDA: number of documents: ', self._num_corpus_docs, ' number of topics: ', self._lda_num_topics  
                     
             # loads LSI model details 
-            if nexists(lsi_mdl_file) and nexists(lsi_cos_index_file):
-                self.lsi_mdl, self.lsi_index = load_lsi_variables(lsi_mdl_file, lsi_cos_index_file)
-                self._is_tm_index_available = True  
-                self._lsi_theta = np.loadtxt(lsi_theta_file) # loads the LSI theta from the model theta file 
-                lsi_num_docs, self._lsi_num_topics = self._lsi_theta.shape 
-                # print 'LSI: number of documents: ', lsi_num_docs, ' number of topics: ', self._lsi_num_topics   
+            
+            if 'LSI' in self._mdl_cfg:
+            
+                lsi_mdl_file = self._mdl_cfg['LSI']['lsi_model_file']
+                lsi_cos_index_file = self._mdl_cfg['LSI']['lsi_cos_index_file']
+                lsi_theta_file = self._mdl_cfg['LSI']['lsi_theta_file']
                 
-                # Loads the TFIDF file 
+                if nexists(lsi_mdl_file) and nexists(lsi_cos_index_file):
+                    self.lsi_mdl, self.lsi_index = load_lsi_variables(lsi_mdl_file, lsi_cos_index_file)
+                    self._has_lsi = True  
+                    self._lsi_theta = np.loadtxt(lsi_theta_file) # loads the LSI theta from the model theta file 
+                    _, self._lsi_num_topics = self._lsi_theta.shape 
+                
+            # Loads the TFIDF file     
+            if 'TFIDF' in self._mdl_cfg:
+                
+                tfidf_file = self._mdl_cfg['TFIDF']['tfidf_file']
+                
                 self._doc_tfidf = []
                 with open(tfidf_file) as fp:
                     for line in fp:
                         self._doc_tfidf.append(eval(line))
-                # print 'TFIDF is loaded.'                    
+                        
+                self._has_tfidf = True
 
         # Loads Lucene index files 
         self._lucene_index_dir_path = self._mdl_cfg['LUCENE']['lucene_index_dir']
-        self._is_lucene_index_available = nexists(self._lucene_index_dir_path)  
+        self._is_lucene_index_available = nexists(self._lucene_index_dir_path)
         
-        print 
+        print
 
     def __search_tm_topics(self, sel_topic_idx, limit):   
         '''
@@ -267,7 +305,8 @@ class SMARTeRTest:
         # K-means clustering on the LDA theta 
         
         if np.isnan(np.min(self._lda_theta)):
-            print "Cannot perform k-means because one of the elements of the document THETA matrix is NAN."
+            print """Cannot perform k-means because one of 
+                     the elements of the document THETA matrix is NAN."""
             exit()
         
         whitened = whiten(self._lda_theta + 1e-15)
@@ -291,9 +330,9 @@ class SMARTeRTest:
             cluster_sample_size = min(math.ceil(cluster_prop * float(req_num_seeds)), cluster_count)
             seed_doc_ids += cluster_docs_dict[cluster_id][0:int(cluster_sample_size)]
 
-        print 
-        print 'k-Means proportional sampling, seed count:', len(seed_doc_ids)
-        print 
+#         print 
+#         print 'k-Means proportional sampling, seed count:', len(seed_doc_ids)
+#         print 
         
         return seed_doc_ids
 
@@ -302,15 +341,22 @@ class SMARTeRTest:
 
 
     def _smart_classify(self, lucene_query, topic_query, 
-                        SVM_C=32, SVM_g=0.5, 
                         num_seeds=100, 
                         include_lda_lucene=True,
-                        include_lda=True, 
+                        include_lda=False, 
                         include_lsi=False):
         """
         Actions to be done when the "Run Query" button is clicked
 
         """
+        
+        print "_smart_classify(seeds:", num_seeds, ")" 
+        
+        # default values 
+        
+        SVM_C=32 
+        SVM_g=0.5 
+        
         
         def eval_prediction(doc_prediction):
             '''
@@ -321,57 +367,152 @@ class SMARTeRTest:
             true_negatives = 0
             false_positives = 0
             false_negatives = 0 
+            true_class_ids = []
+            pred_probs = []
             
             for doc in doc_prediction:
-                doc_id, predicted_cls, _ = doc
+                doc_id, predicted_cls, pred_prob = doc
                 true_cls = self._doc_true_class_ids[doc_id]
+                true_class_ids.append(true_cls)
+                pred_probs.append(pred_prob) 
                 
                 if predicted_cls == self.RESPONSIVE_CLASS_ID: 
-                    if predicted_cls == true_cls: true_positives += 1
-                    else: false_positives += 1
+                    if predicted_cls == true_cls: 
+                        true_positives += 1
+                    else: 
+                        false_positives += 1
                 elif predicted_cls == self.UNRESPONSIVE_CLASS_ID:
-                    if predicted_cls == true_cls: true_negatives += 1
-                    else: false_negatives += 1
+                    if predicted_cls == true_cls: 
+                        true_negatives += 1
+                    else: 
+                        false_negatives += 1
+                        
+            fpr, tpr, _ = roc_curve(true_class_ids, pred_probs)
+            roc_auc = auc(fpr, tpr) * 100.
                     
-            accuracy = (true_positives + true_negatives) * 100.0 / (true_positives + true_negatives + false_positives + false_negatives)
+            accuracy = ((true_positives + true_negatives) * 100.0 / 
+                        (true_positives + true_negatives + false_positives + false_negatives))
             
-            if (true_positives + false_positives) == 0: precision = -1
-            else: precision = true_positives * 100.0 / (true_positives + false_positives)
+            if (true_positives + false_positives) == 0: 
+                precision = -1
+            else: 
+                precision = true_positives * 100.0 / (true_positives + false_positives)
             
-            if (true_positives + false_negatives) == 0: recall = -1 
-            else: recall = true_positives * 100.0 / (true_positives + false_negatives)
+            if (true_positives + false_negatives) == 0: 
+                recall = -1 
+            else: 
+                recall = true_positives * 100.0 / (true_positives + false_negatives)
             
-            return {'TP':true_positives, 'TN':true_negatives, 'FP':false_positives, 'FN':false_negatives, 'Accuracy':accuracy, 'Recall':recall, 'Precision':precision}
+            # print true_positives, true_negatives, false_positives, false_negatives, roc_auc
+            
+            return {'TP':true_positives, 'TN':true_negatives, 
+                    'FP':false_positives, 'FN':false_negatives, 
+                    'Accuracy':accuracy, 'Recall':recall, 
+                    'Precision':precision, 'AUC':roc_auc}
 
         def svm_pred(features, seed_docs, SVM_C, SVM_g):
-
+ 
             seed_docs_theta = [features[doc_id] for doc_id in seed_docs] 
             seed_docs_cls = [self._doc_true_class_ids[doc_id] for doc_id in seed_docs] 
-            
-            
+             
+             
             # SVM train 
-
+ 
             train_prob  = svm_problem(seed_docs_cls, seed_docs_theta)
             train_param = svm_parameter('-t 2 -c 0 -b 1 -c %f -g %f -q' % (SVM_C, SVM_g))
             seed_docs_svm_mdl = svm_train(train_prob, train_param)
-            
+             
             # SVM prediction for all the documents in the results 
-            
+             
             svm_labels, _, svm_decision_values = svm_predict([0]*self._num_corpus_docs, 
                                                              features, seed_docs_svm_mdl, 
                                                              '-b 0 -q')
             svm_prediction = [[doc_id, svm_label, svm_decision_values[doc_id][0]] 
                               for doc_id, svm_label in enumerate(svm_labels)] # [doc_id, lucene_cls, lucene_score]
-
+ 
             return svm_prediction
         
+
+        def svm_pred2(features, seed_docs):
+            '''
+            The SVM prediction is based sklearn toolkit
+            
+            '''
+            
+            
+            # Creates the training set 
+            
+            seed_docs_theta = np.array([features[doc_id] for doc_id in seed_docs])
+            seed_docs_cls = np.array([self._doc_true_class_ids[doc_id] for doc_id in seed_docs])
+            
+            # Parameter Grid search
+            # Train the optimal classifier using seeds 
+            
+            try: 
+                ret = find_optimal_RBF_C_gamma(seed_docs_theta, 
+                                               seed_docs_cls, 
+                                               random_state=SEED)
+                print "SVM:", ret
+                train_param = svm_parameter('-t 2 -s 0 -b 1 -c %f -g %f -q' % (ret['C'], ret['gamma']))
+#                 classifier = svm.SVC(kernel='rbf', probability=True, 
+#                                      random_state=SEED, 
+#                                      C=ret['C'], gamma=ret['gamma'])
+            except: 
+                # use the default one 
+                print "SVM: {'C':32, 'gamma':0.5}"
+                train_param = svm_parameter('-t 2 -s 0 -b 1 -c %f -g %f -q' % (SVM_C, SVM_g))
+#                 classifier = svm.SVC(kernel='rbf', probability=True, 
+#                                      random_state=SEED, 
+#                                      C=SVM_C, gamma=SVM_g)
+            
+            
+#             cf = classifier.fit(seed_docs_theta, seed_docs_cls)
+# 
+#             # Test it using the whole population 
+#             
+#             # Compute probabilities of possible outcomes for samples in X.
+#             X_test = np.array(features)
+#             pred_prob = cf.predict_proba(X_test) 
+#             pred_labels = cf.predict(X_test)
+            
+
+            
+#             y_test = np.array([self._doc_true_class_ids[doc_id] for 
+#                                doc_id in range(0, self._num_corpus_docs)]) 
+#             
+#             eval_SVC_classifier(seed_docs_theta, X_test, 
+#                                 seed_docs_cls, y_test, cf)
+#             
+#             svm_prediction = [[doc_id, pred_labels[0], prob[1]] 
+#                               for doc_id, prob in enumerate(pred_prob)] # [doc_id, lucene_cls, lucene_score]
+
+
+            # SVM train 
+ 
+            train_prob  = svm_problem([self._doc_true_class_ids[doc_id] for doc_id in seed_docs], [features[doc_id] for doc_id in seed_docs])            
+            seed_docs_svm_mdl = svm_train(train_prob, train_param)
+             
+            # SVM prediction for all the documents in the results 
+             
+            svm_labels, _, svm_decision_values = svm_predict([0]*self._num_corpus_docs, 
+                                                             features, seed_docs_svm_mdl, 
+                                                             '-b 1 -q')
+            svm_prediction = [[doc_id, svm_label, svm_decision_values[doc_id][0]] 
+                              for doc_id, svm_label in enumerate(svm_labels)] # [doc_id, lucene_cls, lucene_score]
+
+            return svm_prediction
+
+
         
         # Document Lucene and topic modeling-based ranking
         
         # dominant_topics = get_dominant_query_topics(topic_query, self._dictionary, self._lda_mdl, self.TOP_K_TOPICS)
         # dominant_topics_idx = [idx for (idx, _) in dominant_topics] # gets the topic indices
         
-        lucene_search_results = boolean_search_lucene_index(self._lucene_index_dir_path, lucene_query, self._num_corpus_docs) # lucene search 
+        
+        
+        lucene_search_results = boolean_search_lucene_index(self._lucene_index_dir_path, 
+                                                            lucene_query, self._num_corpus_docs) # lucene search 
         # lda_search_results = self.__search_tm_topics(dominant_topics_idx, self._num_documents) # returns [doc_id, doc_path, doc_name, doc_score] 
             
         self._lucene_score_dict = dict((int(doc[9]), doc[10]) for doc in lucene_search_results)
@@ -382,88 +523,110 @@ class SMARTeRTest:
         for doc_details in self._corpus_doc_paths:
             doc_id, _, _ = doc_details
             if doc_id in self._lucene_score_dict:
-                self._lucene_prediction.append([doc_id, self.RESPONSIVE_CLASS_ID, self._lucene_score_dict[doc_id]]) 
+                self._lucene_prediction.append([doc_id, self.RESPONSIVE_CLASS_ID, 
+                                                self._lucene_score_dict[doc_id]]) 
             else: 
-                self._lucene_prediction.append([doc_id, self.UNRESPONSIVE_CLASS_ID, min_lucene_score * 1e-15]) 
+                self._lucene_prediction.append([doc_id, self.UNRESPONSIVE_CLASS_ID, 
+                                                min_lucene_score * 1e-15]) 
             
-        lucene_results = eval_prediction(self._lucene_prediction)
-        eval_results = {'LS':lucene_results}
+
 
         kmeans_seed_docs = self.__seed_docs_Kmeans_proportional_selection(num_seeds) 
         random_seed_docs = self.__seed_docs_random_selection(num_seeds) 
         
+        print "k-Means seeds:", len(kmeans_seed_docs), "random seeds:", len(random_seed_docs)
+
+
+        lucene_results = eval_prediction(self._lucene_prediction)
+        eval_results = {'LS':lucene_results}
+        
+        
         if include_lda_lucene:
 
-            # Query term Boosting 
-
-            query_vec = self._dictionary.doc2bow(whitespace_tokenize(topic_query)) # converts into the corpus format 
-            query_terms_id = [vocab_id for vocab_id, _ in query_vec] # identify keywords' vocabulary ids  
-            query_terms_tfidfs = []
-            for doc_tfidf in self._doc_tfidf:
-                tfidf_dict = dict(doc_tfidf) 
-                terms_tfidf = []
-                for vocab_id in query_terms_id:
-                    if vocab_id in tfidf_dict:
-                        terms_tfidf.append(tfidf_dict[vocab_id] * 1e+2)
-                    else: 
-                        terms_tfidf.append(.0)
-                query_terms_tfidfs.append(terms_tfidf)
+            if self._has_tfidf:
+                # Query term Boosting 
+                # Features are LDA topics, Lucene search score, and query TF-IDFs      
+                
+                query_vec = self._dictionary.doc2bow(whitespace_tokenize(topic_query)) # converts into the corpus format 
+                query_terms_id = [vocab_id for vocab_id, _ in query_vec] # identify keywords' vocabulary ids  
+                query_terms_tfidfs = []
+                for doc_tfidf in self._doc_tfidf:
+                    tfidf_dict = dict(doc_tfidf) 
+                    terms_tfidf = []
+                    for vocab_id in query_terms_id:
+                        if vocab_id in tfidf_dict:
+                            terms_tfidf.append(tfidf_dict[vocab_id] * 1e+2)
+                        else: 
+                            terms_tfidf.append(.0)
+                    query_terms_tfidfs.append(terms_tfidf)
+        
+                        
+                 
+                corpus_docs_features = [(theta_d + [self._lucene_prediction[doc_id][2]] 
+                                         + query_terms_tfidfs[doc_id]) 
+                                        for doc_id, theta_d in enumerate(self._lda_theta.tolist())]  
     
-            # Include the Lucene scores as the last element  
-            # This improves the accuracy by 7% on TREC2010:Query-201 
-           
-            # corpus_docs_features = [(theta_d + [self._lucene_prediction[doc_id][2]]) for doc_id, theta_d in enumerate((self._lda_theta + 1e-24).tolist())]                
-            
-            # corpus_docs_features = whiten(corpus_docs_features).tolist()
-                    
-            # Features are LDA topics, Lucene search score, and query TF-IDFs       
-            corpus_docs_features = [(theta_d + [self._lucene_prediction[doc_id][2]] + query_terms_tfidfs[doc_id]) 
-                                    for doc_id, theta_d in enumerate(self._lda_theta.tolist())]  
-    
-            
+            else: 
+                # Include the Lucene scores as the last element  
+                # This improves the accuracy by 7% on TREC2010:Query-201
+                corpus_docs_features = [(theta_d + [self._lucene_prediction[doc_id][2]]) 
+                                        for doc_id, theta_d in enumerate((self._lda_theta).tolist())]                
+                
             
             # Selecting seed documents using k-Means 
             
-            kmeans_svm_prediction = svm_pred(corpus_docs_features, kmeans_seed_docs, SVM_C, SVM_g)
+            # kmeans_svm_prediction = svm_pred(corpus_docs_features, kmeans_seed_docs, SVM_C, SVM_g)
+            kmeans_svm_prediction = svm_pred2(corpus_docs_features, kmeans_seed_docs)
             kmeans_svm_results = eval_prediction(kmeans_svm_prediction)
             eval_results['SVM(k-Means, LDA+LS)'] = kmeans_svm_results
+            
     
             # Selecting seed documents by random selection 
             
-            random_svm_prediction = svm_pred(corpus_docs_features, random_seed_docs, SVM_C, SVM_g)
+            # random_svm_prediction = svm_pred(corpus_docs_features, random_seed_docs, SVM_C, SVM_g)
+            random_svm_prediction = svm_pred2(corpus_docs_features, random_seed_docs)
             random_svm_results = eval_prediction(random_svm_prediction)
             eval_results['SVM(random, LDA+LS)'] = random_svm_results
+            
         
-        if include_lsi:
+        if self._has_lsi and include_lsi:
+             
             lsi_theta = self._lsi_theta.tolist()
             lda_lsi_lu_features = [(doc_features + lsi_theta[doc_id]) for doc_id, doc_features in enumerate(corpus_docs_features)]  
             random_lda_lsi_lu_svm_pred = svm_pred(lda_lsi_lu_features, random_seed_docs, SVM_C, SVM_g)
+            # random_lda_lsi_lu_svm_pred = svm_pred2(lda_lsi_lu_features, random_seed_docs)
             random_lda_lsi_lu_svm_results = eval_prediction(random_lda_lsi_lu_svm_pred)
             eval_results['SVM(k-Means, LDA+LS+LSA)'] = random_lda_lsi_lu_svm_results
-        
+         
         '''
         The below code is to include classifiers results based on LDA  
         features alone 
         '''
         if include_lda:
-
+ 
             lda_theta = self._lda_theta.tolist()
-            
+             
             # Selecting seed documents using k-Means 
-            
+             
             lda_kmeans_svm_prediction = svm_pred(lda_theta, kmeans_seed_docs, SVM_C, SVM_g)
+            # lda_kmeans_svm_prediction = svm_pred2(lda_theta, kmeans_seed_docs)
             lda_kmeans_svm_results = eval_prediction(lda_kmeans_svm_prediction)
-    
+     
             # Selecting seed documents by random selection 
-            
+             
             lda_random_svm_prediction = svm_pred(lda_theta, random_seed_docs, SVM_C, SVM_g)
+            # lda_random_svm_prediction = svm_pred2(lda_theta, random_seed_docs)
             lda_random_svm_results = eval_prediction(lda_random_svm_prediction)
-            
+             
             eval_results['SVM(k-Means, LDA)'] = lda_kmeans_svm_results
             eval_results['SVM(random, LDA)'] = lda_random_svm_results
 
 
         return eval_results
+    
+    
+    
+    
         
     def _smart_classify2(self, lucene_query, topic_query, 
                         SVM_C=32, SVM_g=0.5, 
@@ -896,12 +1059,14 @@ def classify_with_varying_seeds(norm_tokens, project_name, model_cfg_file):
     seed_counts = range(20, smarter._num_corpus_docs, 20) # 
     results = []
     for num_seeds in seed_counts:
+        
         eval_avg = {}
-        for i in range(0, 100):
+        for i in range(0, 5):
             mdl_results_dict = smarter._smart_classify(lucene_query, 
                                                        norm_tokens, 
                                                        num_seeds=num_seeds, 
-                                                       include_lda=True)
+                                                       include_lda=False)
+
             for mdl, values in mdl_results_dict.items():
                 metric_dict = defaultdict(list)
                 if mdl in eval_avg: metric_dict = eval_avg[mdl]
@@ -954,68 +1119,71 @@ def classify_with_varying_seeds(norm_tokens, project_name, model_cfg_file):
     title_font.set_family('arial')
     title_font.set_size(14)
     
-    metrics = ['Accuracy', 'Precision', 'Recall', 'TP'] 
-    line_styles = ['ro-', 'kx-', 'c^-', 'gv-', 'bd-', 'y+-'] # for each model 
+     
     
-#    # To make a single figure with multiple sub plots 
-#    
-#    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-#    axl = [ax1, ax2, ax3, ax4]
-#
-#    for i, mn in enumerate(metrics):
-#        y_mins = []
-#        y_maxs = []  
-#        for midx, (mdl, values) in enumerate(metric_mdl_dict[mn].items()):
-#            y = [m for m, s in values]
-#            y_error = [s for m, s in values]
-#            axl[i].errorbar(seed_counts, y, yerr=y_error, 
-#                            fmt=line_styles[midx], label=mdl, 
-#                            capsize=4)
-#            
-#            y_mins += [min(y) - max(y_error) - 5]
-#            y_maxs += [max(y) + max(y_error) + 5]   
-#            
-#        axl[i].set_xlim(0., smarter._num_corpus_docs + 5)
-#        axl[i].set_ylim(min(y_mins), max(y_maxs))
-#        axl[i].set_title(mn, fontproperties=title_font)
-#        axl[i].set_xlabel('Number of Seeds', fontproperties=axis_font)
-#        axl[i].set_ylabel(mn + ' (mean)', fontproperties=axis_font)
-#        axl[i].legend(loc='lower right', prop={'size':14, 'family':'arial'})
-#    
-#    plt.show()              
-          
-    # To make individual figures are save them 
+    # To make a single figure with multiple sub plots 
+    
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    axl = [ax1, ax2, ax3, ax4]
 
-    for mn in metrics:
-        plt.clf()
-        # f, ax = plt.subplots()
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        
-        file_name = '%s-seed-eval-%s.eps' % (project_name, mn)
-
+    for i, mn in enumerate(score_names):
         y_mins = []
         y_maxs = []  
         for midx, (mdl, values) in enumerate(metric_mdl_dict[mn].items()):
             y = [m for m, s in values]
             y_error = [s for m, s in values]
-            ax.errorbar(seed_counts, y, yerr=y_error, 
+            
+            axl[i].errorbar(seed_counts, y, yerr=y_error, 
                             fmt=line_styles[midx], label=mdl, 
                             capsize=4)
             
             y_mins += [min(y) - max(y_error) - 5]
             y_maxs += [max(y) + max(y_error) + 5]   
             
-        ax.set_xlim(0., smarter._num_corpus_docs + 5)
-        ax.set_ylim(min(y_mins), max(y_maxs))
-        ax.set_xlabel('Number of Seeds', fontproperties=axis_font)
-        ax.set_ylabel(mn + ' (mean)', fontproperties=axis_font)
-        ax.legend(loc='lower right', prop={'size':14, 'family':'arial'})
+        axl[i].set_xlim(0., smarter._num_corpus_docs + 5)
+        axl[i].set_ylim(min(y_mins), max(y_maxs))
+        axl[i].set_title(mn, fontproperties=title_font)
+        axl[i].set_xlabel('Number of Seeds', fontproperties=axis_font)
+        axl[i].set_ylabel(mn + ' (mean)', fontproperties=axis_font)
+        axl[i].legend(loc='lower right', prop={'size':14, 'family':'arial'})
     
-        plt.savefig(file_name, dpi=700, bbox_inches='tight', pad_inches=0.1)
-        print mn, 'plot is created at', file_name 
-        
-    plt.close()
+    plt.show()       
+    
+    
+           
+          
+#     # To make individual figures are save them 
+# 
+#     for mn in metrics:
+#         plt.clf()
+#         # f, ax = plt.subplots()
+#         fig = plt.figure()
+#         ax = fig.add_subplot(111)
+#         
+#         file_name = '%s-seed-eval-%s.eps' % (project_name, mn)
+# 
+#         y_mins = []
+#         y_maxs = []  
+#         for midx, (mdl, values) in enumerate(metric_mdl_dict[mn].items()):
+#             y = [m for m, s in values]
+#             y_error = [s for m, s in values]
+#             ax.errorbar(seed_counts, y, yerr=y_error, 
+#                             fmt=line_styles[midx], label=mdl, 
+#                             capsize=4)
+#             
+#             y_mins += [min(y) - max(y_error) - 5]
+#             y_maxs += [max(y) + max(y_error) + 5]   
+#             
+#         ax.set_xlim(0., smarter._num_corpus_docs + 5)
+#         ax.set_ylim(min(y_mins), max(y_maxs))
+#         ax.set_xlabel('Number of Seeds', fontproperties=axis_font)
+#         ax.set_ylabel(mn + ' (mean)', fontproperties=axis_font)
+#         ax.legend(loc='lower right', prop={'size':14, 'family':'arial'})
+#     
+#         plt.savefig(file_name, dpi=700, bbox_inches='tight', pad_inches=0.1)
+#         print mn, 'plot is created at', file_name 
+#         
+#     plt.close()
     
 def classify_with_varying_seeds_rocs(norm_tokens, project_name, model_cfg_file):
     
@@ -1058,6 +1226,7 @@ def classify_with_varying_seeds_rocs(norm_tokens, project_name, model_cfg_file):
 
 
 def classify_with_varying_topics(topic_counts, prject_prefix, 
+                                 config_file_dir,
                                  lucene_query, norm_tokens, 
                                  num_seeds = 40): 
 
@@ -1065,9 +1234,9 @@ def classify_with_varying_topics(topic_counts, prject_prefix,
     for num_topics in topic_counts:
         
         print 'Number of topics for LDA:', num_topics
-        
-        project_name = "%s-%dT" % (prject_prefix, num_topics)
-        model_cfg_file = "F:\\Research\\datasets\\trec2010\\%s.cfg" % project_name 
+        model_cfg_file = os.path.join(config_file_dir, 
+                                      "%s-%dT.cfg" % (prject_prefix, num_topics))
+        # model_cfg_file = "F:\\Research\\datasets\\trec2010\\%s.cfg" % project_name 
 #        fp_file_name = '%s-FP-doc-details.txt' % project_name
         
         
@@ -1123,15 +1292,14 @@ def classify_with_varying_topics(topic_counts, prject_prefix,
     title_font.set_family('arial')
     title_font.set_size(14)
     
-    metrics = ['Accuracy', 'Precision', 'Recall', 'FP'] 
-    line_styles = ['ro-', 'kx-', 'c^-', 'gv-', 'bd-', 'y+-'] # for each model 
+    
     
     # To make a single figure with multiple sub plots 
     
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
     axl = [ax1, ax2, ax3, ax4]
 
-    for i, mn in enumerate(metrics):
+    for i, mn in enumerate(score_names):
         y_mins = []
         y_maxs = []  
         for midx, (mdl, values) in enumerate(metric_mdl_dict[mn].items()):
@@ -1153,30 +1321,32 @@ def classify_with_varying_topics(topic_counts, prject_prefix,
 
 
 if __name__ == '__main__':
+
     '''
     Plots classification performance based 
     on varying number of topics 
     '''
-    topic_counts = [5, 10, 15, 20, 30, 40, 50, 60, 70, 80]
-#    query_id = 204
-#    model_cfg_file = "C:\\Users\\Clint\\SMARTeR\\repository\\prj-204.cfg" 
-#    keywords = 'retention compliance preserve discard destroy delete clean eliminate shred schedule period documents file policy e-mail'
-
-    query_id = 207 
-    keywords = 'football Eric Bass'
-        
-    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) )
-    lucene_query = 'all:(%s)' % norm_tokens # search in all fields 
-    print 
-    print 'Lucene query:', lucene_query
-    print 'TM query:', norm_tokens
-    print 
-    print '------------------------------------------------------------------------------------------------------'
-    project_prefix = "Q%d-LW" % (query_id)
-    classify_with_varying_topics(topic_counts, project_prefix, 
-                                 lucene_query, norm_tokens,
-                                 num_seeds=150)
-
+    RELEVANT_DIR_NAME = "1"
+    output_folder = "E:\\E-Discovery\\trec2010index"
+    
+#     topic_counts = [5, 10, 15, 20, 30, 40, 50, 60, 70, 80]
+# 
+#     query_id = 207 
+#     keywords = 'football Eric Bass'
+#         
+#     norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) )
+#     lucene_query = 'all:(%s)' % norm_tokens # search in all fields 
+#     print 
+#     print 'Lucene query:', lucene_query
+#     print 'TM query:', norm_tokens
+#     print 
+#     print '------------------------------------------------------------------------------------------------------'
+#     project_prefix = "Q%d-LW" % (query_id)
+#     classify_with_varying_topics(topic_counts, project_prefix, 
+#                                  output_folder,
+#                                  lucene_query, norm_tokens,
+#                                  num_seeds=100)
+# 
 
 
 #    query_id = 202     
@@ -1195,7 +1365,7 @@ if __name__ == '__main__':
 #    print 
 #    print '------------------------------------------------------------------------------------------------------'
 #    project_prefix = "Q%d-LW" % (query_id)
-#    classify_with_varying_topics(topic_counts, project_prefix, lucene_query, norm_tokens)
+#    classify_with_varying_topics(topic_counts, project_prefix, output_folder, lucene_query, norm_tokens)
 #
 #    norm_tokens = ' '.join( stem_tokens(lemmatize_tokens( regex_tokenizer(keywords) )) )
 #    lucene_query = 'all:(%s)' % norm_tokens # search in all fields 
@@ -1205,26 +1375,26 @@ if __name__ == '__main__':
 #    print 
 #    print '------------------------------------------------------------------------------------------------------'
 #    project_prefix = "Q%d-LST" % (query_id)
-#    classify_with_varying_topics(topic_counts, project_prefix, lucene_query, norm_tokens)
+#    classify_with_varying_topics(topic_counts, project_prefix, output_folder, lucene_query, norm_tokens)
 
 
     '''
     Classification performance when the number of seeds is varied 
     '''
       
-#    project_name = "Q201-LW-30T"
-#    keywords = 'prepay transactions swap pre-pay'
-#    model_cfg_file = "F:\\Research\\datasets\\trec2010\\%s.cfg" % project_name 
-#    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) )
-#    classify_with_varying_seeds(norm_tokens, project_name, model_cfg_file)
-#    classify_with_varying_seeds_rocs(norm_tokens, project_name, model_cfg_file)
+    project_name = "Q201-LW-30T"
+    keywords = 'prepay transactions swap pre-pay'
+    model_cfg_file = "%s\\%s.cfg" % (output_folder, project_name)
+    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) )
+    classify_with_varying_seeds(norm_tokens, project_name, model_cfg_file)
+#     classify_with_varying_seeds_rocs(norm_tokens, project_name, model_cfg_file)
 #
-#    project_name = "Q207-LW-30T"
-#    keywords = 'football Eric Bass'
-#    model_cfg_file = "F:\\Research\\datasets\\trec2010\\%s.cfg" % project_name 
-#    norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) )
-#    classify_with_varying_seeds(norm_tokens, project_name, model_cfg_file)
-#    classify_with_varying_seeds_rocs(norm_tokens, project_name, model_cfg_file)
+#     project_name = "Q207-LW-30T"
+#     keywords = 'football Eric Bass'
+#     model_cfg_file = "%s\\%s.cfg" % (output_folder, project_name)
+#     norm_tokens = ' '.join( lemmatize_tokens( regex_tokenizer(keywords) ) )
+#     classify_with_varying_seeds(norm_tokens, project_name, model_cfg_file)
+#     classify_with_varying_seeds_rocs(norm_tokens, project_name, model_cfg_file)
 #    
 #    project_name = "Q202-LW-30T"
 #    keywords = 'FAS transaction swap trust Transferor Transferee'

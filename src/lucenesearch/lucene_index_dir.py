@@ -13,7 +13,7 @@ import os
 import logging 
 from lucene import IndexWriter, StandardAnalyzer, Document, Field 
 from lucene import SimpleFSDirectory, File, initVM, Version
-from lucene import IndexSearcher, QueryParser, MultiFieldQueryParser, BooleanClause
+from lucene import IndexSearcher, QueryParser, MultiFieldQueryParser
 from utils.utils_email import parse_plain_text_email 
 from utils.utils_file import get_file_paths_index, load_file_paths_index, store_file_paths_index
 
@@ -301,6 +301,7 @@ def boolean_search_lucene_index(index_dir, query_text, limit):
     '''
     DEFAULT_QUERY_FIELD = 'all'
     
+    
     store = SimpleFSDirectory(File(index_dir))
     
     searcher = IndexSearcher(store, True)
@@ -311,7 +312,7 @@ def boolean_search_lucene_index(index_dir, query_text, limit):
     scoreDocs = searcher.search(query, limit).scoreDocs
     duration = datetime.datetime.now() - start
     
-    print "Lucene Search: Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
+    # print "Lucene Search: Found %d document(s) (in %s) that matched query '%s':" %(len(scoreDocs), duration, query)
 
     
     rows = []
@@ -339,8 +340,8 @@ if __name__ == '__main__':
 
     # test_search("F:\\Research\\datasets\\trec2010\\project4\\lucene")
     
-    index_dir = "C:\\Users\\Sail\\SMARTeR\\Project201\\lucene"
-    lucene_query = 'all:(+swap trans*) or all:(+swap trans*)'
+    index_dir = "E:\\E-Discovery\\trec2010index\\Q201-UNW-30T\\lucene"
+    lucene_query = 'all:(+swap trans*)'
     record_limit = 1000 
     
     boolean_search_lucene_index(index_dir, lucene_query, record_limit)

@@ -25,7 +25,7 @@ from sampler.random_sampler import random_sampler, SUPPORTED_CONFIDENCES, DEFAUL
 from file_utils import find_files_in_folder, convert_size, start_thread, copy_with_dialog, get_destination_file_path, free_space
 from _winreg import OpenKey, CloseKey, QueryValueEx, HKEY_LOCAL_MACHINE
 from pickle import TRUE, FALSE
-from multiprocessing import Event
+from test_multiprocessing.py.py import Event
 import shutil
 #from test.test_mutants import Parent
 from _pyio import open

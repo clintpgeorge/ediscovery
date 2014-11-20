@@ -9,14 +9,20 @@ Created by: Clint P. George
 Created On: Jan 29, 2013   
 
 '''
-
-import re 
+import sys
 import quopri
 import codecs
 import email 
+import locale
 from nltk.tokenize import PunktWordTokenizer, RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem import SnowballStemmer
+from dateutil import parser
+from fractions import Fraction
+
+
+locale.setlocale(locale.LC_NUMERIC, 'US')
+
 
 
 '''
@@ -33,29 +39,6 @@ REMOVE_LIST = [u"[", u"]", u"{", u"}", u"(", u")", u"'", u".",
                u"\"", u";", u":", u"-", u"`", u"~", u"@", u"$", 
                u"^", u"|", u"#", u"=", u"*"];
 
-numeric_parser = re.compile(r"""        # A numeric string consists of:
-    (?P<sign>[-+])?              # an optional sign, followed by either...
-    (
-        (?=\d|\.\d)              # ...a number (with at least one digit)
-        (?P<int>\d*)             # having a (possibly empty) integer part
-        (\.(?P<frac>\d*))?       # followed by an optional fractional part
-        (E(?P<exp>[-+]?\d+))?    # followed by an optional exponent, or...
-    |
-        Inf(inity)?              # ...an infinity, or...
-    |
-        (?P<signal>s)?           # ...an (optionally signaling)
-        NaN                      # NaN
-        (?P<diag>\d*)            # with (possibly empty) diagnostic info.
-    )
-    \Z
-""", re.VERBOSE | re.IGNORECASE | re.UNICODE).match
-    
-date_parser = re.compile(r'''(\d{2})[/.-](\d{2})[/.-](\d{4})$''',
-                         re.VERBOSE | re.IGNORECASE | re.UNICODE).match
-time_parser = re.compile(r'''(\d{2}):(\d{2}):(\d{2})$''',
-                         re.VERBOSE | re.IGNORECASE | re.UNICODE).match
-time_parser2 = re.compile(r'''(\d{2}):(\d{2})$''',
-                         re.VERBOSE | re.IGNORECASE | re.UNICODE).match
 '''
 Initializes the tokenizer, lemmatizer, and stemmer  
 '''
@@ -75,6 +58,15 @@ pat3 = r'''(?x)    # set flag to allow verbose regexps
         | \.\.\.            # ellipsis
         | [][.,;"'?():-_`]  # these are separate tokens
         '''
+# Updated on June 26, 2014 
+pat4 = r'''(?x)                    # set flag to allow verbose regexps
+        ([A-Z]\.)+                 # abbreviations, e.g. U.S.A. 
+        | \d[\d,.:\-/\d]*\d        # currency and percentages, e.g. $12.40, 82%
+        | \w+[\w\-_\.&|@:/]*\w+    # words with optional internal hyphens
+        | \.\.\.                   # ellipsis
+        | [][.,;"'?():-_`]         # these are separate tokens
+        '''
+
 
 regx_tokenizer = RegexpTokenizer(pat1)
 
@@ -85,6 +77,27 @@ snowball_stemmer = SnowballStemmer("english") # Choose a language
 def xstr(s):
     return '' if s is None else str(s)
 
+def is_date(token):
+    try:
+        parser.parse(token)
+    except:
+        return False
+    return True 
+
+def is_numeric(num_str):
+    try:
+        float(num_str)
+        return True 
+    except ValueError:
+        try:
+            locale.atof(num_str)
+            return True 
+        except ValueError:
+            try:
+                float(Fraction(num_str))
+                return True 
+            except ValueError:
+                return False  
 
 def load_en_stopwords(filename):
     '''Loads English stop-words from a given file 
@@ -102,7 +115,7 @@ def load_en_stopwords(filename):
     return stopwords
 
 stop_words = load_en_stopwords('en_stopwords')
-print 'Number of stop words:', len(stop_words)
+# print 'Number of stop words:', len(stop_words)
 
 def cleanup(token):
     '''Clean up a given token based on regular expression, strip(),
@@ -122,12 +135,12 @@ def cleanup(token):
 
         for each_char in STRIP_CHAR_LIST:
             token = token.strip(each_char)
+            if token.endswith(u"'s"): token = token.rstrip(u"'s")            
         
         if ((token in REMOVE_LIST) # removes if it's in the remove list 
             or (token in stop_words) # removes stop words  
-            or numeric_parser(token) # discards if it's a numeric 
-            or date_parser(token) # discards if it's a date  
-            or time_parser(token) or time_parser2(token)): # discards if it's a time   
+            or is_date(token) # discards if it's a date  
+            or is_numeric(token)): # discards if it's a numeric
             return ''
 
     except: 
@@ -151,15 +164,13 @@ def regex_tokenizer(text):
           
     tokens = regx_tokenizer.tokenize(text)
 
-    filtered = []
+    cleaned_tokens = []
     for w in tokens:
-        try:
-            token = cleanup(w.lower()) 
-            if len(token) > 0: 
-                filtered.append(token)
-        except: pass 
+        try: token = cleanup(w.lower()) 
+        except: token = u"" 
+        if len(token) > 0: cleaned_tokens.append(token)
 
-    return filtered
+    return cleaned_tokens
 
    
    
@@ -172,27 +183,20 @@ def punkt_word_tokenizer(text):
         a string to tokenized 
     
     '''
-    try: 
-        text = ' '.join(text.lower().split()) # removes newline, tab, and white space
-    except Exception:
-        pass  
-          
+    try: text = ' '.join(text.lower().split()) 
+    except Exception: pass  
     tokens = punkt_tokenizer.tokenize(text)
     
-    print tokens 
-    # tokens = [cleanup(w) for w in tokens]
-    # tokens = [w for w in tokens if w not in REMOVE_LIST]
-    filtered = []
+    cleaned_tokens = []
     for w in tokens:
-        try: 
-            w = cleanup(w)
-            if len(w) > 0: 
-                for wt in w.split(','): 
-                    filtered.append(wt)
-        except: 
-            pass 
-    
-    return filtered
+        try: token = cleanup(w.lower()) 
+        except: pass 
+        if len(token) > 0: 
+            for wt in token.split(','): 
+                cleaned_tokens.append(wt)
+
+    return cleaned_tokens
+
 
 def whitespace_tokenize(doc_text):
     '''
@@ -210,12 +214,9 @@ def lemmatize_tokens(word_tokens):
     '''
     tokens = [] 
     for token in word_tokens:
-        try:
-            # print 'lemma:', token, '-->', wordnet_lmtzr.lemmatize(token)   
-            token = wordnet_lmtzr.lemmatize(token)
+        try: token = wordnet_lmtzr.lemmatize(token)
         except: pass 
         tokens.append(token)
-    
     return tokens
 
 
@@ -225,12 +226,9 @@ def stem_tokens(word_tokens):
     '''
     tokens = [] 
     for token in word_tokens:
-        try:
-            # print 'stem:', token, '-->', snowball_stemmer.stem(token)   
-            token = snowball_stemmer.stem(token)
+        try: token = snowball_stemmer.stem(token)
         except: pass 
-        tokens.append(token)
-        
+        tokens.append(token)        
     return tokens
 
  
@@ -245,14 +243,16 @@ def __strip_email_footer(email_text):
     ''' 
     def __is_email_footer(line):
         ret = False  
-        for l in ['***********', 'EDRM Enron Email Data Set has been produced in EML']:
+        for l in ['***********', 
+                  'EDRM Enron Email Data Set has been produced in EML']:
             if line.startswith(l): 
                 return True  
         return ret
     
     
     cnt = 0
-    cleaned_lines = []
+#     cleaned_lines = []
+    stripped_text = ''
     for line in email_text.split('\n'): # Gets each line 
         if cnt > 2: 
             break # ignores all the text after the 3 footer lines 
@@ -260,9 +260,10 @@ def __strip_email_footer(email_text):
             cnt += 1 # increments the footer line count 
         else: 
             cnt = 0 # resets to zero 
-            cleaned_lines.append(line)            
-    
-    stripped_text = '\n'.join(cleaned_lines)
+            stripped_text += line + '\n'
+#             cleaned_lines.append(line)            
+#     
+#     stripped_text = u'\n'.join(cleaned_lines)
     
     return stripped_text
 
@@ -270,28 +271,137 @@ def __strip_email_footer(email_text):
 def __strip_email_header_fields(body_text):
     
     cleaned_body = []
-    for line in body_text.split("\n"):
-        for header_field in ['to:', 'from:', 'subject:', 'date:', 'cc:', 'bcc:', 're:']:
+    for line in body_text.split(u'\n'):
+        for header_field in ['to:', 'from:', 'subject:', 'date:', 'cc:', 
+                             'bcc:', 're:']:
             if line.lower().startswith(header_field):
                 line = line[len(header_field):]
                 break 
         cleaned_body.append(line)
     
-    return '\n'.join(cleaned_body)
+    return u'\n'.join(cleaned_body)
         
+def parse_text_emails_and_attachments(file_path, file_type="E"):
+    '''Reads a given email or attachment which is in plain text format  
     
-     
+    Arguments: 
+        file_path - the email or attachment file path
+        file_type - [E] - email and [A] - attachment   
+    '''
+    doc_text = u''
+    receiver = u''
+    sender = u''
+    cc = u''
+    bcc = u''
+    subject = u''
+    body_text = u''
+    date = u''
+    
+    try:
+        with codecs.open(file_path, 'r', encoding='ascii', 
+                         errors='ignore') as fp: 
+            doc_text = fp.read()
 
-def parse_plain_text_email(file_path, tokenize = True, 
-                           lemmatize = False, stem = False, 
-                           nonascii = True, 
-                           text_tokenizer=regex_tokenizer):
+        if file_type == "E": # if it's an email 
+            doc_text = __strip_email_footer(doc_text) 
+            msg = email.message_from_string(doc_text)  
+            receiver = xstr(msg['to'])
+            sender = xstr(msg['from'])
+            cc = xstr(msg['cc'])
+            bcc = xstr(msg['bcc']) # Subodh - Rahul - Get BCC attribute from the email 
+            subject = xstr(msg['subject'])
+            date = xstr(msg['date'])
+            if msg.is_multipart(): 
+                body_text = ' '.join(str(w) for w in msg.get_payload())
+            else: 
+                body_text = msg.get_payload()
+            doc_text = ' '.join([receiver, sender, cc, bcc, subject])
+            doc_text += ' ' + body_text
+    except UnicodeError as ue: 
+        print "Unicode error({0}): {1}".format(ue.errno, ue.strerror)
+        pass 
+    except:
+        print "Unexpected error:", sys.exc_info()[0]
+        raise
+    
+    return (receiver, sender, cc, subject, body_text, bcc, date, doc_text)
+
+    
+# def parse_plain_text_email2(file_path, lemmatize=False, stem=False, 
+#                             text_tokenizer=regex_tokenizer, file_type="E"):
+#     '''Processes a single email file that's in plain/text format 
+#     
+#     Arguments: 
+#         file_path - the email file path 
+#     '''
+#     
+#     # Handles different text encoding 
+#     doc_text = u''
+#     receiver = u''
+#     sender = u''
+#     cc = u''
+#     bcc = u''
+#     subject = u''
+#     body_text = u''
+#     date = u''
+#     
+#     try:
+#         with codecs.open(file_path, 'r', encoding='ascii', 
+#                          errors='ignore') as fp: 
+#             doc_text = fp.read()
+# 
+#         if file_type == "E": # if it's an email 
+#             doc_text = __strip_email_footer(doc_text) 
+#             msg = email.message_from_string(doc_text)  
+#             receiver = xstr(msg['to'])
+#             sender = xstr(msg['from'])
+#             cc = xstr(msg['cc'])
+#             bcc = xstr(msg['bcc']) # Subodh - Rahul - Get BCC attribute from the email 
+#             subject = xstr(msg['subject'])
+#             date = xstr(msg['date'])
+#             
+#             if msg.is_multipart(): 
+#                 body_text = u' '.join(str(w) for w in msg.get_payload())
+#             else: 
+#                 body_text = msg.get_payload()
+#             body_tokens = text_tokenizer(body_text)
+#             
+#             if lemmatize: body_tokens = lemmatize_tokens(body_tokens)
+#             if stem: body_tokens = stem_tokens(body_tokens)
+#             
+#             body_text = u' '.join(body_tokens)
+#     
+#             doc_text = u' '.join(text_tokenizer(u' '.join([receiver, sender, 
+#                                                            cc, bcc, subject])))
+#             doc_text += u' ' + body_text
+#         else: # if it's an attachment 
+#             body_tokens = text_tokenizer(doc_text)            
+#             if lemmatize: body_tokens = lemmatize_tokens(body_tokens)
+#             if stem: body_tokens = stem_tokens(body_tokens)
+#     
+#             doc_text = u' '.join(body_tokens)
+#         
+#     except UnicodeError as ue: 
+#         print "Unicode error({0}): {1}".format(ue.errno, ue.strerror)
+#         pass 
+#     except:
+#         print "Unexpected error:", sys.exc_info()[0]
+#         raise
+#     
+#     return (receiver, sender, cc, subject, body_text, bcc, date, doc_text)
+#   
+
+
+
+def parse_plain_text_email(file_path, lemmatize=False, stem=False, 
+                           nonascii=True, text_tokenizer=regex_tokenizer, 
+                           file_type="E"):
     '''Processes a single email file that's in plain/text format 
     
     Arguments: 
         file_path - the email file path 
     '''
-    def removeNonAscii(s): 
+    def remove_non_ascii(s): 
         return ''.join(i for i in s if ord(i) < 128)
     
     
@@ -322,35 +432,35 @@ def parse_plain_text_email(file_path, tokenize = True,
             pass
         else: break
 
-    email_text = __strip_email_footer(email_text)
-  
-
-    if len(email_text) > 0: 
     
-        msg = email.message_from_string(email_text)  
-        receiver = xstr(msg['to'])
-        sender = xstr(msg['from'])
-        cc = xstr(msg['cc'])
-        bcc = xstr(msg['bcc']) # Subodh - Rahul - Get BCC attribute from the email 
-        subject = xstr(msg['subject'])
-        date = xstr(msg['date'])
-        body_text = str(msg.get_payload())
+    if file_type == "E": # if it's an email 
 
-        body_text = __strip_email_header_fields(body_text) 
-
-        if tokenize:
+        email_text = __strip_email_footer(email_text)
+        
+        if len(email_text) > 0: 
+            msg = email.message_from_string(email_text)  
+            receiver = xstr(msg['to'])
+            sender = xstr(msg['from'])
+            cc = xstr(msg['cc'])
+            bcc = xstr(msg['bcc']) # Subodh - Rahul - Get BCC attribute from the email 
+            subject = xstr(msg['subject'])
+            date = xstr(msg['date'])
+            body_text = str(msg.get_payload())
+    
+            body_text = __strip_email_header_fields(body_text) 
+    
+    #         if tokenize:
             body_tokens = text_tokenizer(body_text)
-            if lemmatize: 
-                body_tokens = lemmatize_tokens(body_tokens)
-            if stem: 
-                body_tokens = stem_tokens(body_tokens)
+            
+            if lemmatize: body_tokens = lemmatize_tokens(body_tokens)
+            if stem: body_tokens = stem_tokens(body_tokens)
             
             # This is added to remove stop words after normalization  
             if lemmatize or stem:
                 body_tokens = [w for w in body_tokens if len(cleanup(w)) > 0]
             
+            body_text = ''
             if body_charset == 'ISO-8859-1':
-                body_text = ''
                 for ch in body_tokens:
                     try:
                         token = ch.decode('ascii')
@@ -358,74 +468,69 @@ def parse_plain_text_email(file_path, tokenize = True,
                     except UnicodeDecodeError:
                         pass
             else:
+                try: body_text = ' '.join(body_tokens)
+                except Exception: pass
+    
+    #         else:
+    #             # If message is multi-part, we only want the text version of 
+    #             # the body, this walks the message and gets the body.
+    #             if msg.get_content_maintype() == 'multipart': 
+    #                 for part in msg.walk():       
+    #                     if part.get_content_type() == "text/plain":
+    #                         body_text += part.get_payload(decode=True)
+    
+            
+            email_text = ' '.join(text_tokenizer(' '.join([receiver, sender, 
+                                                           cc, bcc, subject])))
+            email_text += ' ' + body_text
+        
+        body_text = body_text.strip()
+        email_text = email_text.strip()
+        
+        if not nonascii:            
+            ret = (remove_non_ascii(receiver), 
+                    remove_non_ascii(sender), 
+                    remove_non_ascii(cc), 
+                    remove_non_ascii(subject), 
+                    remove_non_ascii(body_text), 
+                    remove_non_ascii(bcc), 
+                    remove_non_ascii(date),
+                    remove_non_ascii(email_text))
+        else: 
+            ret = (receiver, sender, cc, subject, body_text, bcc, date, 
+                   email_text)
+    
+    else: # if it's an attachment 
+        
+        body_tokens = text_tokenizer(email_text)
+            
+        if lemmatize: body_tokens = lemmatize_tokens(body_tokens)
+        if stem: body_tokens = stem_tokens(body_tokens)
+        
+        # This is added to remove stop words after normalization  
+        if lemmatize or stem:
+            body_tokens = [w for w in body_tokens if len(cleanup(w)) > 0]
+        
+        email_text = ''
+        if body_charset == 'ISO-8859-1':
+            for ch in body_tokens:
                 try:
-                    body_text = ' '.join(body_tokens)
-                except Exception:
-                    pass
-
+                    token = ch.decode('ascii')
+                    email_text += ' ' + token
+                except UnicodeDecodeError: pass
         else:
-            # If message is multi-part, we only want the text version of 
-            # the body, this walks the message and gets the body.
-            if msg.get_content_maintype() == 'multipart': 
-                for part in msg.walk():       
-                    if part.get_content_type() == "text/plain":
-                        body_text += part.get_payload(decode=True)
-
-        
-        email_text = ' '.join(text_tokenizer(' '.join([receiver, sender, cc, bcc, subject])))
-        email_text += ' ' + body_text
-        
-    
-    if not nonascii:            
-        ret = (removeNonAscii(receiver), 
-                removeNonAscii(sender), 
-                removeNonAscii(cc), 
-                removeNonAscii(subject), 
-                removeNonAscii(body_text), 
-                removeNonAscii(bcc), 
-                removeNonAscii(date),
-                removeNonAscii(email_text))
-    else: 
+            try: email_text = ' '.join(body_tokens)
+            except Exception: pass
+            
+        if not nonascii: email_text = remove_non_ascii(email_text)
         ret = (receiver, sender, cc, subject, body_text, bcc, date, email_text)
-    
+
     return ret
     
-if __name__ == '__main__':
-    
-    file_path = 'C:\\Users\\Clint\\SMARTeR\\prj-207-re-30t\\files\\1\\3.546995.DXMALIWB1YBIEAJKZ00OSLZ2QXCTTNB1B.txt'
-    ret = parse_plain_text_email(file_path)
-    print ret[4] 
-    print ret[7] 
-    
-
-#    file_path = 'C:\\Users\\Clint\\SMARTeR\\prj-207\\files\\0\\3.181161.OPMT5EU0PZGZEDI4MHNK4P5KDX551MJEB.txt'
-#    ret = parse_plain_text_email(file_path)
-#    print ret[4] 
-    
-#    text = '''
-#    abbreviations: U.S.A., eg., AT&T
-#    possessives: John's, Lars'
-#    contractions: that's, it's, that'll, I've, couldn't 
-#    diacritics: non-english languages may have apostrophes as diacritics
-#    hyphenated words: low-budget, pre-owned
-#    email addresses: foo.bar@baz.com
-#    urls: http://www.foo.com
-#    foreign phrases: et cetera
-#    
-#    units:
-#    real numbers/ measures: 1,210,234.3245, 2.3, 2.3 kgs.
-#    currencies: $ 4.5, $ 150,000, AU$ 6.7, 67 AUD
-#    date: 29/01/2009, 29-01-2009, and various other date formats
-#    time: 2:30 pm., 2.30 pm.
-#    
-#    http://stackoverflow.com/questions/5214177/regex-tokenizer-to-split-a-text-into-words-digits-and-punctuation-marks
-#    https://code.google.com/p/nltk/issues/detail?id=128
-#    https://www.google.com/search?q=nltk.word_tokenize()&rlz=1C1_____enUS391US391&oq=nltk.word_tokenize()&aqs=chrome..69i57&sourceid=chrome&espv=210&es_sm=122&ie=UTF-8
-#    
-#    '''
-#    
-#    print regx_tokenizer.tokenize(text)
-
-    
-    
+# if __name__ == '__main__':
+#     
+#     file_path = 'E:\\E-Discovery\\trec2010dataset\\seeds-a\\201\\1\\3.215558.MUQRZJDAZEC5GAZM0JG5K2HCKBZQA1TEB.1.txt'
+#     (receiver, sender, cc, subject, body_text, bcc, date, 
+#      email_text) = parse_plain_text_email(file_path, True, True, True, False)
+#     print body_text 
     
